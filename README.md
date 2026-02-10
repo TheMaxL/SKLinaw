@@ -1,5 +1,6 @@
 # SKLinaw
 Vision: For a transparent government.
+
 Mission: 
 - Transperancy of the projects of the SK in a barangay to its populace.
 - A useful project/budget management app for the SK.
