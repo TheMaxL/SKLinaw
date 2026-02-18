@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SK Barangay Portal</title>
+  <link rel="stylesheet" href="Style.css">
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>SK Barangay Portal</h1>
+
+    <!-- SIGN IN BUTTON -->
+    <button id="signInBtn">Sign in as SK</button>
+
+    <!-- REGISTRATION FORM -->
+    <div id="accountForm" class="form hidden">
+      <h3>Create Account</h3>
+
+      <label>Full Name</label>
+      <input type="text" id="name">
+
+      <label>Position</label>
+      <input type="text" id="position">
+
+      <label>Barangay</label>
+      <input type="text" id="barangay">
+
+      <button id="viewDetailsBtn">View Account Details</button>
+    </div>
+
+    <!-- ACCOUNT DETAILS DISPLAY -->
+    <div id="accountDetails" class="details-box hidden">
+      <h3>Account Details</h3>
+      <p><strong>Name:</strong> <span id="displayName"></span></p>
+      <p><strong>Position:</strong> <span id="displayPosition"></span></p>
+      <p><strong>Barangay:</strong> <span id="displayBarangay"></span></p>
+      <p><strong>Status:</strong> Pending Approval</p>
+    </div>
+
+  </div>
+
+  <script src="Account.js"></script>
+
+</body>
+</html>
+
