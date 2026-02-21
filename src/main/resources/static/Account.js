@@ -15,7 +15,7 @@ const signInBtn = document.getElementById("signInBtn");
       const password = document.getElementById("password").value;
       const barangay = document.getElementById("barangay").value;
 
-      fetch("http://localhost.8080/addAccount", {
+      fetch("http://localhost:8080/api/addAccount", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

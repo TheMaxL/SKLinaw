@@ -13,7 +13,6 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.xerial:sqlite-jdbc:3.51.2.0'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jdbc-test'
