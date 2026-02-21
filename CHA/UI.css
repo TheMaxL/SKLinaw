@@ -1,0 +1,134 @@
+:root {
+    --sk-green: #4CAF2F;
+    --sk-dark: #2e7d1f;
+    --sk-yellow: #ffd54f;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f4f4f4;
+}
+
+/* HEADER */
+.header {
+    background: var(--sk-green);
+    padding: 50px 20px;
+    text-align: center;
+    position: relative;
+    color: var(--sk-yellow);
+}
+
+.header h1 {
+    font-size: 60px;
+    letter-spacing: 4px;
+    font-weight: bold;
+}
+
+/* TOP RIGHT MENU */
+.top-dropdown {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+}
+
+.top-dropdown select {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: none;
+    background: white;
+    color: var(--sk-green);
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.top-dropdown select:hover {
+    background: var(--sk-yellow);
+    color: black;
+}
+
+/* COMMITTEE DROPDOWN */
+.select-container {
+    background: white;
+    padding: 30px;
+    text-align: center;
+}
+
+#committeeSelect {
+    padding: 12px 25px;
+    border-radius: 25px;
+    border: none;
+    background: var(--sk-green);
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    min-width: 220px;
+}
+
+#committeeSelect:hover {
+    background: var(--sk-dark);
+}
+
+/* CARDS */
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    padding: 80px 40px;
+    flex-wrap: wrap;
+}
+
+.card {
+    width: 400px;
+    height: 500px;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+    transition: 0.4s ease;
+}
+
+.card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Dark overlay */
+.card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+}
+
+/* Title text */
+.card-title {
+    position: absolute;
+    bottom: 25px;
+    left: 20px;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    z-index: 2;
+}
+
+/* Hover animation */
+.card:hover {
+    transform: scale(1.07);
+}
+
+/* RESPONSIVE */
+@media(max-width: 1000px) {
+    .cards {
+        flex-direction: column;
+        align-items: center;
+    }
+}
