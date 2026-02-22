@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 HELP.md
 .gradle
 build/
@@ -35,3 +36,6 @@ out/
 
 ### VS Code ###
 .vscode/
+=======
+".gradle/" 
+>>>>>>> 0dfc41e (Ignore .gradle directory)
