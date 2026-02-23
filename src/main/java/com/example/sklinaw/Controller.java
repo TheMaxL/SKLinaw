@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin
 
 public class Controller {
-    private static final String URL = "jdbc:sqlite:sklinaw.db";
+    private static final String URL = "jdbc:sqlite:SKLinaw.db";
 
     @PostMapping("/addAccount")
     public String addAccount(@RequestBody Account account) {
