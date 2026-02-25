@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 HELP.md
-.gradle
+.gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
@@ -33,9 +32,8 @@ out/
 /dist/
 /nbdist/
 /.nb-gradle/
+.gradle/
+build/
 
 ### VS Code ###
 .vscode/
-=======
-".gradle/" 
->>>>>>> 0dfc41e (Ignore .gradle directory)
