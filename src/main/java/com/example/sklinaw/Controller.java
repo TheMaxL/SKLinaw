@@ -38,4 +38,28 @@ public class Controller {
 
         return "Account saved successfully!";
     }
+    @PostMapping("/login")
+    public String login(@RequestBody Account account) {
+
+        try (Connection conn = DriverManager.getConnection(URL)) {
+
+            String sql = "SELECT * FROM Councilors WHERE Name = ? AND Password = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+
+            pstmt.setString(1, account.getName());
+            pstmt.setString(2, account.getPassword());
+
+            var rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return "SUCCESS";
+            } else {
+                return "INVALID";
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
 }
