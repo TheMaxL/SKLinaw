@@ -1,22 +1,57 @@
+body {
+    background: #000;
+    color: #fff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.pv-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 32px 0 32px;
+    border-bottom: 2px solid #fff;
+}
+.pv-sk-title {
+    font-size: 2.4em;
+    color: #7ffcff;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+.pv-public-title {
+    font-size: 2.2em;
+    color: #ff6b8a;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+.pv-nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #000;
+    border-bottom: 2px solid #fff;
+    padding: 0 0 0 0;
+    height: 48px;
+}
 .pv-nav-item {
-  flex: 1;
-  text-align: center;
-  color: #fff;
-  font-size: 1.3em;
-  font-weight: 500;
-  padding: 12px 0;
-  border-right: 1px solid #fff;
-  cursor: pointer;
-  background: #000;
-  letter-spacing: 1px;
-  transition: background-color 0.3s ease;
+    flex: 1;
+    text-align: center;
+    color: #fff;
+    font-size: 1.3em;
+    font-weight: 500;
+    padding: 12px 0;
+    border-right: 1px solid #fff;
+    cursor: pointer;
+    background: #000;
+    letter-spacing: 1px;
 }
-
 .pv-nav-item:last-child {
-  border-right: none;
+    border-right: none;
+}
+.pv-content-area {
+    min-height: 500px;
+    background: #000;
+    margin: 0;
+    padding: 0;
 }
 
-.pv-nav-item.active {
-  background-color: #ff6b8a; /* highlight color */
-  color: #fff; /* contrast */
-}
