@@ -1,0 +1,22 @@
+.pv-nav-item {
+  flex: 1;
+  text-align: center;
+  color: #fff;
+  font-size: 1.3em;
+  font-weight: 500;
+  padding: 12px 0;
+  border-right: 1px solid #fff;
+  cursor: pointer;
+  background: #000;
+  letter-spacing: 1px;
+  transition: background-color 0.3s ease;
+}
+
+.pv-nav-item:last-child {
+  border-right: none;
+}
+
+.pv-nav-item.active {
+  background-color: #ff6b8a; /* highlight color */
+  color: #fff; /* contrast */
+}
