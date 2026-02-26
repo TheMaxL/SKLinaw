@@ -107,3 +107,182 @@ button {
     background: none;
     font-family: inherit;
 }
+
+.detail-container {
+    width: 100%;
+    background: #000;
+}
+
+
+.detail-header {
+    padding: 30px 32px 20px 32px;
+    border-bottom: 2px solid #fff;
+}
+
+.sk-badge {
+    font-size: 1.8em;
+    color: #7ffcff;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.detail-committee-name {
+    font-size: 2.8em;
+    color: #ff6b8a;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+
+
+.detail-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 2px solid #fff;
+    height: 60px;
+}
+
+.detail-tab {
+    background: #000;
+    color: #fff;
+    border: none;
+    border-right: 2px solid #fff;
+    font-size: 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    height: 100%;
+    width: 100%;
+    padding: 0 10px;
+    letter-spacing: 0.5px;
+}
+
+.detail-tab:last-child {
+    border-right: none;
+}
+
+.detail-tab.active {
+    background: #ff6b8a;
+    color: #000;
+}
+
+.tab-content {
+    min-height: 350px;
+    padding: 32px;
+    border-bottom: 2px solid #fff;
+}
+
+.tab-pane {
+    border: 2px solid #333;
+    padding: 30px;
+}
+
+.tab-pane h2 {
+    color: #7ffcff;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.tab-pane ul {
+    list-style: none;
+}
+
+.tab-pane li {
+    font-size: 1.3em;
+    padding: 12px 0;
+    border-bottom: 1px solid #333;
+    color: #fff;
+}
+
+.tab-pane li:last-child {
+    border-bottom: none;
+}
+
+.tab-pane li::before {
+    content: "●";
+    color: #ff6b8a;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+/* Back Button */
+.back-section {
+    padding: 20px 32px 30px 32px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    color: #7ffcff;
+    border: 2px solid #7ffcff;
+    padding: 12px 28px;
+    font-size: 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 8px;
+}
+
+.back-btn:hover {
+    background: #7ffcff;
+    color: #000;
+}
+
+.back-arrow {
+    font-size: 1.3em;
+}
+
+@media (max-width: 800px) {
+    .detail-tabs {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .detail-tab {
+        height: 50px;
+        border-right: none;
+        border-bottom: 2px solid #fff;
+    }
+    
+    .detail-tab:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-committee-name {
+        font-size: 2em;
+    }
+    
+    .sk-badge {
+        font-size: 1.4em;
+    }
+    
+    .tab-pane li {
+        font-size: 1.1em;
+    }
+}
+
+@media (max-width: 500px) {
+    .detail-header {
+        padding: 20px;
+    }
+    
+    .detail-committee-name {
+        font-size: 1.0em;
+    }
+    
+    .tab-pane h2 {
+        font-size: 1.4em;
+    }
+    
+    .back-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
