@@ -4,7 +4,11 @@ body {
     font-family: 'Segoe UI', Arial, sans-serif;
     margin: 0;
     padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
+
 .pv-header-row {
     display: flex;
     justify-content: space-between;
@@ -44,14 +48,62 @@ body {
     cursor: pointer;
     background: #000;
     letter-spacing: 1px;
+    transition: all 0.1s ease;
 }
 .pv-nav-item:last-child {
     border-right: none;
 }
+.pv-nav-item.active {
+    background: #ff6b8a !important;
+    color: #000;
+}
 .pv-content-area {
-    min-height: 500px;
+    flex: 1;
     background: #000;
     margin: 0;
     padding: 0;
+    min-height: calc(100vh - 120px); 
 }
 
+.committee-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 16px;
+    padding: 32px;
+    background: #000;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.committee-btn {
+    background: #000;
+    color: #fff;
+    border: 2px solid #fff;
+    padding: 24px 16px; 
+    font-size: 1.2em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    letter-spacing: 0.5px;
+    width: 100%;
+    border-radius: 0; 
+}
+
+.committee-btn:hover {
+    background: #333;
+    border-color: #ff6b8a;
+}
+
+.committee-btn:active {
+    background: #ff6b8a;
+    color: #000;
+    border-color: #ff6b8a;
+}
+
+
+button {
+    border: none;
+    background: none;
+    font-family: inherit;
+}
