@@ -15,7 +15,7 @@ public class SubmitCredentials extends Application {
 
     private static final String DB_URL = "jdbc:sqlite:SKLinaw.db";
 
-    // ─── DB Setup ────────────────────────────────────────────────────────────
+    // DB Setup 
 
     public static void initDB() {
         String createUsers = """
@@ -36,7 +36,7 @@ public class SubmitCredentials extends Application {
         }
     }
 
-    // ─── Login ───────────────────────────────────────────────────────────────
+    // Login 
 
     /**
      * Validates credentials for SK Official login.
@@ -56,7 +56,7 @@ public class SubmitCredentials extends Application {
         }
     }
 
-    // ─── Register ────────────────────────────────────────────────────────────
+    // Register 
 
     /**
      * Registers a new SK Youth member (pending approval).
@@ -78,7 +78,7 @@ public class SubmitCredentials extends Application {
         }
     }
 
-    // ─── JavaFX UI ───────────────────────────────────────────────────────────
+    // JavaFX UI 
 
     @Override
     public void start(Stage stage) {
