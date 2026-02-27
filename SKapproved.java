@@ -17,7 +17,7 @@ public class SKApproved extends Application {
 
     private static final String DB_URL = "jdbc:sqlite:SKLinaw.db";
 
-    // ─── Model ───────────────────────────────────────────────────────────────
+    // Model 
 
     public static class UserRow {
         private final int    id;
@@ -38,7 +38,7 @@ public class SKApproved extends Application {
         public String getStatus()   { return status; }
     }
 
-    // ─── DB Helpers ──────────────────────────────────────────────────────────
+    // DB Helpers 
 
     private ObservableList<UserRow> loadPendingUsers() {
         ObservableList<UserRow> list = FXCollections.observableArrayList();
@@ -75,7 +75,7 @@ public class SKApproved extends Application {
         }
     }
 
-    // ─── UI ──────────────────────────────────────────────────────────────────
+    // UI 
 
     @Override
     public void start(Stage stage) {
@@ -100,7 +100,7 @@ public class SKApproved extends Application {
         table.setItems(loadPendingUsers());
         table.setPlaceholder(new Label("No registered users found."));
 
-        // ── Buttons ──
+        // Buttons 
         Button approveBtn = new Button("✔ Approve");
         approveBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
 
