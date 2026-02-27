@@ -20,7 +20,6 @@
     .then(data => {
 
         if (data === "SUCCESS") {
-            // ✅ Redirect to your UI page
             window.location.replace("/Homepage/UI.html");
         } else if (data === "INVALID") {
             alert("Invalid name or password.");

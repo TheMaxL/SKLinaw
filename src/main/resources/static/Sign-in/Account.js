@@ -21,7 +21,7 @@
       const password = document.getElementById("password").value;
       const barangay = document.getElementById("barangay").value;
 
-      fetch("http://localhost:8080/api/addAccount", {
+      fetch("/api/addAccount", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -34,7 +34,19 @@
     })
     .then(response => response.text())
     .then(data => {
-        alert(data);
-    })
-    .catch(error => console.error("Error: ", error));
-    });
+
+        if (data === "SUCCESS") {
+            alert("Account created successfully!");
+            window.location.replace("/Log-in/Login.html");
+        }
+        else if (data === "NOT_VERIFIED") {
+            alert("You are not in the verified list. Contact administrator.");
+        }
+        else if (data === "ALREADY_EXISTS") {
+            alert("Account already exists.");
+        }
+        else {
+            alert("Server error.");
+        }
+
+    });})
