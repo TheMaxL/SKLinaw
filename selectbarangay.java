@@ -16,7 +16,7 @@ public class SelectBarangay {
 
     private static final String DB_URL = "jdbc:sqlite:SKLinaw.db";
 
-    // ─── Default Barangay List (replace with your actual municipality's list) ─
+    // Default Barangay List (replace with your actual municipality's list) ─
 
     private static final String[] DEFAULT_BARANGAYS = {
         "Barangay 1", "Barangay 2", "Barangay 3", "Barangay 4",
@@ -25,7 +25,7 @@ public class SelectBarangay {
         "Lahug", "Ramos", "V Rama", "etc"
     };
 
-    // ─── DB Setup ────────────────────────────────────────────────────────────
+    // DB Setup 
 
     public static void initBarangayTable() {
         String createTable = """
@@ -50,7 +50,7 @@ public class SelectBarangay {
         }
     }
 
-    // ─── Load Barangays from DB ───────────────────────────────────────────────
+    // Load Barangays from DB 
 
     public static ObservableList<String> loadBarangays() {
         ObservableList<String> list = FXCollections.observableArrayList();
@@ -68,7 +68,7 @@ public class SelectBarangay {
         return list;
     }
 
-    // ─── Build ComboBox (reusable) ────────────────────────────────────────────
+    // Build ComboBox (reusable) 
 
     /**
      * Returns a ready-to-use ComboBox populated with barangays.
@@ -100,7 +100,7 @@ public class SelectBarangay {
         return combo;
     }
 
-    // ─── Standalone UI (for testing) ─────────────────────────────────────────
+    // Standalone UI (for testing) 
 
     public static void showStandalone(Stage stage) {
         ComboBox<String> barangayBox = buildBarangayComboBox();
