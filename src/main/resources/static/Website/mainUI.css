@@ -1,0 +1,91 @@
+body {
+    background: #000;
+    color: #6ffcff;
+    font-family: 'Montserrat', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    text-align: center;
+    padding: 60px 20px 40px 20px;
+}
+.header {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.main-title {
+    font-size: 4rem;
+    font-weight: 900;
+    margin-bottom: 20px;
+}
+.subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 40px;
+}
+.button-row {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin-bottom: 40px;
+}
+.btn {
+    background: #ff5c6c;
+    color: #6ffcff;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding: 25px 60px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.btn:hover {
+    background: #ff2e4c;
+    color: #fff;
+}
+footer {
+    background: #111;
+    color: #6ffcff;
+    padding: 30px 20px;
+    border-top: 2px solid #6ffcff;
+}
+.footer-contact {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+.contact-left, .contact-right {
+    flex: 1 1 350px;
+    margin: 10px;
+}
+.contact-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #6ffcff;
+}
+.contact-label {
+    font-weight: 600;
+    color: #6ffcff;
+}
+.contact-info {
+    color: #ff5c6c;
+    font-weight: 500;
+}
+@media (max-width: 800px) {
+    .footer-contact {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .container {
+        padding: 30px 10px 20px 10px;
+    }
+    .main-title {
+        font-size: 2.2rem;
+    }
+    .header {
+        font-size: 1.5rem;
+    }
+}
