@@ -1,52 +1,60 @@
-    const signInBtn = document.getElementById("signInBtn");
-    const accountForm = document.getElementById("accountForm");
-    const viewDetailsBtn = document.getElementById("viewDetailsBtn");
-    const haveAccountBtn = document.getElementById("haveAccountBtn");
-    const accountDetails = document.getElementById("accountDetails");
+const signInBtn = document.getElementById("signInBtn");
+const accountForm = document.getElementById("accountForm");
+const haveAccountBtn = document.getElementById("haveAccountBtn");
+const submitCredentialsBtn = document.getElementById("submitCredentialsBtn");
+const photoInput = document.getElementById("photo");
 
-    // Show registration form
-    signInBtn.addEventListener("click", function() {
-      accountForm.classList.remove("hidden");
-      signInBtn.style.display = "none";
-    });
+// Show form
+signInBtn.addEventListener("click", function() {
+    accountForm.classList.remove("hidden");
+    signInBtn.style.display = "none";
+});
 
-    // Move to Log-in form
-    haveAccountBtn.addEventListener("click", function() {
-        window.location.replace("/Log-in/Login.html");
-    });
+// Go to login
+haveAccountBtn.addEventListener("click", function() {
+    window.location.replace("/Log-in/Login.html");
+});
 
-    // Show account details dynamically
-    viewDetailsBtn.addEventListener("click", function() {
-      const name = document.getElementById("name").value;
-      const password = document.getElementById("password").value;
-      const barangay = document.getElementById("barangay").value;
+// Submit credentials
+submitCredentialsBtn.addEventListener("click", function() {
 
-      fetch("/api/addAccount", {
+    const name = document.getElementById("name").value;
+    const password = document.getElementById("password").value;
+    const barangay = document.getElementById("barangay").value;
+    const photo = photoInput.files[0];
+
+    if (!photo) {
+        alert("Please upload your identification photo.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("password", password);
+    formData.append("barangay", barangay);
+    formData.append("photo", photo);
+
+    fetch("/api/submitCredentials", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            name: name,
-            password: password,
-            barangay: barangay
-        })
+        body: formData
     })
-    .then(response => response.text())
+    .then(res => res.text())
     .then(data => {
 
         if (data === "SUCCESS") {
-            alert("Account created successfully!");
+            alert("Credentials submitted. Please wait for admin approval.");
             window.location.replace("/Log-in/Login.html");
         }
         else if (data === "NOT_VERIFIED") {
-            alert("You are not in the verified list. Contact administrator.");
+            alert("You are not in the verified SK list.");
         }
-        else if (data === "ALREADY_EXISTS") {
-            alert("Account already exists.");
+        else if (data === "ALREADY_SUBMITTED") {
+            alert("Your credentials are already under review.");
         }
         else {
             alert("Server error.");
         }
 
-    });})
+    });
+
+});
