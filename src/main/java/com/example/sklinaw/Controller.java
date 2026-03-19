@@ -120,10 +120,34 @@ public class Controller {
 
         try (Connection conn = DriverManager.getConnection(URL)) {
 
-            // 1️⃣ Hash password
+            // 1️⃣ Check if already in PendingAccounts
+            String pendingSql = "SELECT * FROM PendingAccounts WHERE Name = ? AND Barangay = ?";
+            PreparedStatement pendingStmt = conn.prepareStatement(pendingSql);
+            pendingStmt.setString(1, name);
+            pendingStmt.setString(2, barangay);
+
+            ResultSet pendingRs = pendingStmt.executeQuery();
+
+            if (pendingRs.next()) {
+                return "PENDING";
+            }
+
+            // 2️⃣ Check if already in Councilors (approved accounts)
+            String existingSql = "SELECT * FROM Councilors WHERE Name = ? AND Barangay = ?";
+            PreparedStatement existingStmt = conn.prepareStatement(existingSql);
+            existingStmt.setString(1, name);
+            existingStmt.setString(2, barangay);
+
+            ResultSet existingRs = existingStmt.executeQuery();
+
+            if (existingRs.next()) {
+                return "ALREADY_EXISTS";
+            }
+
+            // 3️⃣ Hash password (BCrypt)
             String hashedPassword = encoder.encode(password);
 
-            // 2️⃣ Save uploaded photo
+            // 4️⃣ Save uploaded photo
             String fileName = System.currentTimeMillis() + "_" + photo.getOriginalFilename();
             String uploadDir = "C:/Users/91460/.SKLinaw/uploads/";
 
@@ -135,7 +159,7 @@ public class Controller {
             File file = new File(dir, fileName);
             photo.transferTo(file);
 
-            // 3️⃣ Insert into PendingAccounts
+            // 5️⃣ Insert into PendingAccounts
             String sql = "INSERT INTO PendingAccounts (Name, Password, Barangay, Photo) VALUES (?, ?, ?, ?)";
             PreparedStatement stmt = conn.prepareStatement(sql);
 
