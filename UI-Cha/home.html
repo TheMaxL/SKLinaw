@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Home</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="home.css"/>
+</head>
+<body>
+
+<nav>
+  <div class="logo" style="font-size:1.55rem;letter-spacing:-0.5px">SK <span>Linaw</span></div>
+  <div class="nav-links">
+    <button class="btn btn-outline btn-md" onclick="location.href='signup.html'">Sign Up</button>
+    <button class="btn btn-primary btn-md" style="border-radius:8px" onclick="location.href='login.html'">Log In</button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">
+    <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
+    Transparency Platform for Sangguniang Kabataan
+  </div>
+  <h1>Budget<br>transparency<br>of the<br><em>barangay</em></h1>
+  <p>SK Linaw makes it easy for SK council to publish programs, track spending, and keep constituents informed — openly and honestly.</p>
+
+  <div class="entry-cards">
+    <button class="entry-card" onclick="location.href='public.html'">
+      <div class="entry-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <h3>View as Public</h3>
+      <p>Browse SK projects and spending of your Barangay.</p>
+    </button>
+    <button class="entry-card" onclick="location.href='login.html'">
+      <div class="entry-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <h3>Log In as SK</h3>
+      <p>Access your committee dashboard and manage projects.</p>
+    </button>
+    <button class="entry-card" onclick="location.href='signup.html'">
+      <div class="entry-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      </div>
+      <h3>Register as SK</h3>
+      <p>Create your account and submit credentials for verification.</p>
+    </button>
+  </div>
+</div>
+
+<div class="stats-strip">
+  <div class="stat"><div class="stat-val">100%</div><div class="stat-lbl">Open Access</div></div>
+  <div class="stat"><div class="stat-val">Real-time</div><div class="stat-lbl">Budget Tracking</div></div>
+  <div class="stat"><div class="stat-val">Transparency</div><div class="stat-lbl">at its FINEST</div></div>
+</div>
+
+<div class="toast" id="global-toast"></div>
+<script src="shared.js"></script>
+</body>
+</html>
