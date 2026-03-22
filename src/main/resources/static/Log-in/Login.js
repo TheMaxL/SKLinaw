@@ -20,7 +20,7 @@
     .then(data => {
 
         if (data === "SUCCESS") {
-            window.location.replace("/Homepage/UI.html");
+            window.location.replace("/Dashboard/Dashboard.html");
         } else if (data === "INVALID") {
             alert("Invalid name or password.");
         } else {

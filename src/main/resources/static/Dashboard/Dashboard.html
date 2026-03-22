@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Committee Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="Dashboard.css"/>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">SK <span>Linaw</span></div>
+  <a class="nav-item active" href="#">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item" href="#">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+    My Projects
+  </a>
+  <a class="nav-item" href="#">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    Budget
+  </a>
+  <a class="nav-item" href="/Committee/Committee.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+    Committee
+  </a>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="avatarInitial">?</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarName">Loading…</div>
+        <div class="user-role" id="sidebarBarangay">—</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="page-title">Committee Dashboard</div>
+  <div class="page-subtitle">Track projects, spending, and budget for your committee.</div>
+
+  <!-- Budget Overview -->
+  <div class="budget-section">
+    <div class="section-heading">Budget Overview</div>
+    <div class="budget-card" id="budgetCard">
+      <div style="color:var(--muted);font-size:0.85rem">Select a committee to see budget details.</div>
+    </div>
+  </div>
+
+  <!-- Project List -->
+  <div>
+    <div class="section-heading">Projects</div>
+    <div class="filter-bar">
+      <select id="committeeFilter" onchange="onCommitteeChange()">
+        <option value="">Loading committees…</option>
+      </select>
+      <select id="statusFilter" onchange="applyFilters()">
+        <option value="">All statuses</option>
+        <option value="PENDING">Pending</option>
+        <option value="APPROVED">Approved</option>
+        <option value="REJECTED">Rejected</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="Search projects…" oninput="applyFilters()"/>
+      <button class="btn-add" onclick="openModal()">+ Add Project</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="project-table">
+        <thead>
+          <tr>
+            <th>Project Name</th>
+            <th>Purpose</th>
+            <th>Cost</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="projectTableBody">
+          <tr class="loader-row"><td colspan="6"><div class="loader"><span></span><span></span><span></span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROJECT MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Add New Project</h2>
+    <div class="form-group">
+      <label>Project Name</label>
+      <input type="text" id="formProjectName" placeholder="e.g. Basketball Court Renovation"/>
+    </div>
+    <div class="form-group">
+      <label>Purpose</label>
+      <textarea id="formPurpose" rows="2" placeholder="Brief description of the project's goal…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Committee</label>
+      <select id="formCommittee"></select>
+    </div>
+    <div class="form-group">
+      <label>Total Cost (₱)</label>
+      <input type="number" id="formCost" placeholder="0.00" min="0" step="0.01"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-submit" onclick="submitProject()">Submit Project</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="Dashboard.js"></script>
+</body>
+</html>

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api")
 @CrossOrigin
-public class CommitteeController {
+public class Committeecontroller {
 
     private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db";
 
@@ -167,7 +167,7 @@ public class CommitteeController {
      * }
      */
     @PostMapping("/addProject")
-    public String addProject(@RequestBody Project project) {
+    public String addProject(@RequestBody project project) {
         try (Connection conn = DriverManager.getConnection(URL)) {
 
             // 1. Check councilor is registered and approved

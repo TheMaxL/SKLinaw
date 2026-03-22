@@ -1,6 +1,6 @@
 package com.example.sklinaw;
 
-public class Project {
+public class project {
     private String projectName;
     private String purpose;
     private String committeeName;
