@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Budget Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --teal:      #0BBFB5;
+      --teal-dark: #089991;
+      --teal-dim:  rgba(11,191,181,0.1);
+      --bg:        #0D1F1E;
+      --surface:   #142322;
+      --surface2:  #1C302E;
+      --border:    rgba(11,191,181,0.18);
+      --text:      #E8F5F4;
+      --muted:     #6AACAA;
+      --error:     #EF4444;
+      --warning:   #F59E0B;
+      --success:   #10B981;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* SIDEBAR */
+    .sidebar { width: 230px; min-width: 230px; background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.3rem; position: sticky; top: 0; height: 100vh; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--teal); padding: 0.5rem 0.75rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+    .logo span { color: var(--text); }
+    .nav-section { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 0.6rem 0.75rem 0.3rem; }
+    .nav-item { display: flex; align-items: center; gap: 0.65rem; padding: 0.6rem 0.75rem; border-radius: 9px; font-size: 0.86rem; font-weight: 500; color: var(--muted); cursor: pointer; transition: background 0.2s, color 0.2s; text-decoration: none; }
+    .nav-item:hover, .nav-item.active { background: var(--teal-dim); color: var(--teal); }
+    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .user-chip { display: flex; align-items: center; gap: 0.65rem; padding: 0.6rem 0.75rem; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--teal-dim); border: 1.5px solid var(--teal); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--teal); flex-shrink: 0; }
+    .user-name { font-size: 0.84rem; font-weight: 600; }
+    .user-role { font-size: 0.7rem; color: var(--teal); font-weight: 600; }
+    .btn-logout { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; color: var(--muted); font-size: 0.82rem; cursor: pointer; border: none; background: none; border-radius: 8px; width: 100%; transition: color 0.2s; }
+    .btn-logout:hover { color: var(--error); }
+
+    /* MAIN */
+    .main { flex: 1; padding: 2rem 2.5rem; overflow-y: auto; }
+    .page-header { margin-bottom: 2rem; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+    .page-sub { color: var(--muted); font-size: 0.88rem; margin-top: 3px; }
+
+    /* ROLE GUARD */
+    .role-guard { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 1rem 1.25rem; font-size: 0.85rem; color: var(--warning); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.6rem; }
+
+    /* LAYOUT */
+    .content-grid { display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; align-items: start; }
+
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; animation: fadeUp 0.4s ease both; }
+    .panel-title { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 1.25rem; }
+
+    /* BUDGET FORM */
+    .form-group { margin-bottom: 1.1rem; }
+    .form-group label { display: block; font-size: 0.74rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .input-prefix-wrap { position: relative; }
+    .input-prefix { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-family: 'Syne', sans-serif; font-weight: 700; color: var(--teal); font-size: 0.95rem; pointer-events: none; }
+    .input-prefix-wrap input { width: 100%; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; padding: 0.7rem 0.9rem 0.7rem 2rem; outline: none; transition: border-color 0.2s; }
+    .input-prefix-wrap input:focus { border-color: var(--teal); }
+    .input-prefix-wrap input.error-field { border-color: var(--error); }
+
+    /* ALLOCATION ROW HEADER */
+    .alloc-header { display: grid; grid-template-columns: 1fr 160px 40px; gap: 0.75rem; padding: 0 0 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 0.75rem; }
+    .alloc-header span { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+
+    /* ALLOCATION ROW */
+    .alloc-row { display: grid; grid-template-columns: 1fr 160px 40px; gap: 0.75rem; align-items: center; margin-bottom: 0.65rem; animation: fadeUp 0.3s ease both; }
+    .alloc-name { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; font-weight: 600; }
+    .alloc-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .alloc-input-wrap { position: relative; }
+    .alloc-input-wrap .pfx { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); font-family: 'Syne', sans-serif; font-weight: 700; color: var(--teal); font-size: 0.82rem; pointer-events: none; }
+    .alloc-input { width: 100%; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 0.7rem 0.55rem 1.6rem; outline: none; transition: border-color 0.2s; }
+    .alloc-input:focus { border-color: var(--teal); }
+    .alloc-input.over { border-color: var(--error); }
+    .alloc-pct { font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700; color: var(--muted); text-align: right; }
+
+    /* REMAINING BANNER */
+    .remaining-banner { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1.1rem; margin: 1.25rem 0; display: flex; align-items: center; justify-content: space-between; }
+    .remaining-banner.over { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.06); }
+    .remaining-label { font-size: 0.8rem; color: var(--muted); }
+    .remaining-val { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--teal); }
+    .remaining-val.over { color: var(--error); }
+
+    /* PROGRESS PREVIEW */
+    .preview-bars { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
+    .pbar-row { }
+    .pbar-header { display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 3px; }
+    .pbar-name { font-weight: 600; }
+    .pbar-pct { color: var(--muted); }
+    .pbar-track { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+    .pbar-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+
+    /* PIE PREVIEW */
+    .pie-preview-wrap { position: relative; width: 180px; height: 180px; margin: 0 auto 1rem; }
+    .pie-preview-wrap canvas { width: 100% !important; height: 100% !important; }
+    .pie-preview-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+    .pie-preview-val { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 800; }
+    .pie-preview-lbl { font-size: 0.62rem; color: var(--muted); }
+
+    /* BUTTONS */
+    .btn-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+    .btn-save { flex: 1; background: var(--teal); color: #fff; border: none; border-radius: 10px; padding: 0.75rem; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+    .btn-save:hover { background: var(--teal-dark); }
+    .btn-save:active { transform: scale(0.98); }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-reset { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 10px; padding: 0.75rem 1.2rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; cursor: pointer; transition: border-color 0.2s; }
+    .btn-reset:hover { border-color: var(--teal); color: var(--teal); }
+
+    /* ALERT */
+    .alert { display: none; border-radius: 9px; font-size: 0.82rem; padding: 0.65rem 0.9rem; margin-bottom: 1rem; }
+    .alert.error   { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--error); }
+    .alert.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--success); }
+    .alert.show { display: block; }
+
+    /* ADD COMMITTEE */
+    .add-committee-row { display: flex; gap: 0.6rem; margin-top: 0.75rem; }
+    .add-committee-input { flex: 1; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.86rem; padding: 0.5rem 0.8rem; outline: none; transition: border-color 0.2s; }
+    .add-committee-input:focus { border-color: var(--teal); }
+    .btn-add-comm { background: var(--teal-dim); border: 1px solid var(--border); color: var(--teal); border-radius: 8px; padding: 0.5rem 0.9rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .btn-add-comm:hover { background: rgba(11,191,181,0.2); }
+    .btn-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: 2px; transition: color 0.2s; }
+    .btn-remove:hover { color: var(--error); }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 650px) { .sidebar { display: none; } .main { padding: 1.25rem; } }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="nav-section">Main</div>
+  <a class="nav-item" href="../Website/dashboard.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item" href="../static/ProjectsCouncilor.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+    Projects
+  </a>
+  <div class="nav-section">Finance</div>
+  <a class="nav-item active" href="#">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    Budget
+  </a>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="avatarEl">?</div>
+      <div>
+        <div class="user-name" id="nameEl">Loading…</div>
+        <div class="user-role">Treasurer</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <div class="page-title">Budget Management</div>
+    <div class="page-sub">Set the total SK budget and allocate funds per committee.</div>
+  </div>
+
+  <div class="role-guard" id="roleGuard" style="display:none">
+    ⚠️ You are viewing this page in read-only mode. Only the assigned Treasurer can edit the budget.
+  </div>
+
+  <div class="alert" id="alertMsg"></div>
+
+  <div class="content-grid">
+
+    <!-- FORM PANEL -->
+    <div class="panel">
+      <div class="panel-title">Set SK Budget</div>
+
+      <!-- Total Budget -->
+      <div class="form-group">
+        <label>Total SK Budget for <span id="barangayLabel">—</span></label>
+        <div class="input-prefix-wrap">
+          <span class="input-prefix">₱</span>
+          <input type="number" id="totalBudget" placeholder="0.00" min="0" step="0.01"
+                 oninput="onTotalChange()" />
+        </div>
+      </div>
+
+      <!-- Allocation per committee -->
+      <div class="form-group" style="margin-top:1.5rem">
+        <label>Allocate Per Committee</label>
+        <div class="alloc-header">
+          <span>Committee</span>
+          <span>Amount</span>
+          <span>%</span>
+        </div>
+        <div id="allocRows"></div>
+
+        <!-- Remaining banner -->
+        <div class="remaining-banner" id="remainingBanner">
+          <div class="remaining-label">Unallocated</div>
+          <div class="remaining-val" id="remainingVal">₱0</div>
+        </div>
+
+        <!-- Add custom committee -->
+        <div class="add-committee-row">
+          <input class="add-committee-input" type="text" id="newCommName" placeholder="Add committee name…"/>
+          <button class="btn-add-comm" onclick="addCommitteeRow()">+ Add</button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-reset" onclick="resetForm()">Reset</button>
+        <button class="btn-save" id="saveBtn" onclick="saveBudget()">Save Budget</button>
+      </div>
+    </div>
+
+    <!-- PREVIEW PANEL -->
+    <div>
+      <div class="panel" style="margin-bottom:1.25rem">
+        <div class="panel-title">Live Preview</div>
+        <div class="pie-preview-wrap">
+          <canvas id="piePreview"></canvas>
+          <div class="pie-preview-center">
+            <div class="pie-preview-val" id="previewTotal">₱0</div>
+            <div class="pie-preview-lbl">Total</div>
+          </div>
+        </div>
+        <div class="preview-bars" id="previewBars"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Current Budget</div>
+        <div id="currentBudgetPanel" style="color:var(--muted);font-size:0.84rem">Loading current budget…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+
+  const COLORS = [
+    '#0BBFB5','#F59E0B','#6366F1','#10B981',
+    '#EC4899','#3B82F6','#F97316','#8B5CF6',
+  ];
+
+  const session = {
+    name:        localStorage.getItem('sk_name')      || 'Treasurer',
+    barangay:    localStorage.getItem('sk_barangay')  || 'Lahug',
+    isTreasurer: localStorage.getItem('sk_role')      === 'treasurer'
+  };
+
+  document.getElementById('nameEl').textContent      = session.name;
+  document.getElementById('avatarEl').textContent    = session.name.charAt(0).toUpperCase();
+  document.getElementById('barangayLabel').textContent = session.barangay;
+
+  // Show read-only guard if not treasurer
+  // (In production, check role from server; here we trust localStorage)
+  // document.getElementById('roleGuard').style.display = session.isTreasurer ? 'none' : 'flex';
+
+  let committees = [];   // { name, color, allocInput }
+
+  async function init() {
+    await loadCommittees();
+    await loadCurrentBudget();
+  }
+
+  async function loadCommittees() {
+    try {
+      const res  = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
+      const data = await res.json();
+      committees = data.map((c, i) => ({ name: c.name, color: COLORS[i % COLORS.length] }));
+    } catch (e) {
+      // Demo committees
+      committees = [
+        { name: 'Sports',      color: COLORS[0] },
+        { name: 'Education',   color: COLORS[1] },
+        { name: 'Environment', color: COLORS[2] },
+        { name: 'Health',      color: COLORS[3] },
+      ];
+    }
+    renderAllocRows();
+    updatePreview();
+  }
+
+  async function loadCurrentBudget() {
+    try {
+      const res  = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
+      const data = await res.json();
+      renderCurrentBudget(data);
+
+      // Pre-fill form with existing values
+      if (data.totalBudget) {
+        document.getElementById('totalBudget').value = data.totalBudget;
+      }
+      (data.committees || []).forEach(c => {
+        const input = document.querySelector(`.alloc-input[data-name="${CSS.escape(c.committeeName)}"]`);
+        if (input) { input.value = c.allocated || 0; }
+      });
+      updatePreview();
+    } catch (e) {
+      document.getElementById('currentBudgetPanel').textContent = 'No budget set yet.';
+    }
+  }
+
+  function renderAllocRows() {
+    const container = document.getElementById('allocRows');
+    container.innerHTML = committees.map((c, i) => `
+      <div class="alloc-row" id="row-${i}">
+        <div class="alloc-name">
+          <div class="alloc-dot" style="background:${c.color}"></div>
+          ${esc(c.name)}
+        </div>
+        <div class="alloc-input-wrap">
+          <span class="pfx">₱</span>
+          <input class="alloc-input" type="number" min="0" step="0.01"
+                 data-name="${esc(c.name)}" data-idx="${i}"
+                 placeholder="0.00"
+                 oninput="updatePreview()"/>
+        </div>
+        <div class="alloc-pct" id="pct-${i}">0%</div>
+      </div>
+    `).join('');
+  }
+
+  function addCommitteeRow() {
+    const input = document.getElementById('newCommName');
+    const name  = input.value.trim();
+    if (!name) return;
+    if (committees.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+      showAlert('Committee already exists.', 'error'); return;
+    }
+    committees.push({ name, color: COLORS[committees.length % COLORS.length] });
+    input.value = '';
+    renderAllocRows();
+    updatePreview();
+  }
+
+  function onTotalChange() { updatePreview(); }
+
+  function updatePreview() {
+    const total    = parseFloat(document.getElementById('totalBudget').value) || 0;
+    const inputs   = document.querySelectorAll('.alloc-input');
+    let totalAlloc = 0;
+
+    inputs.forEach((inp, i) => {
+      const val = parseFloat(inp.value) || 0;
+      totalAlloc += val;
+      const pct  = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+      const pctEl = document.getElementById(`pct-${inp.dataset.idx}`);
+      if (pctEl) pctEl.textContent = pct + '%';
+      inp.classList.toggle('over', val > total && total > 0);
+    });
+
+    // Remaining banner
+    const remaining = total - totalAlloc;
+    const banner    = document.getElementById('remainingBanner');
+    const remVal    = document.getElementById('remainingVal');
+    remVal.textContent = (remaining < 0 ? '-' : '') + '₱' + Math.abs(remaining).toLocaleString('en-PH');
+    remVal.classList.toggle('over', remaining < 0);
+    banner.classList.toggle('over', remaining < 0);
+
+    // Progress bars preview
+    const barsEl = document.getElementById('previewBars');
+    barsEl.innerHTML = committees.map((c, i) => {
+      const inp = document.querySelector(`.alloc-input[data-idx="${i}"]`);
+      const val = parseFloat(inp?.value) || 0;
+      const pct = total > 0 ? Math.min((val / total) * 100, 100) : 0;
+      return `
+        <div class="pbar-row">
+          <div class="pbar-header">
+            <span class="pbar-name">${esc(c.name)}</span>
+            <span class="pbar-pct">${pct.toFixed(1)}%</span>
+          </div>
+          <div class="pbar-track">
+            <div class="pbar-fill" style="width:${pct}%; background:${c.color}"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Pie
+    document.getElementById('previewTotal').textContent = '₱' + (total/1000).toFixed(0) + 'K';
+    drawPreviewPie(committees.map((c, i) => {
+      const inp = document.querySelector(`.alloc-input[data-idx="${i}"]`);
+      return { value: parseFloat(inp?.value) || 0, color: c.color };
+    }));
+  }
+
+  function drawPreviewPie(slices) {
+    const canvas = document.getElementById('piePreview');
+    const ctx    = canvas.getContext('2d');
+    const size   = 180;
+    canvas.width = canvas.height = size;
+    const cx = size/2, cy = size/2, outerR = 78, innerR = 48;
+
+    ctx.clearRect(0, 0, size, size);
+    const total = slices.reduce((s, sl) => s + sl.value, 0) || 1;
+    let angle = -Math.PI / 2;
+
+    slices.forEach(sl => {
+      const sweep = (sl.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, outerR, angle, angle + sweep);
+      ctx.closePath();
+      ctx.fillStyle = sl.color;
+      ctx.fill();
+      angle += sweep;
+    });
+
+    // Donut hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+    ctx.fillStyle = '#142322';
+    ctx.fill();
+
+    // Gaps
+    angle = -Math.PI / 2;
+    slices.forEach(sl => {
+      const sweep = (sl.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + innerR * Math.cos(angle), cy + innerR * Math.sin(angle));
+      ctx.lineTo(cx + outerR * Math.cos(angle), cy + outerR * Math.sin(angle));
+      ctx.strokeStyle = '#142322';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      angle += sweep;
+    });
+  }
+
+  function renderCurrentBudget(data) {
+    const el   = document.getElementById('currentBudgetPanel');
+    const coms = data.committees || [];
+    if (!data.totalBudget) { el.innerHTML = '<span style="color:var(--muted)">No budget set yet.</span>'; return; }
+    el.innerHTML = `
+      <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--teal);margin-bottom:4px">
+        ₱${(data.totalBudget||0).toLocaleString('en-PH')}
+      </div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:1rem">Current total budget</div>
+      ${coms.map((c, i) => `
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:5px">
+          <span style="display:flex;align-items:center;gap:5px">
+            <span style="width:8px;height:8px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block"></span>
+            ${esc(c.committeeName)}
+          </span>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--teal)">₱${(c.allocated||0).toLocaleString('en-PH')}</span>
+        </div>`).join('')}
+    `;
+  }
+
+  async function saveBudget() {
+    const total    = parseFloat(document.getElementById('totalBudget').value) || 0;
+    const inputs   = document.querySelectorAll('.alloc-input');
+
+    if (total <= 0) { showAlert('Please enter a valid total budget.', 'error'); return; }
+
+    const allocations = {};
+    let totalAlloc = 0;
+    inputs.forEach(inp => {
+      const val = parseFloat(inp.value) || 0;
+      if (val > 0) { allocations[inp.dataset.name] = val; totalAlloc += val; }
+    });
+
+    if (totalAlloc > total) {
+      showAlert(`Total allocations (₱${totalAlloc.toLocaleString('en-PH')}) exceed the total budget.`, 'error');
+      return;
+    }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+    try {
+      const res  = await fetch(`${API}/setBudget`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ barangay: session.barangay, totalBudget: total, allocations })
+      });
+      const text = await res.text();
+
+      if (text === 'SUCCESS') {
+        showAlert('Budget saved successfully!', 'success');
+        await loadCurrentBudget();
+      } else if (text.startsWith('NO_HEAD_ASSIGNED:')) {
+        showAlert(`Committee "${text.split(':')[1]}" has no head assigned. Assign a head first.`, 'error');
+      } else {
+        showAlert('Failed: ' + text, 'error');
+      }
+    } catch (e) {
+      showAlert('Could not connect to server.', 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Save Budget';
+  }
+
+  function resetForm() {
+    document.getElementById('totalBudget').value = '';
+    document.querySelectorAll('.alloc-input').forEach(inp => inp.value = '');
+    updatePreview();
+    document.getElementById('alertMsg').className = 'alert';
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alertMsg');
+    el.textContent = msg;
+    el.className = `alert ${type} show`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (type === 'success') setTimeout(() => el.classList.remove('show'), 4000);
+  }
+
+  function logout() {
+    localStorage.removeItem('sk_name');
+    localStorage.removeItem('sk_barangay');
+    localStorage.removeItem('sk_role');
+    window.location.href = '../Log-in/login.html';
+  }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  init();
+</script>
+</body>
+</html>

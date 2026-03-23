@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Public View</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --teal:      #0BBFB5;
+      --teal-dark: #089991;
+      --bg:        #F0F7F7;
+      --surface:   #FFFFFF;
+      --border:    #D2ECEB;
+      --text:      #0D2B2A;
+      --muted:     #5A8A88;
+      --pending:   #F59E0B;
+      --approved:  #10B981;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: var(--text);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--teal); }
+    .logo span { color: #fff; }
+    .header-nav { display: flex; gap: 0.75rem; align-items: center; }
+    .nav-link { color: #7AADAB; font-size: 0.82rem; text-decoration: none; transition: color 0.2s; }
+    .nav-link:hover { color: var(--teal); }
+    .btn-sk { background: var(--teal); color: #fff; border: none; border-radius: 7px; padding: 0.42rem 1rem; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+    .btn-sk:hover { background: var(--teal-dark); }
+
+    .hero {
+      background: var(--text);
+      padding: 3rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 130%, rgba(11,191,181,0.16) 0%, transparent 70%); pointer-events: none; }
+    .hero h1 { font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 800; color: #fff; position: relative; }
+    .hero h1 em { font-style: normal; color: var(--teal); }
+    .hero p { color: #7AADAB; font-size: 0.95rem; margin-top: 0.65rem; font-weight: 300; position: relative; }
+
+    /* FILTER CARD */
+    .filter-wrap { max-width: 860px; margin: -22px auto 0; padding: 0 1.5rem; position: relative; z-index: 10; }
+    .filter-card { background: var(--surface); border-radius: 14px; padding: 1.1rem 1.4rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); display: flex; gap: 0.85rem; flex-wrap: wrap; align-items: flex-end; }
+    .filter-group { flex: 1; min-width: 140px; }
+    .filter-group label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; }
+    .filter-group select,
+    .filter-group input { border: 1.5px solid var(--border); border-radius: 8px; padding: 0.5rem 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.2s; width: 100%; }
+    .filter-group select:focus,
+    .filter-group input:focus { border-color: var(--teal); }
+    .btn-load { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 0.52rem 1.3rem; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: background 0.2s; white-space: nowrap; align-self: flex-end; }
+    .btn-load:hover { background: var(--teal-dark); }
+
+    /* MAIN */
+    .main { max-width: 860px; margin: 1.75rem auto; padding: 0 1.5rem 4rem; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; margin-bottom: 1.5rem; }
+    .stat-chip { background: var(--surface); border: 1.5px solid var(--border); border-radius: 11px; padding: 0.9rem 1.1rem; text-align: center; animation: fadeUp 0.4s ease both; }
+    .stat-chip:nth-child(2) { animation-delay: 0.06s; }
+    .stat-chip:nth-child(3) { animation-delay: 0.12s; }
+    .stat-val { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--teal); }
+    .stat-lbl { font-size: 0.72rem; color: var(--muted); }
+
+    .section-lbl { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 0.75rem; }
+
+    .project-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 13px; margin-bottom: 0.75rem; overflow: hidden; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; animation: fadeUp 0.35s ease both; }
+    .project-card:hover { border-color: var(--teal); box-shadow: 0 4px 20px rgba(11,191,181,0.1); }
+    .project-header { display: flex; align-items: center; justify-content: space-between; padding: 0.95rem 1.15rem; gap: 1rem; }
+    .project-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; }
+    .project-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .project-sub span { margin-right: 0.65rem; }
+    .project-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+    .project-cost { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.98rem; color: var(--teal); }
+    .status-pill { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; padding: 2px 9px; border-radius: 99px; }
+    .st-APPROVED { background: rgba(16,185,129,0.1); color: var(--approved); }
+    .chevron { color: var(--muted); transition: transform 0.2s; }
+    .project-card.open .chevron { transform: rotate(180deg); }
+
+    .project-body { display: none; padding: 0 1.15rem 1rem; border-top: 1.5px solid var(--border); animation: fadeDown 0.2s ease; }
+    .project-card.open .project-body { display: block; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem; margin-top: 0.85rem; }
+    .detail-item label { font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .detail-item p { font-size: 0.85rem; margin-top: 2px; }
+    .docs-note { margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); font-size: 0.78rem; color: var(--muted); }
+    .docs-note strong { color: var(--teal); }
+
+    .empty-state { text-align: center; padding: 4rem 1rem; color: var(--muted); }
+    .empty-state p { font-size: 0.9rem; }
+    .loader { display: flex; justify-content: center; padding: 3rem; gap: 6px; }
+    .loader span { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); animation: bounce 0.8s infinite alternate; }
+    .loader span:nth-child(2) { animation-delay: 0.2s; }
+    .loader span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes fadeUp   { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bounce   { from { transform: translateY(0); opacity: 0.5; } to { transform: translateY(-9px); opacity: 1; } }
+
+    @media (max-width: 560px) { .stats-row { grid-template-columns: 1fr 1fr; } .detail-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="header-nav">
+    <a class="nav-link" href="../Homepage/homepage.html">Home</a>
+    <a class="btn-sk" href="../Log-in/login.html">SK Login</a>
+  </div>
+</header>
+
+<div class="hero">
+  <h1>Barangay SK <em>Transparency</em></h1>
+  <p>Browse all implemented projects and their expenses — open to every citizen.</p>
+</div>
+
+<div class="filter-wrap">
+  <div class="filter-card">
+    <div class="filter-group">
+      <label>Barangay</label>
+      <select id="barangaySelect" onchange="loadCommittees()">
+        <option value="">— Select a barangay —</option>
+        <option>Lahug</option>
+        <option>Apas</option>
+        <option>Banilad</option>
+        <option>Talamban</option>
+        <option>Guadalupe</option>
+        <option>Kasambagan</option>
+        <option>Mabolo</option>
+        <option>Kamputhaw</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Committee</label>
+      <select id="committeeSelect">
+        <option value="">All committees</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Search</label>
+      <input type="text" id="searchInput" placeholder="Search projects…" oninput="liveSearch()"/>
+    </div>
+    <button class="btn-load" onclick="loadProjects()">View Projects</button>
+  </div>
+</div>
+
+<div class="main">
+  <div id="statsRow" class="stats-row" style="display:none">
+    <div class="stat-chip"><div class="stat-val" id="sTotal">0</div><div class="stat-lbl">Total Projects</div></div>
+    <div class="stat-chip"><div class="stat-val" id="sCount">0</div><div class="stat-lbl">Committees Active</div></div>
+    <div class="stat-chip"><div class="stat-val" id="sCost">₱0</div><div class="stat-lbl">Total Spent</div></div>
+  </div>
+  <div class="section-lbl" id="sectionLbl" style="display:none">Published Projects</div>
+  <div id="projectList">
+    <div class="empty-state">
+      <p>Select a barangay above and click <strong>View Projects</strong> to get started.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+  let committees = [];
+
+  async function loadCommittees() {
+    const barangay = document.getElementById('barangaySelect').value;
+    const sel      = document.getElementById('committeeSelect');
+    sel.innerHTML  = '<option value="">All committees</option>';
+    if (!barangay) return;
+    try {
+      const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(barangay)}`);
+      committees  = await res.json();
+      committees.forEach(c => {
+        const o = document.createElement('option');
+        o.value = o.textContent = c.name;
+        sel.appendChild(o);
+      });
+    } catch (e) {}
+  }
+
+  async function loadProjects() {
+    const barangay  = document.getElementById('barangaySelect').value;
+    const committee = document.getElementById('committeeSelect').value;
+    if (!barangay) { alert('Please select a barangay.'); return; }
+
+    const listEl = document.getElementById('projectList');
+    listEl.innerHTML = `<div class="loader"><span></span><span></span><span></span></div>`;
+    document.getElementById('statsRow').style.display  = 'none';
+    document.getElementById('sectionLbl').style.display = 'none';
+
+    try {
+      let all = [];
+      if (committee) {
+        const r = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(barangay)}&committeeName=${encodeURIComponent(committee)}`);
+        const d = await r.json();
+        if (Array.isArray(d)) all = d.map(p => ({ ...p, committeeName: committee }));
+      } else {
+        const cRes = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(barangay)}`);
+        const coms = await cRes.json();
+        for (const c of coms) {
+          const pRes = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(barangay)}&committeeName=${encodeURIComponent(c.name)}`);
+          const ps   = await pRes.json();
+          if (Array.isArray(ps)) ps.forEach(p => all.push({ ...p, committeeName: c.name }));
+        }
+      }
+
+      // Public only sees APPROVED
+      const visible = all.filter(p => p.status === 'APPROVED');
+      renderStats(visible);
+      renderCards(visible);
+    } catch (e) {
+      listEl.innerHTML = `<div class="empty-state"><p>⚠️ Could not reach the server. Make sure the Spring Boot app is running on port 8080.</p></div>`;
+    }
+  }
+
+  function renderStats(projects) {
+    const committees = [...new Set(projects.map(p => p.committeeName))];
+    const cost       = projects.reduce((s, p) => s + (p.totalCost || 0), 0);
+    document.getElementById('sTotal').textContent = projects.length;
+    document.getElementById('sCount').textContent = committees.length;
+    document.getElementById('sCost').textContent  = '₱' + cost.toLocaleString('en-PH');
+    document.getElementById('statsRow').style.display   = 'grid';
+    document.getElementById('sectionLbl').style.display = 'block';
+  }
+
+  function renderCards(projects) {
+    const listEl = document.getElementById('projectList');
+    if (!projects.length) {
+      listEl.innerHTML = `<div class="empty-state"><p>No published projects found for this selection.</p></div>`;
+      return;
+    }
+    listEl.innerHTML = projects.map((p, i) => `
+      <div class="project-card" style="animation-delay:${i*0.05}s" onclick="this.classList.toggle('open')">
+        <div class="project-header">
+          <div>
+            <div class="project-name">${esc(p.projectName)}</div>
+            <div class="project-sub">
+              <span>📁 ${esc(p.committeeName)}</span>
+              <span>👤 ${esc(p.councilorName)}</span>
+              <span>📅 ${fmtDate(p.createdAt)}</span>
+            </div>
+          </div>
+          <div class="project-right">
+            <div class="project-cost">₱${(p.totalCost||0).toLocaleString('en-PH')}</div>
+            <div class="status-pill st-APPROVED">Published</div>
+            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="detail-grid">
+            <div class="detail-item"><label>Purpose</label><p>${esc(p.purpose||'—')}</p></div>
+            <div class="detail-item"><label>Total Cost</label><p>₱${(p.totalCost||0).toLocaleString('en-PH')}</p></div>
+            <div class="detail-item"><label>Committee</label><p>${esc(p.committeeName||'—')}</p></div>
+            <div class="detail-item"><label>Submitted by</label><p>${esc(p.councilorName||'—')}</p></div>
+          </div>
+          <div class="docs-note"><strong>📎 Documents & Receipts</strong> — files will appear here once uploaded.</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function liveSearch() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.project-card').forEach(c => {
+      const name = c.querySelector('.project-name')?.textContent.toLowerCase() || '';
+      c.style.display = !q || name.includes(q) ? '' : 'none';
+    });
+  }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmtDate(s) {
+    if (!s) return '—';
+    try { return new Date(s).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }); }
+    catch { return s; }
+  }
+</script>
+</body>
+</html>
