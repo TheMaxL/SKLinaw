@@ -1,5 +1,3 @@
-const API = 'https://abc123.ngrok-free.app/api';
-
   // ── SESSION (read from localStorage set at login) ──
   const session = {
     name:     localStorage.getItem('sk_name')     || 'Councilor',
@@ -7,9 +5,9 @@ const API = 'https://abc123.ngrok-free.app/api';
   };
 
   // Update sidebar user info
-  document.getElementById('sidebarName').textContent = session.name;
-  document.getElementById('sidebarBarangay').textContent = session.barangay;
-  document.getElementById('avatarInitial').textContent = session.name.charAt(0).toUpperCase();
+  document.getElementById('dash-user-name').textContent = session.name;
+  document.getElementById('dash-barangay').textContent = session.barangay;
+  document.getElementById('dash-avatar').textContent = session.name.charAt(0).toUpperCase();
 
   let allProjects = [];
   let committees  = [];
@@ -19,6 +17,14 @@ const API = 'https://abc123.ngrok-free.app/api';
     await loadCommittees();
     await loadCommitteesTable();
     await loadBudget();
+
+    // Auto-load first committee's projects
+    if (committees.length > 0) {
+      const first = committees[0].name;
+      document.getElementById('committeeFilter').value = first;
+      await loadProjects(first);
+      await loadBudget(first);
+    }
   }
 
   async function loadCommittees() {
@@ -197,7 +203,75 @@ const API = 'https://abc123.ngrok-free.app/api';
         showToast('Could not connect to server.', true);
         console.error(e);
     }
-}
+  }
+
+  async function loadProjects(committeeName) {
+    if (!committeeName) {
+      allProjects = [];
+      renderTable([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`
+      );
+
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        allProjects = [];
+      } else {
+        allProjects = data;
+      }
+
+      renderTable(allProjects);
+
+    } catch (e) {
+      console.error(e);
+      showToast('Could not load projects.', true);
+    }
+  }
+
+  async function assignHead(committeeName) {
+    const headName = prompt(`Enter head name for "${committeeName}":`);
+
+    if (!headName) return;
+
+    const body = {
+      name: committeeName,
+      barangay: session.barangay,
+      headName: headName.trim()
+    };
+
+    try {
+      const res = await fetch(`${API}/assignCommitteeHead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const text = await res.text();
+
+      if (text === 'SUCCESS') {
+        showToast('Head assigned successfully!');
+        await loadCommittees();
+        await loadCommitteesTable();
+      } else if (text === 'COUNCILOR_NOT_FOUND') {
+        showToast('Councilor not found or not approved.', true);
+      } else if (text === 'ALREADY_HEADS_A_COMMITTEE') {
+        showToast('This councilor already heads another committee.', true);
+      } else if (text === 'COMMITTEE_NOT_FOUND') {
+        showToast('Committee not found.', true);
+      } else {
+        showToast('Error: ' + text, true);
+      }
+
+    } catch (e) {
+      console.error(e);
+      showToast('Server error while assigning head.', true);
+    }
+  }
 
   function viewProject(id) {
     // Placeholder — expand to open a detail modal

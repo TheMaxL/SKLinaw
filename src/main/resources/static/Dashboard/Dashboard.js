@@ -1,233 +1,110 @@
-const API = 'http://localhost:8080/api';
+document.addEventListener('DOMContentLoaded', () => {
+  if (!Session.name) { location.href = 'dashboard.html'; return; }
 
-  // ── SESSION (read from localStorage set at login) ──
-  const session = {
-    name:     localStorage.getItem('sk_name')     || 'Councilor',
-    barangay: localStorage.getItem('sk_barangay') || 'Lahug'
-  };
+  // Populate user info
+  document.getElementById('dash-avatar').textContent     = Session.name.charAt(0).toUpperCase();
+  document.getElementById('dash-user-name').textContent  = Session.name;
+  document.getElementById('dash-barangay').textContent   = Session.barangay;
+  document.getElementById('dash-greet-name').textContent = Session.name.split(' ')[0];
+  document.getElementById('dash-greet-sub').textContent  = `SK Councilor · ${Session.barangay}`;
+  document.getElementById('dash-today').textContent      = new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  // Update sidebar user info
-  document.getElementById('sidebarName').textContent = session.name;
-  document.getElementById('sidebarBarangay').textContent = session.barangay;
-  document.getElementById('avatarInitial').textContent = session.name.charAt(0).toUpperCase();
-
-  document.querySelectorAll('.nav-item').forEach(a => {
-    if (a.textContent.trim() === 'Committee') {
-      a.addEventListener('click', () => {
-        window.location.href = 'Committee.html';
-      });
-    }
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    Session.clear();
+    Toast.show('Logged out successfully.');
+    setTimeout(() => location.href = 'index.html', 800);
   });
 
+  loadProjects();
+  loadBudget();
+});
 
-  let allProjects = [];
-  let committees  = [];
-
-  // ── INIT ──
-  async function init() {
-    await loadCommittees();
-    await loadProjects();
-    await loadBudget();
-  }
-
-  async function loadCommittees() {
-    try {
-      const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
-      committees = await res.json();
-
-      const filter = document.getElementById('committeeFilter');
-      const formSel = document.getElementById('formCommittee');
-      filter.innerHTML = '<option value="">All committees</option>';
-      formSel.innerHTML = '';
-
-      committees.forEach(c => {
-        filter.innerHTML += `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`;
-        formSel.innerHTML += `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`;
-      });
-    } catch (e) {
-      document.getElementById('committeeFilter').innerHTML = '<option>Could not load</option>';
+async function loadProjects() {
+  try {
+    const cRes = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(Session.barangay)}`);
+    const coms = await cRes.json();
+    let all = [];
+    for (const c of coms) {
+      const pRes = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(Session.barangay)}&committeeName=${encodeURIComponent(c.name)}`);
+      const ps   = await pRes.json();
+      if (Array.isArray(ps)) ps.forEach(p => all.push({ ...p, committeeName: c.name }));
     }
+    const mine = all.filter(p => p.councilorName === Session.name);
+    document.getElementById('qs-total').textContent    = mine.length;
+    document.getElementById('qs-pending').textContent  = mine.filter(p => p.status === 'PENDING').length;
+    document.getElementById('qs-approved').textContent = mine.filter(p => p.status === 'APPROVED').length;
+    renderRecent(mine.slice(0, 5));
+  } catch {
+    // Sample data
+    const sample = [
+      { projectName: 'Youth Sports Fest',   committeeName: 'Sports',      totalCost: 12500, status: 'APPROVED', createdAt: new Date() },
+      { projectName: 'Leadership Training', committeeName: 'Education',   totalCost: 8000,  status: 'PENDING',  createdAt: new Date() },
+      { projectName: 'Eco Drive 2025',      committeeName: 'Environment', totalCost: 5000,  status: 'APPROVED', createdAt: new Date() },
+    ];
+    document.getElementById('qs-total').textContent    = sample.length;
+    document.getElementById('qs-pending').textContent  = 1;
+    document.getElementById('qs-approved').textContent = 2;
+    renderRecent(sample);
   }
+}
 
-  async function loadProjects(committeeName) {
-    const tbody = document.getElementById('projectTableBody');
-    tbody.innerHTML = `<tr class="loader-row"><td colspan="6"><div class="loader"><span></span><span></span><span></span></div></td></tr>`;
-
-    try {
-      allProjects = [];
-
-      if (committeeName) {
-        const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`);
-        const data = await res.json();
-        if (Array.isArray(data)) allProjects = data.map(p => ({ ...p, committeeName }));
-      } else {
-        for (const c of committees) {
-          const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(c.name)}`);
-          const data = await res.json();
-          if (Array.isArray(data)) data.forEach(p => allProjects.push({ ...p, committeeName: c.name }));
-        }
-      }
-      applyFilters();
-    } catch (e) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">⚠️ Could not connect to the server.</td></tr>`;
-    }
+function renderRecent(projects) {
+  const el = document.getElementById('recent-projects');
+  if (!projects.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:0.84rem;padding:0.5rem 0">No projects submitted yet.</p>';
+    return;
   }
-
-  async function loadBudget(committeeName) {
-    try {
-      const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
-      const data = await res.json();
-      renderBudget(data, committeeName);
-    } catch (e) {
-      document.getElementById('budgetCard').innerHTML = `<div style="color:var(--muted);font-size:0.85rem">Budget data unavailable.</div>`;
-    }
-  }
-
-  function renderBudget(data, filterCommittee) {
-    let rows = data.committees || [];
-    if (filterCommittee) rows = rows.filter(c => c.committeeName === filterCommittee);
-
-    const totalBudget = data.totalBudget || 0;
-    const totalSpent  = rows.reduce((s, c) => s + (c.spent || 0), 0);
-
-    document.getElementById('budgetCard').innerHTML = `
-      <div class="budget-top">
-        <div>
-          <div class="budget-total-label">Total SK Budget</div>
-          <div class="budget-total-value">₱${totalBudget.toLocaleString('en-PH')}</div>
-        </div>
-        <div class="budget-meta">
-          Spent: ₱${totalSpent.toLocaleString('en-PH')}<br>
-          Remaining: ₱${(totalBudget - totalSpent).toLocaleString('en-PH')}
-        </div>
+  el.innerHTML = projects.map(p => `
+    <div class="project-row">
+      <div>
+        <div class="pr-name">${esc(p.projectName)}</div>
+        <div class="pr-meta">${esc(p.committeeName)} · ${fmtDateShort(p.createdAt)}</div>
       </div>
-      <div class="committee-rows">
-        ${rows.map(c => {
-          const pct = c.allocated > 0 ? Math.min((c.spent / c.allocated) * 100, 100) : 0;
-          const over = c.spent > c.allocated;
-          return `
-            <div class="committee-row">
-              <div class="committee-row-header">
-                <span class="committee-row-name">${escHtml(c.committeeName)}</span>
-                <span class="committee-row-amounts">₱${(c.spent||0).toLocaleString('en-PH')} / ₱${(c.allocated||0).toLocaleString('en-PH')}</span>
-              </div>
-              <div class="progress-track">
-                <div class="progress-fill ${over ? 'over' : ''}" style="width:${pct}%"></div>
-              </div>
-            </div>`;
-        }).join('')}
-        ${rows.length === 0 ? '<div style="color:var(--muted);font-size:0.82rem">No budget data for this committee yet.</div>' : ''}
+      <div class="pr-right">
+        <div class="pr-cost">₱${(p.totalCost || 0).toLocaleString('en-PH')}</div>
+        <span class="pill pill-${(p.status || 'pending').toLowerCase()}">${p.status}</span>
       </div>
-    `;
-  }
+    </div>`).join('');
+}
 
-  function applyFilters() {
-    const status = document.getElementById('statusFilter').value;
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    let filtered = allProjects;
-    if (status) filtered = filtered.filter(p => p.status === status);
-    if (search) filtered = filtered.filter(p =>
-      p.projectName.toLowerCase().includes(search) ||
-      (p.purpose || '').toLowerCase().includes(search)
-    );
-    renderTable(filtered);
-  }
-
-  function renderTable(projects) {
-    const tbody = document.getElementById('projectTableBody');
-    if (projects.length === 0) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found.</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = projects.map((p, i) => `
-      <tr style="animation-delay:${i * 0.04}s">
-        <td class="project-name-cell">${escHtml(p.projectName)}</td>
-        <td class="project-purpose-cell">${escHtml(p.purpose || '—')}</td>
-        <td class="cost-cell">₱${(p.totalCost||0).toLocaleString('en-PH')}</td>
-        <td><span class="status-pill status-${p.status}">${p.status}</span></td>
-        <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
-        <td><button class="action-btn" onclick="viewProject(${p.id})">View</button></td>
-      </tr>
-    `).join('');
-  }
-
-  function onCommitteeChange() {
-    const val = document.getElementById('committeeFilter').value;
-    loadProjects(val || null);
-    loadBudget(val || null);
-  }
-
-  // ── ADD PROJECT MODAL ──
-  function openModal() {
-    document.getElementById('modalOverlay').classList.add('open');
-  }
-  function closeModal() {
-    document.getElementById('modalOverlay').classList.remove('open');
-  }
-
-  async function submitProject() {
-    const body = {
-      projectName:   document.getElementById('formProjectName').value.trim(),
-      purpose:       document.getElementById('formPurpose').value.trim(),
-      committeeName: document.getElementById('formCommittee').value,
-      barangay:      session.barangay,
-      councilorName: session.name,
-      totalCost:     parseFloat(document.getElementById('formCost').value) || 0
+async function loadBudget() {
+  try {
+    const res  = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(Session.barangay)}`);
+    const data = await res.json();
+    const remaining = (data.totalBudget || 0) - (data.committees || []).reduce((s, c) => s + (c.spent || 0), 0);
+    document.getElementById('qs-budget').textContent = '₱' + Math.max(0, remaining).toLocaleString('en-PH');
+    renderBudget(data);
+  } catch {
+    const sample = {
+      totalBudget: 250000,
+      committees: [
+        { committeeName: 'Sports',      allocated: 60000, spent: 42000 },
+        { committeeName: 'Education',   allocated: 80000, spent: 35000 },
+        { committeeName: 'Environment', allocated: 50000, spent: 18000 },
+      ]
     };
-
-    if (!body.projectName || !body.purpose || !body.committeeName) {
-      showToast('Please fill in all required fields.', true);
-      return;
-    }
-
-    try {
-      const res  = await fetch(`${API}/addProject`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const text = await res.text();
-
-      if (text === 'SUCCESS') {
-        showToast('Project submitted! Awaiting chairman approval.');
-        closeModal();
-        // Reset form
-        ['formProjectName','formPurpose','formCost'].forEach(id => document.getElementById(id).value = '');
-        await loadProjects(document.getElementById('committeeFilter').value || null);
-      } else {
-        showToast('Submission failed: ' + text, true);
-      }
-    } catch (e) {
-      showToast('Could not connect to server.', true);
-    }
+    const remaining = sample.totalBudget - sample.committees.reduce((s, c) => s + c.spent, 0);
+    document.getElementById('qs-budget').textContent = '₱' + remaining.toLocaleString('en-PH');
+    renderBudget(sample);
   }
+}
 
-  function viewProject(id) {
-    // Placeholder — expand to open a detail modal
-    alert(`Viewing project ID: ${id}\n(Connect to your project detail endpoint here.)`);
-  }
-
-  // ── HELPERS ──
-  function showToast(msg, isError = false) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(() => t.classList.remove('show'), 3500);
-  }
-
-  function escHtml(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  function formatDate(str) {
-    if (!str) return '—';
-    try { return new Date(str).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }); }
-    catch { return str; }
-  }
-
-  // Close modal on overlay click
-  document.getElementById('modalOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-  });
-
-  init();
+function renderBudget(data) {
+  const panel = document.getElementById('budget-panel');
+  panel.innerHTML = `
+    <div class="budget-total">₱${(data.totalBudget || 0).toLocaleString('en-PH')}</div>
+    <div class="budget-sub">Total SK budget · ${esc(Session.barangay)}</div>
+    ${(data.committees || []).map(c => {
+      const pct = c.allocated > 0 ? Math.min((c.spent / c.allocated) * 100, 100) : 0;
+      return `
+        <div class="budget-bar-item">
+          <div class="bbar-header">
+            <span class="bbar-name">${esc(c.committeeName)}</span>
+            <span class="bbar-amounts">₱${(c.spent || 0).toLocaleString('en-PH')} / ₱${(c.allocated || 0).toLocaleString('en-PH')}</span>
+          </div>
+          <div class="bbar-track"><div class="bbar-fill" style="width:${pct}%"></div></div>
+        </div>`;
+    }).join('')}
+    ${!data.committees?.length ? '<p style="color:var(--muted);font-size:0.82rem;margin-top:0.5rem">No budget data.</p>' : ''}
+  `;
+}

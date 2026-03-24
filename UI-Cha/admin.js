@@ -1,3 +1,5 @@
+const API = "http://localhost:8080/admin";
+
 let allAccounts = [];
 let activeTab   = 'pending';
 
@@ -15,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('refresh-btn').addEventListener('click', loadAll);
+
   document.getElementById('logout-btn').addEventListener('click', () => {
     Session.clear();
     Toast.show('Logged out.');
@@ -29,10 +32,15 @@ async function loadAll() {
     '<tr class="loader-row"><td colspan="5"><div class="loader"><span></span><span></span><span></span></div></td></tr>';
 
   try {
-    const res = await fetch(`${API}/getPendingAccounts`);
+    const res = await fetch(`${API}/users`);
+    if (!res.ok) throw new Error("Failed to fetch");
+
     allAccounts = await res.json();
-  } catch {
-    // Dev preview data
+
+  } catch (err) {
+    console.error(err);
+
+    // Dev preview fallback
     allAccounts = [
       { id: 1, name: 'Juan Dela Cruz',  barangay: 'Lahug',   photo: 'proof1.jpg', approved: 0 },
       { id: 2, name: 'Maria Santos',    barangay: 'Apas',    photo: 'proof2.jpg', approved: 1 },
@@ -47,6 +55,7 @@ async function loadAll() {
 function renderStats() {
   const pending  = allAccounts.filter(a => a.approved === 0).length;
   const approved = allAccounts.filter(a => a.approved === 1).length;
+
   document.getElementById('admin-stat-pending').textContent  = pending;
   document.getElementById('admin-stat-approved').textContent = approved;
   document.getElementById('admin-stat-total').textContent    = allAccounts.length;
@@ -55,6 +64,7 @@ function renderStats() {
 
 function renderTable() {
   const tbody = document.getElementById('admin-table-body');
+
   let rows = allAccounts;
   if (activeTab === 'pending')  rows = allAccounts.filter(a => a.approved === 0);
   if (activeTab === 'approved') rows = allAccounts.filter(a => a.approved === 1);
@@ -87,16 +97,20 @@ function renderTable() {
 
 async function approveAccount(id) {
   try {
-    const res  = await fetch(`${API}/approveAccount`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
+    const res = await fetch(`${API}/users/${id}/approve`, {
+      method: 'POST'
     });
-    const text = await res.text();
-    if (text !== 'SUCCESS') throw new Error(text);
-  } catch { /* preview */ }
 
+    if (!res.ok) throw new Error("Approve failed");
+
+  } catch (err) {
+    console.error(err);
+  }
+
+  // Update UI locally
   const acc = allAccounts.find(a => a.id === id);
   if (acc) acc.approved = 1;
+
   renderStats();
   renderTable();
   Toast.show('Account approved successfully.');
@@ -104,16 +118,21 @@ async function approveAccount(id) {
 
 async function rejectAccount(id) {
   if (!confirm('Are you sure you want to reject this account?')) return;
-  try {
-    const res  = await fetch(`${API}/rejectAccount`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-    const text = await res.text();
-    if (text !== 'SUCCESS') throw new Error(text);
-  } catch { /* preview */ }
 
+  try {
+    const res = await fetch(`${API}/users/${id}/reject`, {
+      method: 'POST'
+    });
+
+    if (!res.ok) throw new Error("Reject failed");
+
+  } catch (err) {
+    console.error(err);
+  }
+
+  // Remove from UI
   allAccounts = allAccounts.filter(a => a.id !== id);
+
   renderStats();
   renderTable();
   Toast.show('Account rejected.');
