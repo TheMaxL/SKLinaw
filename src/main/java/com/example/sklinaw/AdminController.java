@@ -40,7 +40,7 @@ public class AdminController {
                 Map<String, Object> user = new HashMap<>();
 
                 user.put("id", rs.getInt("id"));
-                user.put("username", rs.getString("Name"));
+                user.put("name", rs.getString("Name"));
                 user.put("barangay", rs.getString("Barangay"));
                 user.put("photo", rs.getString("Photo"));
                 user.put("approved", 0); // always pending

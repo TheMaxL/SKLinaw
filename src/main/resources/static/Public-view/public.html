@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Public View</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="public.css"/>
+</head>
+<body>
+
+  <!-- ── Screen 1: Committee Grid ── -->
+  <div id="screen-committees" class="pub-screen active">
+    <div class="pub-topbar">
+      <div class="pub-logo"><span class="pub-sk">SK</span><span class="pub-linaw">Linaw</span></div>
+      <div class="pub-topbar-right">
+        <div class="pub-barangay-label">Barangay Lahug</div>
+        <div class="pub-view-label">Public View</div>
+      </div>
+    </div>
+
+    <div class="pub-heading">Select Committee</div>
+
+    <div class="pub-grid" id="committee-grid"><!-- rendered by JS --></div>
+
+    <div class="pub-footer">
+      <button class="pub-back-btn" onclick="location.href='index.html'">Back</button>
+    </div>
+  </div>
+
+  <!-- ── Screen 2: Committee Detail ── -->
+  <div id="screen-detail" class="pub-screen">
+    <div class="pub-topbar">
+      <div class="pub-logo"><span class="pub-sk">SK</span><span class="pub-linaw">Linaw</span></div>
+      <div class="pub-topbar-right">
+        <div class="pub-barangay-label">Barangay Lahug</div>
+        <div class="pub-view-label">Public View</div>
+      </div>
+    </div>
+
+    <div class="pub-committee-title" id="detail-name">ACTIVE CITIZENSHIP</div>
+
+    <div class="pub-tabs">
+      <button class="pub-tab active" onclick="switchTab('projects', this)">PROJECTS/ACTIVITIES</button>
+      <button class="pub-tab"        onclick="switchTab('docs',     this)">DOCUMENTATIONS</button>
+      <button class="pub-tab"        onclick="switchTab('files',    this)">FILES</button>
+    </div>
+
+    <div class="pub-content-box">
+      <div id="panel-projects" class="pub-tab-panel active"><div class="loader"><span></span><span></span><span></span></div></div>
+      <div id="panel-docs"     class="pub-tab-panel"><p class="pub-empty-msg">No documentation uploaded yet.</p></div>
+      <div id="panel-files"    class="pub-tab-panel"><p class="pub-empty-msg">No files uploaded yet.</p></div>
+    </div>
+
+    <div class="pub-footer">
+      <button class="pub-back-btn" onclick="showCommittees()">Back</button>
+    </div>
+  </div>
+
+<div class="toast" id="global-toast"></div>
+<script src="shared.js"></script>
+<script src="public.js"></script>
+</body>
+</html>
