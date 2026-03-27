@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SK Barangay Portal</title>
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #4e73df, #1cc88a);
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      width: 350px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    button {
+      padding: 12px 25px;
+      font-size: 14px;
+      border: none;
+      border-radius: 25px;
+      background: #4e73df;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s ease;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background: #2e59d9;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .form {
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .details-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fc;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>SK Barangay Portal</h1>
+
+    <!-- SIGN IN BUTTON -->
+    <button id="signInBtn">Sign in as SK</button>
+
+    <!-- REGISTRATION FORM -->
+    <div id="accountForm" class="form hidden">
+      <h3>Create Account</h3>
+
+      <label>Full Name</label>
+      <input type="text" id="name">
+
+      <label>Position</label>
+      <input type="text" id="position">
+
+      <label>Barangay</label>
+      <input type="text" id="barangay">
+
+      <button id="viewDetailsBtn">View Account Details</button>
+    </div>
+
+    <!-- ACCOUNT DETAILS DISPLAY -->
+    <div id="accountDetails" class="details-box hidden">
+      <h3>Account Details</h3>
+      <p><strong>Name:</strong> <span id="displayName"></span></p>
+      <p><strong>Position:</strong> <span id="displayPosition"></span></p>
+      <p><strong>Barangay:</strong> <span id="displayBarangay"></span></p>
+      <p><strong>Status:</strong> Pending Approval</p>
+    </div>
+
+  </div>
+
+  <script>
+    const signInBtn = document.getElementById("signInBtn");
+    const accountForm = document.getElementById("accountForm");
+    const viewDetailsBtn = document.getElementById("viewDetailsBtn");
+    const accountDetails = document.getElementById("accountDetails");
+
+    // Show registration form
+    signInBtn.addEventListener("click", function() {
+      accountForm.classList.remove("hidden");
+      signInBtn.style.display = "none";
+    });
+
+    // Show account details dynamically
+    viewDetailsBtn.addEventListener("click", function() {
+      const name = document.getElementById("name").value;
+      const position = document.getElementById("position").value;
+      const barangay = document.getElementById("barangay").value;
+
+      document.getElementById("displayName").textContent = name;
+      document.getElementById("displayPosition").textContent = position;
+      document.getElementById("displayBarangay").textContent = barangay;
+
+      accountDetails.classList.remove("hidden");
+    });
+  </script>
+
+</body>
+</html>
+
