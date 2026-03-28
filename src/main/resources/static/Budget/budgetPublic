@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Budget Transparency</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --teal:      #0BBFB5;
+      --teal-dark: #089991;
+      --bg:        #F0F7F7;
+      --surface:   #FFFFFF;
+      --border:    #D2ECEB;
+      --text:      #0D2B2A;
+      --muted:     #5A8A88;
+      --approved:  #10B981;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: var(--text);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px; position: sticky; top: 0; z-index: 100;
+    }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--teal); }
+    .logo span { color: #fff; }
+    .header-nav { display: flex; gap: 0.75rem; align-items: center; }
+    .nav-link { color: #7AADAB; font-size: 0.82rem; text-decoration: none; transition: color 0.2s; }
+    .nav-link:hover { color: var(--teal); }
+    .btn-sk { background: var(--teal); color: #fff; border: none; border-radius: 7px; padding: 0.42rem 1rem; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+    .btn-sk:hover { background: var(--teal-dark); }
+
+    .hero {
+      background: var(--text);
+      padding: 3rem 2rem; text-align: center; position: relative; overflow: hidden;
+    }
+    .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 130%, rgba(11,191,181,0.16) 0%, transparent 70%); pointer-events: none; }
+    .hero h1 { font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 800; color: #fff; position: relative; }
+    .hero h1 em { font-style: normal; color: var(--teal); }
+    .hero p { color: #7AADAB; font-size: 0.95rem; margin-top: 0.65rem; font-weight: 300; position: relative; }
+
+    /* BARANGAY SELECTOR */
+    .selector-wrap { max-width: 860px; margin: -22px auto 0; padding: 0 1.5rem; position: relative; z-index: 10; }
+    .selector-card { background: var(--surface); border-radius: 14px; padding: 1.1rem 1.4rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); display: flex; gap: 0.85rem; align-items: flex-end; flex-wrap: wrap; }
+    .sel-group { flex: 1; min-width: 180px; }
+    .sel-group label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; }
+    .sel-group select { border: 1.5px solid var(--border); border-radius: 8px; padding: 0.5rem 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.2s; width: 100%; }
+    .sel-group select:focus { border-color: var(--teal); }
+    .btn-load { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 0.52rem 1.3rem; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .btn-load:hover { background: var(--teal-dark); }
+
+    /* MAIN */
+    .main { max-width: 860px; margin: 2rem auto; padding: 0 1.5rem 4rem; }
+
+    /* TOP STAT CARDS */
+    .top-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+    .stat-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 13px; padding: 1.1rem 1.25rem; text-align: center; animation: fadeUp 0.4s ease both; }
+    .stat-card:nth-child(2) { animation-delay: 0.07s; }
+    .stat-card:nth-child(3) { animation-delay: 0.14s; }
+    .stat-val { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--teal); }
+    .stat-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* MAIN GRID */
+    .budget-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.25rem; }
+
+    .panel { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 1.5rem; animation: fadeUp 0.4s ease 0.15s both; }
+    .panel-title { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 1.25rem; }
+
+    /* PIE CHART */
+    .pie-wrap { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+    .pie-canvas-wrap { position: relative; width: 220px; height: 220px; }
+    .pie-canvas-wrap canvas { width: 100% !important; height: 100% !important; }
+    .pie-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+    .pie-center-val { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .pie-center-lbl { font-size: 0.68rem; color: var(--muted); margin-top: 1px; }
+    .pie-legend { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem; }
+    .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+    .legend-name { flex: 1; font-weight: 500; }
+    .legend-pct { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem; color: var(--muted); }
+    .legend-amt { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem; color: var(--teal); }
+
+    /* COMMITTEE BREAKDOWN */
+    .committee-list { display: flex; flex-direction: column; gap: 1rem; }
+    .committee-item { padding-bottom: 1rem; border-bottom: 1.5px solid var(--border); }
+    .committee-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .ci-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .ci-name { font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+    .ci-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .ci-allocated { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--teal); }
+    .ci-bar-track { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; margin-bottom: 5px; }
+    .ci-bar-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+    .ci-footer { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); }
+    .ci-footer strong { color: var(--text); }
+
+    /* EMPTY / LOADER */
+    .empty-state { text-align: center; padding: 4rem 1rem; color: var(--muted); font-size: 0.9rem; }
+    .loader { display: flex; justify-content: center; padding: 3rem; gap: 6px; }
+    .loader span { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); animation: bounce 0.8s infinite alternate; }
+    .loader span:nth-child(2) { animation-delay: 0.2s; }
+    .loader span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes fadeUp   { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bounce   { from { transform: translateY(0); opacity: 0.5; } to { transform: translateY(-9px); opacity: 1; } }
+
+    @media (max-width: 680px) {
+      .budget-grid { grid-template-columns: 1fr; }
+      .top-stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="header-nav">
+    <a class="nav-link" href="../Homepage/homepage.html">Home</a>
+    <a class="nav-link" href="../Public-view/publicview.html">Projects</a>
+    <a class="btn-sk" href="../Log-in/login.html">SK Login</a>
+  </div>
+</header>
+
+<div class="hero">
+  <h1>SK Budget <em>Transparency</em></h1>
+  <p>See how each barangay's SK budget is divided and spent across committees.</p>
+</div>
+
+<div class="selector-wrap">
+  <div class="selector-card">
+    <div class="sel-group">
+      <label>Barangay</label>
+      <select id="barangaySelect">
+        <option value="">— Select a barangay —</option>
+        <option>Lahug</option>
+        <option>Apas</option>
+        <option>Banilad</option>
+        <option>Talamban</option>
+        <option>Guadalupe</option>
+        <option>Kasambagan</option>
+        <option>Mabolo</option>
+        <option>Kamputhaw</option>
+      </select>
+    </div>
+    <button class="btn-load" onclick="loadBudget()">View Budget</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- TOP STATS -->
+  <div class="top-stats" id="topStats" style="display:none">
+    <div class="stat-card"><div class="stat-val" id="stTotal">₱0</div><div class="stat-lbl">Total SK Budget</div></div>
+    <div class="stat-card"><div class="stat-val" id="stSpent">₱0</div><div class="stat-lbl">Total Spent</div></div>
+    <div class="stat-card"><div class="stat-val" id="stRemaining">₱0</div><div class="stat-lbl">Remaining</div></div>
+  </div>
+
+  <!-- BUDGET GRID -->
+  <div class="budget-grid" id="budgetGrid" style="display:none">
+    <!-- PIE CHART -->
+    <div class="panel">
+      <div class="panel-title">Budget Allocation by Committee</div>
+      <div class="pie-wrap">
+        <div class="pie-canvas-wrap">
+          <canvas id="pieChart"></canvas>
+          <div class="pie-center">
+            <div class="pie-center-val" id="pieCenterVal">₱0</div>
+            <div class="pie-center-lbl">Total Budget</div>
+          </div>
+        </div>
+        <div class="pie-legend" id="pieLegend"></div>
+      </div>
+    </div>
+
+    <!-- COMMITTEE BREAKDOWN -->
+    <div class="panel">
+      <div class="panel-title">Per-Committee Breakdown</div>
+      <div class="committee-list" id="committeeList"></div>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state">
+    Select a barangay above and click <strong>View Budget</strong> to get started.
+  </div>
+  <div id="loader" style="display:none" class="loader"><span></span><span></span><span></span></div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+
+  const COLORS = [
+    '#0BBFB5','#F59E0B','#6366F1','#10B981',
+    '#EC4899','#3B82F6','#F97316','#8B5CF6',
+  ];
+
+  let pieInstance = null;
+
+  async function loadBudget() {
+    const barangay = document.getElementById('barangaySelect').value;
+    if (!barangay) { alert('Please select a barangay.'); return; }
+
+    document.getElementById('emptyState').style.display  = 'none';
+    document.getElementById('topStats').style.display    = 'none';
+    document.getElementById('budgetGrid').style.display  = 'none';
+    document.getElementById('loader').style.display      = 'flex';
+
+    try {
+      const res  = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(barangay)}`);
+      const data = await res.json();
+
+      document.getElementById('loader').style.display = 'none';
+      renderBudget(data);
+    } catch (e) {
+      document.getElementById('loader').style.display = 'none';
+      // Demo data for UI preview
+      renderBudget({
+        totalBudget: 500000,
+        committees: [
+          { committeeName: 'Sports',       allocated: 120000, spent: 85000  },
+          { committeeName: 'Education',    allocated: 150000, spent: 110000 },
+          { committeeName: 'Environment',  allocated: 80000,  spent: 45000  },
+          { committeeName: 'Health',       allocated: 100000, spent: 60000  },
+          { committeeName: 'Livelihood',   allocated: 50000,  spent: 20000  },
+        ]
+      });
+    }
+  }
+
+  function renderBudget(data) {
+    const committees   = data.committees || [];
+    const totalBudget  = data.totalBudget || 0;
+    const totalSpent   = committees.reduce((s, c) => s + (c.spent || 0), 0);
+    const totalRemain  = totalBudget - totalSpent;
+
+    // Top stats
+    document.getElementById('stTotal').textContent     = '₱' + totalBudget.toLocaleString('en-PH');
+    document.getElementById('stSpent').textContent     = '₱' + totalSpent.toLocaleString('en-PH');
+    document.getElementById('stRemaining').textContent = '₱' + Math.max(0, totalRemain).toLocaleString('en-PH');
+    document.getElementById('topStats').style.display  = 'grid';
+    document.getElementById('budgetGrid').style.display = 'grid';
+
+    // Pie center
+    document.getElementById('pieCenterVal').textContent = '₱' + (totalBudget / 1000).toFixed(0) + 'K';
+
+    // Draw pie
+    drawPie(committees, totalBudget);
+
+    // Legend
+    const legendEl = document.getElementById('pieLegend');
+    legendEl.innerHTML = committees.map((c, i) => {
+      const pct = totalBudget > 0 ? ((c.allocated / totalBudget) * 100).toFixed(1) : 0;
+      return `
+        <div class="legend-item">
+          <div class="legend-dot" style="background:${COLORS[i % COLORS.length]}"></div>
+          <span class="legend-name">${esc(c.committeeName)}</span>
+          <span class="legend-pct">${pct}%</span>
+          <span class="legend-amt">₱${(c.allocated||0).toLocaleString('en-PH')}</span>
+        </div>`;
+    }).join('');
+
+    // Committee breakdown bars
+    const listEl = document.getElementById('committeeList');
+    listEl.innerHTML = committees.map((c, i) => {
+      const pct    = c.allocated > 0 ? Math.min((c.spent / c.allocated) * 100, 100) : 0;
+      const remain = (c.allocated || 0) - (c.spent || 0);
+      return `
+        <div class="committee-item">
+          <div class="ci-header">
+            <div class="ci-name">
+              <div class="ci-dot" style="background:${COLORS[i % COLORS.length]}"></div>
+              ${esc(c.committeeName)}
+            </div>
+            <div class="ci-allocated">₱${(c.allocated||0).toLocaleString('en-PH')}</div>
+          </div>
+          <div class="ci-bar-track">
+            <div class="ci-bar-fill" style="width:${pct}%; background:${COLORS[i % COLORS.length]}"></div>
+          </div>
+          <div class="ci-footer">
+            <span>Spent: <strong>₱${(c.spent||0).toLocaleString('en-PH')}</strong></span>
+            <span>Remaining: <strong>₱${Math.max(0, remain).toLocaleString('en-PH')}</strong></span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function drawPie(committees, totalBudget) {
+    const canvas = document.getElementById('pieChart');
+    const ctx    = canvas.getContext('2d');
+    const size   = 220;
+    canvas.width  = size;
+    canvas.height = size;
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = 95, innerR = 58;
+
+    const slices = committees.map((c, i) => ({
+      value: c.allocated || 0,
+      color: COLORS[i % COLORS.length],
+      name:  c.committeeName
+    }));
+
+    const total = slices.reduce((s, sl) => s + sl.value, 0) || 1;
+    let startAngle = -Math.PI / 2;
+
+    // Clear
+    ctx.clearRect(0, 0, size, size);
+
+    slices.forEach(sl => {
+      const sweep = (sl.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, outerR, startAngle, startAngle + sweep);
+      ctx.closePath();
+      ctx.fillStyle = sl.color;
+      ctx.fill();
+      startAngle += sweep;
+    });
+
+    // Inner hole (donut)
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+
+    // Gap lines
+    startAngle = -Math.PI / 2;
+    slices.forEach(sl => {
+      const sweep = (sl.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + innerR * Math.cos(startAngle), cy + innerR * Math.sin(startAngle));
+      ctx.lineTo(cx + outerR * Math.cos(startAngle), cy + outerR * Math.sin(startAngle));
+      ctx.strokeStyle = '#F0F7F7';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      startAngle += sweep;
+    });
+  }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
