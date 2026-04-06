@@ -42,15 +42,8 @@
     .hero h1 em { font-style: normal; color: var(--teal); }
     .hero p { color: #7AADAB; font-size: 0.95rem; margin-top: 0.65rem; font-weight: 300; position: relative; }
 
-    /* BARANGAY SELECTOR */
-    .selector-wrap { max-width: 860px; margin: -22px auto 0; padding: 0 1.5rem; position: relative; z-index: 10; }
-    .selector-card { background: var(--surface); border-radius: 14px; padding: 1.1rem 1.4rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); display: flex; gap: 0.85rem; align-items: flex-end; flex-wrap: wrap; }
-    .sel-group { flex: 1; min-width: 180px; }
-    .sel-group label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; }
-    .sel-group select { border: 1.5px solid var(--border); border-radius: 8px; padding: 0.5rem 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.2s; width: 100%; }
-    .sel-group select:focus { border-color: var(--teal); }
-    .btn-load { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 0.52rem 1.3rem; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
-    .btn-load:hover { background: var(--teal-dark); }
+    /* MAIN */
+    .main { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem 4rem; }
 
     /* MAIN */
     .main { max-width: 860px; margin: 2rem auto; padding: 0 1.5rem 4rem; }
@@ -125,28 +118,9 @@
 
 <div class="hero">
   <h1>SK Budget <em>Transparency</em></h1>
-  <p>See how each barangay's SK budget is divided and spent across committees.</p>
+  <p>See how the SK budget is divided and spent across all committees.</p>
 </div>
 
-<div class="selector-wrap">
-  <div class="selector-card">
-    <div class="sel-group">
-      <label>Barangay</label>
-      <select id="barangaySelect">
-        <option value="">— Select a barangay —</option>
-        <option>Lahug</option>
-        <option>Apas</option>
-        <option>Banilad</option>
-        <option>Talamban</option>
-        <option>Guadalupe</option>
-        <option>Kasambagan</option>
-        <option>Mabolo</option>
-        <option>Kamputhaw</option>
-      </select>
-    </div>
-    <button class="btn-load" onclick="loadBudget()">View Budget</button>
-  </div>
-</div>
 
 <div class="main">
   <!-- TOP STATS -->
@@ -180,48 +154,47 @@
     </div>
   </div>
 
-  <div id="emptyState" class="empty-state">
-    Select a barangay above and click <strong>View Budget</strong> to get started.
-  </div>
+  <div id="emptyState" class="empty-state" style="display:none">No budget data available yet.</div>
   <div id="loader" style="display:none" class="loader"><span></span><span></span><span></span></div>
 </div>
 
 <script>
   const API = 'http://localhost:8080/api';
 
+  // ── Single client barangay ──
+  // Change this one value if the barangay name changes in the DB
+  const BARANGAY = 'Lahug';
+
   const COLORS = [
     '#0BBFB5','#F59E0B','#6366F1','#10B981',
     '#EC4899','#3B82F6','#F97316','#8B5CF6',
   ];
 
-  let pieInstance = null;
+  // Auto-load on page open — no barangay selector needed
+  window.addEventListener('DOMContentLoaded', loadBudget);
 
   async function loadBudget() {
-    const barangay = document.getElementById('barangaySelect').value;
-    if (!barangay) { alert('Please select a barangay.'); return; }
-
     document.getElementById('emptyState').style.display  = 'none';
     document.getElementById('topStats').style.display    = 'none';
     document.getElementById('budgetGrid').style.display  = 'none';
     document.getElementById('loader').style.display      = 'flex';
 
     try {
-      const res  = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(barangay)}`);
+      const res  = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(BARANGAY)}`);
       const data = await res.json();
-
       document.getElementById('loader').style.display = 'none';
       renderBudget(data);
     } catch (e) {
       document.getElementById('loader').style.display = 'none';
-      // Demo data for UI preview
+      // Demo data for UI preview when API is not yet running
       renderBudget({
         totalBudget: 500000,
         committees: [
-          { committeeName: 'Sports',       allocated: 120000, spent: 85000  },
-          { committeeName: 'Education',    allocated: 150000, spent: 110000 },
-          { committeeName: 'Environment',  allocated: 80000,  spent: 45000  },
-          { committeeName: 'Health',       allocated: 100000, spent: 60000  },
-          { committeeName: 'Livelihood',   allocated: 50000,  spent: 20000  },
+          { committeeName: 'Sports',      allocated: 120000, spent: 85000  },
+          { committeeName: 'Education',   allocated: 150000, spent: 110000 },
+          { committeeName: 'Environment', allocated: 80000,  spent: 45000  },
+          { committeeName: 'Health',      allocated: 100000, spent: 60000  },
+          { committeeName: 'Livelihood',  allocated: 50000,  spent: 20000  },
         ]
       });
     }
