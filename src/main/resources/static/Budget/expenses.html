@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Expenses</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --teal:      #0BBFB5;
+      --teal-dark: #089991;
+      --teal-dim:  rgba(11,191,181,0.1);
+      --bg:        #0D1F1E;
+      --surface:   #142322;
+      --surface2:  #1C302E;
+      --border:    rgba(11,191,181,0.18);
+      --text:      #E8F5F4;
+      --muted:     #6AACAA;
+      --warning:   #F59E0B;
+      --success:   #10B981;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* SIDEBAR */
+    .sidebar { width: 230px; min-width: 230px; background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.3rem; position: sticky; top: 0; height: 100vh; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--teal); padding: 0.5rem 0.75rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+    .logo span { color: var(--text); }
+    .nav-section { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 0.6rem 0.75rem 0.3rem; }
+    .nav-item { display: flex; align-items: center; gap: 0.65rem; padding: 0.6rem 0.75rem; border-radius: 9px; font-size: 0.86rem; font-weight: 500; color: var(--muted); cursor: pointer; transition: background 0.2s, color 0.2s; text-decoration: none; }
+    .nav-item:hover, .nav-item.active { background: var(--teal-dim); color: var(--teal); }
+    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .user-chip { display: flex; align-items: center; gap: 0.65rem; padding: 0.6rem 0.75rem; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--teal-dim); border: 1.5px solid var(--teal); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--teal); flex-shrink: 0; }
+    .user-name { font-size: 0.84rem; font-weight: 600; }
+    .user-role { font-size: 0.7rem; color: var(--muted); }
+    .btn-logout { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; color: var(--muted); font-size: 0.82rem; cursor: pointer; border: none; background: none; border-radius: 8px; width: 100%; transition: color 0.2s; }
+    .btn-logout:hover { color: #EF4444; }
+
+    /* MAIN */
+    .main { flex: 1; padding: 2rem 2.5rem; overflow-y: auto; }
+
+    /* PAGE HEADER */
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+    .page-sub { color: var(--muted); font-size: 0.88rem; margin-top: 3px; }
+
+    /* SUMMARY CARDS */
+    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+    .sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: 13px; padding: 1rem 1.2rem; animation: fadeUp 0.4s ease both; }
+    .sum-card:nth-child(2) { animation-delay: 0.07s; }
+    .sum-card:nth-child(3) { animation-delay: 0.14s; }
+    .sum-card:nth-child(4) { animation-delay: 0.21s; }
+    .sum-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--teal-dim); display: flex; align-items: center; justify-content: center; color: var(--teal); margin-bottom: 0.6rem; }
+    .sum-val { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; }
+    .sum-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* TOOLBAR */
+    .toolbar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+    .toolbar-left { display: flex; gap: 0.6rem; flex-wrap: wrap; flex: 1; }
+    .search-input { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.86rem; padding: 0.5rem 0.9rem; outline: none; transition: border-color 0.2s; min-width: 200px; }
+    .search-input:focus { border-color: var(--teal); }
+    .select-filter { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.84rem; padding: 0.5rem 0.8rem; outline: none; transition: border-color 0.2s; }
+    .select-filter:focus { border-color: var(--teal); }
+
+    /* SORT BUTTONS */
+    .sort-bar { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .sort-btn { border: 1px solid var(--border); background: none; border-radius: 7px; padding: 0.38rem 0.85rem; font-family: 'DM Sans', sans-serif; font-size: 0.76rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
+    .sort-btn:hover, .sort-btn.active { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+    .sort-arrow { font-size: 0.7rem; }
+
+    /* COMMITTEE TABS */
+    .committee-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+    .ctab { border: 1.5px solid var(--border); background: none; border-radius: 8px; padding: 0.4rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+    .ctab:hover, .ctab.active { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+    .ctab-count { font-size: 0.68rem; background: var(--surface2); border-radius: 99px; padding: 1px 6px; }
+    .ctab.active .ctab-count { background: rgba(11,191,181,0.2); }
+
+    /* TABLE */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
+    thead th:hover { color: var(--teal); }
+    thead th .th-inner { display: flex; align-items: center; gap: 4px; }
+    tbody td { padding: 0.85rem 1rem; font-size: 0.84rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background 0.15s; animation: fadeUp 0.3s ease both; }
+    tbody tr:hover { background: var(--surface2); }
+
+    .td-name { font-weight: 600; max-width: 220px; }
+    .td-committee { display: inline-flex; align-items: center; font-size: 0.74rem; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: var(--teal-dim); color: var(--teal); white-space: nowrap; }
+    .td-amount { font-family: 'Syne', sans-serif; font-weight: 800; color: var(--teal); white-space: nowrap; text-align: right; }
+    .type-pill { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+    .type-PROJECT { background: rgba(99,102,241,0.15); color: #818CF8; }
+    .type-PAYMENT { background: rgba(245,158,11,0.15);  color: var(--warning); }
+    .td-muted { color: var(--muted); font-size: 0.78rem; }
+
+    /* PAGINATION */
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); }
+    .page-btns { display: flex; gap: 0.4rem; }
+    .page-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 0.78rem; padding: 4px 10px; cursor: pointer; transition: all 0.2s; }
+    .page-btn:hover, .page-btn.active { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+    .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .empty-row td { text-align: center; padding: 3rem; color: var(--muted); font-size: 0.88rem; }
+    .loader-row td { text-align: center; padding: 2.5rem; }
+    .loader { display: inline-flex; gap: 6px; }
+    .loader span { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); animation: bounce 0.8s infinite alternate; }
+    .loader span:nth-child(2) { animation-delay: 0.2s; }
+    .loader span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bounce { from { transform: translateY(0); opacity: 0.5; } to { transform: translateY(-8px); opacity: 1; } }
+
+    @media (max-width: 900px) { .summary-cards { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 650px) { .sidebar { display: none; } .main { padding: 1.25rem; } .summary-cards { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="nav-section">Main</div>
+  <a class="nav-item" href="../Website/dashboard.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item" href="../static/ProjectsCouncilor.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+    Projects
+  </a>
+  <div class="nav-section">Finance</div>
+  <a class="nav-item" href="budget-treasurer.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    Budget
+  </a>
+  <a class="nav-item active" href="expenses.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Expenses
+  </a>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="avatarEl">?</div>
+      <div>
+        <div class="user-name" id="nameEl">Loading…</div>
+        <div class="user-role" id="roleEl">Councilor</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Expenses</div>
+      <div class="page-sub">All project costs and payment entries — sortable and filterable by committee.</div>
+    </div>
+  </div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="summary-cards">
+    <div class="sum-card">
+      <div class="sum-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="sum-val" id="sumTotal">—</div>
+      <div class="sum-lbl">Total Expenses</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+      <div class="sum-val" id="sumAmount">₱0</div>
+      <div class="sum-lbl">Total Amount Spent</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+      <div class="sum-val" id="sumProjects">—</div>
+      <div class="sum-lbl">Project Entries</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+      <div class="sum-val" id="sumPayments">—</div>
+      <div class="sum-lbl">Payment Entries</div>
+    </div>
+  </div>
+
+  <!-- COMMITTEE TABS -->
+  <div class="committee-tabs" id="committeeTabs"></div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input class="search-input" type="text" id="searchInput" placeholder="Search by name, committee, or person…" oninput="applyFilters()"/>
+      <select class="select-filter" id="typeFilter" onchange="applyFilters()">
+        <option value="">All types</option>
+        <option value="PROJECT">Projects only</option>
+        <option value="PAYMENT">Payments only</option>
+      </select>
+    </div>
+    <div class="sort-bar">
+      <span style="font-size:0.75rem;color:var(--muted);align-self:center">Sort:</span>
+      <button class="sort-btn active" id="sortDate" onclick="sortBy('date', this)">
+        <div class="th-inner">Date <span class="sort-arrow" id="arrowDate">↓</span></div>
+      </button>
+      <button class="sort-btn" id="sortAmount" onclick="sortBy('amount', this)">
+        <div class="th-inner">Amount <span class="sort-arrow" id="arrowAmount">↕</span></div>
+      </button>
+      <button class="sort-btn" id="sortName" onclick="sortBy('name', this)">
+        <div class="th-inner">Name <span class="sort-arrow" id="arrowName">↕</span></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th><div class="th-inner">Description</div></th>
+          <th><div class="th-inner">Committee</div></th>
+          <th><div class="th-inner">Submitted By</div></th>
+          <th><div class="th-inner">Type</div></th>
+          <th><div class="th-inner">Date</div></th>
+          <th style="text-align:right"><div class="th-inner" style="justify-content:flex-end">Amount</div></th>
+        </tr>
+      </thead>
+      <tbody id="expenseBody">
+        <tr class="loader-row"><td colspan="6"><div class="loader"><span></span><span></span><span></span></div></td></tr>
+      </tbody>
+    </table>
+    <div class="pagination" id="pagination" style="display:none">
+      <span id="paginationInfo"></span>
+      <div class="page-btns" id="pageButtons"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API      = 'http://localhost:8080/api';
+  const BARANGAY = 'Lahug'; // ← update to match your client's barangay
+  const PAGE_SIZE = 15;
+
+  const session = {
+    name:     localStorage.getItem('sk_name')     || 'Councilor',
+    barangay: localStorage.getItem('sk_barangay') || BARANGAY,
+    role:     localStorage.getItem('sk_role')     || 'councilor'
+  };
+
+  document.getElementById('nameEl').textContent   = session.name;
+  document.getElementById('avatarEl').textContent = session.name.charAt(0).toUpperCase();
+  document.getElementById('roleEl').textContent   = session.role;
+
+  let allExpenses      = [];
+  let filteredExpenses = [];
+  let activePage       = 1;
+  let activeCommittee  = 'all';
+  let sortField        = 'date';
+  let sortDir          = 'desc';
+
+  async function init() {
+    try {
+      const res  = await fetch(`${API}/getExpenses?barangay=${encodeURIComponent(session.barangay)}`);
+      const data = await res.json();
+      allExpenses = Array.isArray(data) ? data : [];
+    } catch (e) {
+      // Demo data
+      allExpenses = [
+        { id:1,  description:'Basketball Court Renovation', committeeName:'Sports',      councilorName:'Juan Dela Cruz', amount:85000,  date:'2025-03-01', type:'PROJECT'  },
+        { id:2,  description:'Uniform Purchase',            committeeName:'Sports',      councilorName:'Juan Dela Cruz', amount:12000,  date:'2025-03-15', type:'PAYMENT'  },
+        { id:3,  description:'School Supplies Drive',       committeeName:'Education',   councilorName:'Maria Santos',   amount:45000,  date:'2025-02-20', type:'PROJECT'  },
+        { id:4,  description:'Tutorial Program',            committeeName:'Education',   councilorName:'Maria Santos',   amount:18000,  date:'2025-03-10', type:'PAYMENT'  },
+        { id:5,  description:'Tree Planting Activity',      committeeName:'Environment', councilorName:'Pedro Reyes',    amount:15000,  date:'2025-01-28', type:'PROJECT'  },
+        { id:6,  description:'Medical Mission Supplies',    committeeName:'Health',      councilorName:'Ana Gomez',      amount:60000,  date:'2025-02-14', type:'PROJECT'  },
+        { id:7,  description:'Livelihood Training',         committeeName:'Livelihood',  councilorName:'Carlos Tan',     amount:20000,  date:'2025-02-28', type:'PROJECT'  },
+        { id:8,  description:'Medicine Restock',            committeeName:'Health',      councilorName:'Ana Gomez',      amount:8500,   date:'2025-03-05', type:'PAYMENT'  },
+        { id:9,  description:'Sports Equipment',            committeeName:'Sports',      councilorName:'Juan Dela Cruz', amount:22000,  date:'2025-01-15', type:'PAYMENT'  },
+        { id:10, description:'Scholarship Fund',            committeeName:'Education',   councilorName:'Maria Santos',   amount:50000,  date:'2025-03-20', type:'PROJECT'  },
+      ];
+    }
+
+    buildSummary();
+    buildCommitteeTabs();
+    applyFilters();
+  }
+
+  function buildSummary() {
+    const total    = allExpenses.length;
+    const amount   = allExpenses.reduce((s, e) => s + (e.amount||0), 0);
+    const projects = allExpenses.filter(e => e.type === 'PROJECT').length;
+    const payments = allExpenses.filter(e => e.type === 'PAYMENT').length;
+    document.getElementById('sumTotal').textContent    = total;
+    document.getElementById('sumAmount').textContent   = '₱' + amount.toLocaleString('en-PH');
+    document.getElementById('sumProjects').textContent = projects;
+    document.getElementById('sumPayments').textContent = payments;
+  }
+
+  function buildCommitteeTabs() {
+    const committees = [...new Set(allExpenses.map(e => e.committeeName))];
+    const tabsEl     = document.getElementById('committeeTabs');
+    const allCount   = allExpenses.length;
+
+    tabsEl.innerHTML =
+      `<button class="ctab active" onclick="setCommittee('all', this)">
+         All <span class="ctab-count">${allCount}</span>
+       </button>` +
+      committees.map(c => {
+        const count = allExpenses.filter(e => e.committeeName === c).length;
+        return `<button class="ctab" onclick="setCommittee('${esc(c)}', this)">
+          ${esc(c)} <span class="ctab-count">${count}</span>
+        </button>`;
+      }).join('');
+  }
+
+  function setCommittee(committee, btn) {
+    activeCommittee = committee;
+    document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activePage = 1;
+    applyFilters();
+  }
+
+  function sortBy(field, btn) {
+    if (sortField === field) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortField = field;
+      sortDir   = field === 'amount' ? 'desc' : 'asc';
+    }
+    // Update sort button states
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['Date','Amount','Name'].forEach(f => {
+      const el = document.getElementById(`arrow${f}`);
+      if (el) el.textContent = '↕';
+    });
+    const arrowMap = { date:'Date', amount:'Amount', name:'Name' };
+    const arrowEl  = document.getElementById(`arrow${arrowMap[field]}`);
+    if (arrowEl) arrowEl.textContent = sortDir === 'asc' ? '↑' : '↓';
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const type   = document.getElementById('typeFilter').value;
+
+    let rows = allExpenses;
+
+    // Committee filter
+    if (activeCommittee !== 'all') rows = rows.filter(e => e.committeeName === activeCommittee);
+
+    // Type filter
+    if (type) rows = rows.filter(e => e.type === type);
+
+    // Search
+    if (search) rows = rows.filter(e =>
+      e.description.toLowerCase().includes(search) ||
+      e.committeeName.toLowerCase().includes(search) ||
+      e.councilorName.toLowerCase().includes(search)
+    );
+
+    // Sort
+    rows = [...rows].sort((a, b) => {
+      let valA, valB;
+      if (sortField === 'date')   { valA = new Date(a.date||0); valB = new Date(b.date||0); }
+      if (sortField === 'amount') { valA = a.amount||0;         valB = b.amount||0; }
+      if (sortField === 'name')   { valA = a.description||'';   valB = b.description||''; }
+      if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDir === 'asc' ?  1 : -1;
+      return 0;
+    });
+
+    filteredExpenses = rows;
+    activePage = 1;
+    renderTable();
+    renderPagination();
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('expenseBody');
+    const start = (activePage - 1) * PAGE_SIZE;
+    const page  = filteredExpenses.slice(start, start + PAGE_SIZE);
+
+    if (!filteredExpenses.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No expenses match your filters.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = page.map((e, i) => `
+      <tr style="animation-delay:${i*0.035}s">
+        <td class="td-name">${esc(e.description)}</td>
+        <td><span class="td-committee">${esc(e.committeeName)}</span></td>
+        <td class="td-muted">${esc(e.councilorName)}</td>
+        <td><span class="type-pill type-${e.type}">${e.type}</span></td>
+        <td class="td-muted">${fmtDate(e.date)}</td>
+        <td class="td-amount">₱${(e.amount||0).toLocaleString('en-PH')}</td>
+      </tr>`).join('');
+  }
+
+  function renderPagination() {
+    const total = filteredExpenses.length;
+    const pages = Math.ceil(total / PAGE_SIZE);
+    const pgEl  = document.getElementById('pagination');
+    const infoEl= document.getElementById('paginationInfo');
+    const btnsEl= document.getElementById('pageButtons');
+
+    if (pages <= 1) { pgEl.style.display = 'none'; return; }
+    pgEl.style.display = 'flex';
+
+    const start = (activePage - 1) * PAGE_SIZE + 1;
+    const end   = Math.min(activePage * PAGE_SIZE, total);
+    infoEl.textContent = `Showing ${start}–${end} of ${total} entries`;
+
+    let btns = `<button class="page-btn" onclick="goPage(${activePage-1})" ${activePage===1?'disabled':''}>←</button>`;
+    for (let i = 1; i <= pages; i++) {
+      btns += `<button class="page-btn ${i===activePage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    }
+    btns += `<button class="page-btn" onclick="goPage(${activePage+1})" ${activePage===pages?'disabled':''}>→</button>`;
+    btnsEl.innerHTML = btns;
+  }
+
+  function goPage(n) {
+    const pages = Math.ceil(filteredExpenses.length / PAGE_SIZE);
+    if (n < 1 || n > pages) return;
+    activePage = n;
+    renderTable();
+    renderPagination();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function logout() {
+    localStorage.removeItem('sk_name');
+    localStorage.removeItem('sk_barangay');
+    localStorage.removeItem('sk_role');
+    window.location.href = '../Log-in/login.html';
+  }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmtDate(s) {
+    if (!s) return '—';
+    try { return new Date(s).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }); }
+    catch { return s; }
+  }
+
+  init();
+</script>
+</body>
+</html>
