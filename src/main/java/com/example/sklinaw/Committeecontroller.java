@@ -167,7 +167,7 @@ public class Committeecontroller {
      * }
      */
     @PostMapping("/addProject")
-    public String addProject(@RequestBody project project) {
+    public String addProject(@RequestBody Projectcontroller project) {
         try (Connection conn = DriverManager.getConnection(URL)) {
 
             // 1. Check councilor is registered and approved
