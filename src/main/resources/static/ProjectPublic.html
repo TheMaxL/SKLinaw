@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Project Transparency</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --teal:      #0BBFB5;
+      --teal-dark: #089991;
+      --teal-dim:  rgba(11,191,181,0.12);
+      --bg:        #F0F7F7;
+      --surface:   #FFFFFF;
+      --border:    #D2ECEB;
+      --text:      #0D2B2A;
+      --muted:     #5A8A88;
+      --pending:   #F59E0B;
+      --approved:  #10B981;
+      --rejected:  #EF4444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--text);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: var(--teal);
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: #fff; }
+    .header-badge {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--teal);
+      border: 1px solid var(--teal);
+      padding: 3px 10px;
+      border-radius: 99px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--text);
+      padding: 3.5rem 2rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 120%, rgba(11,191,181,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.15;
+      position: relative;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--teal);
+    }
+    .hero p {
+      margin-top: 0.75rem;
+      color: #7AADAB;
+      font-size: 1rem;
+      font-weight: 300;
+      position: relative;
+    }
+
+    /* ── CONTROLS ── */
+    .controls {
+      max-width: 900px;
+      margin: -24px auto 0;
+      padding: 0 1.5rem;
+      position: relative;
+      z-index: 10;
+    }
+    .controls-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .controls-card label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .controls-card select,
+    .controls-card input {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.85rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border 0.2s;
+      width: 100%;
+    }
+    .controls-card select:focus,
+    .controls-card input:focus { border-color: var(--teal); }
+    .control-group { flex: 1; min-width: 160px; }
+    .btn-load {
+      align-self: flex-end;
+      background: var(--teal);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.58rem 1.4rem;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-load:hover { background: var(--teal-dark); }
+    .btn-load:active { transform: scale(0.97); }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      border: 1.5px solid var(--border);
+      text-align: center;
+      animation: fadeUp 0.4s ease both;
+    }
+    .stat-card:nth-child(2) { animation-delay: 0.07s; }
+    .stat-card:nth-child(3) { animation-delay: 0.14s; }
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--teal);
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* ── PROJECT LIST ── */
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.85rem;
+    }
+
+    .project-card {
+      background: var(--surface);
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      margin-bottom: 0.85rem;
+      overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow 0.2s, border-color 0.2s;
+      animation: fadeUp 0.35s ease both;
+    }
+    .project-card:hover {
+      box-shadow: 0 6px 24px rgba(11,191,181,0.12);
+      border-color: var(--teal);
+    }
+    .project-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      gap: 1rem;
+    }
+    .project-title-block { flex: 1; min-width: 0; }
+    .project-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .project-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .project-meta span {
+      display: inline-block;
+      margin-right: 0.75rem;
+    }
+    .project-cost {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--teal);
+      white-space: nowrap;
+    }
+    .status-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+    .status-APPROVED  { background: rgba(16,185,129,0.12); color: var(--approved); }
+    .status-PENDING   { background: rgba(245,158,11,0.12);  color: var(--pending); }
+    .status-REJECTED  { background: rgba(239,68,68,0.12);   color: var(--rejected); }
+
+    /* ── EXPANDABLE DETAILS ── */
+    .project-details {
+      display: none;
+      padding: 0 1.25rem 1.1rem;
+      border-top: 1.5px solid var(--border);
+      animation: fadeDown 0.25s ease;
+    }
+    .project-card.open .project-details { display: block; }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem 2rem;
+      margin-top: 0.9rem;
+    }
+    .detail-item label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .detail-item p {
+      font-size: 0.88rem;
+      margin-top: 2px;
+    }
+    .detail-docs {
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      border-top: 1px dashed var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .detail-docs strong { color: var(--teal); }
+
+    /* ── EMPTY / LOADING ── */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--muted);
+    }
+    .empty-state svg { opacity: 0.35; margin-bottom: 1rem; }
+    .empty-state p { font-size: 0.95rem; }
+
+    .loader {
+      display: flex;
+      justify-content: center;
+      padding: 3rem;
+    }
+    .loader span {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--teal);
+      animation: bounce 0.8s infinite alternate;
+      margin: 0 4px;
+    }
+    .loader span:nth-child(2) { animation-delay: 0.2s; }
+    .loader span:nth-child(3) { animation-delay: 0.4s; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounce {
+      from { transform: translateY(0); opacity: 0.5; }
+      to   { transform: translateY(-10px); opacity: 1; }
+    }
+
+    @media (max-width: 600px) {
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .project-cost { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="header-badge">Public Transparency</div>
+</header>
+
+<div class="hero">
+  <h1>Barangay SK <em>Project List</em></h1>
+  <p>View all implemented programs and their expenses — open to everyone.</p>
+</div>
+
+<div class="controls">
+  <div class="controls-card">
+    <div class="control-group">
+      <label>Barangay</label>
+      <select id="barangaySelect">
+        <option value="">— Select a barangay —</option>
+        <option>Lahug</option>
+        <option>Apas</option>
+        <option>Banilad</option>
+        <option>Talamban</option>
+        <option>Guadalupe</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Committee</label>
+      <select id="committeeSelect">
+        <option value="">All committees</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Search</label>
+      <input type="text" id="searchInput" placeholder="Project name…"/>
+    </div>
+    <button class="btn-load" onclick="loadProjects()">Load Projects</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label">Total Projects</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statApproved">0</div>
+      <div class="stat-label">Published</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statCost">₱0</div>
+      <div class="stat-label">Total Expenditure</div>
+    </div>
+  </div>
+
+  <div class="section-title" id="listLabel" style="display:none">Projects</div>
+  <div id="projectList">
+    <div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+      </svg>
+      <p>Select a barangay and click <strong>Load Projects</strong> to get started.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+
+  // Load committees for dropdown when barangay changes
+  document.getElementById('barangaySelect').addEventListener('change', async function () {
+    const barangay = this.value;
+    const sel = document.getElementById('committeeSelect');
+    sel.innerHTML = '<option value="">All committees</option>';
+    if (!barangay) return;
+
+    try {
+      const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(barangay)}`);
+      const data = await res.json();
+      data.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    } catch (e) { /* API not available, committees stay empty */ }
+  });
+
+  async function loadProjects() {
+    const barangay = document.getElementById('barangaySelect').value;
+    const committee = document.getElementById('committeeSelect').value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+
+    if (!barangay) { alert('Please select a barangay first.'); return; }
+
+    const listEl = document.getElementById('projectList');
+    listEl.innerHTML = `<div class="loader"><span></span><span></span><span></span></div>`;
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('listLabel').style.display = 'none';
+
+    try {
+      // If a specific committee is selected, fetch that; else fetch all committees
+      let allProjects = [];
+
+      if (committee) {
+        const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(barangay)}&committeeName=${encodeURIComponent(committee)}`);
+        const data = await res.json();
+        allProjects = Array.isArray(data) ? data.map(p => ({ ...p, committeeName: committee })) : [];
+      } else {
+        // Fetch committees first, then all projects per committee
+        const cRes = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(barangay)}`);
+        const committees = await cRes.json();
+
+        for (const c of committees) {
+          const pRes = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(barangay)}&committeeName=${encodeURIComponent(c.name)}`);
+          const projects = await pRes.json();
+          if (Array.isArray(projects)) {
+            projects.forEach(p => allProjects.push({ ...p, committeeName: c.name }));
+          }
+        }
+      }
+
+      // Only show APPROVED to public
+      let visible = allProjects.filter(p => p.status === 'APPROVED');
+
+      // Apply search filter
+      if (search) {
+        visible = visible.filter(p =>
+          p.projectName.toLowerCase().includes(search) ||
+          p.purpose.toLowerCase().includes(search)
+        );
+      }
+
+      renderStats(visible);
+      renderProjects(visible);
+
+    } catch (e) {
+      listEl.innerHTML = `<div class="empty-state"><p>⚠️ Could not connect to the server. Make sure the Spring Boot app is running.</p></div>`;
+    }
+  }
+
+  function renderStats(projects) {
+    const total = projects.length;
+    const approved = projects.filter(p => p.status === 'APPROVED').length;
+    const cost = projects.reduce((sum, p) => sum + (p.totalCost || 0), 0);
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statApproved').textContent = approved;
+    document.getElementById('statCost').textContent = '₱' + cost.toLocaleString('en-PH');
+    document.getElementById('statsBar').style.display = 'grid';
+    document.getElementById('listLabel').style.display = 'block';
+  }
+
+  function renderProjects(projects) {
+    const listEl = document.getElementById('projectList');
+    if (projects.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+          </svg>
+          <p>No published projects found for this selection.</p>
+        </div>`;
+      return;
+    }
+
+    listEl.innerHTML = projects.map((p, i) => `
+      <div class="project-card" style="animation-delay:${i * 0.05}s" onclick="toggleCard(this)">
+        <div class="project-header">
+          <div class="project-title-block">
+            <div class="project-name">${escHtml(p.projectName)}</div>
+            <div class="project-meta">
+              <span>📁 ${escHtml(p.committeeName || '')}</span>
+              <span>👤 ${escHtml(p.councilorName || '')}</span>
+              <span>📅 ${formatDate(p.createdAt)}</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0">
+            <div class="project-cost">₱${(p.totalCost || 0).toLocaleString('en-PH')}</div>
+            <div class="status-pill status-${p.status}">${p.status}</div>
+          </div>
+        </div>
+        <div class="project-details">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Purpose</label>
+              <p>${escHtml(p.purpose || '—')}</p>
+            </div>
+            <div class="detail-item">
+              <label>Total Cost</label>
+              <p>₱${(p.totalCost || 0).toLocaleString('en-PH')}</p>
+            </div>
+            <div class="detail-item">
+              <label>Committee</label>
+              <p>${escHtml(p.committeeName || '—')}</p>
+            </div>
+            <div class="detail-item">
+              <label>Submitted by</label>
+              <p>${escHtml(p.councilorName || '—')}</p>
+            </div>
+          </div>
+          <div class="detail-docs">
+            <strong>📎 Documents & Receipts</strong> — attached files will appear here once uploaded.
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function toggleCard(el) {
+    el.classList.toggle('open');
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function formatDate(str) {
+    if (!str) return '—';
+    try { return new Date(str).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }); }
+    catch { return str; }
+  }
+
+  // Live search filter without re-fetching
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const cards = document.querySelectorAll('.project-card');
+    const q = this.value.toLowerCase();
+    cards.forEach(card => {
+      const name = card.querySelector('.project-name')?.textContent.toLowerCase() || '';
+      card.style.display = (!q || name.includes(q)) ? '' : 'none';
+    });
+  });
+</script>
+</body>
+</html>
