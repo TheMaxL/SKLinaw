@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Budget Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="Budget.css"/>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="nav-section">Main</div>
+  <a class="nav-item" href="../Dashboard/dashboard.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item" href="../Project/Projects.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+    Projects
+  </a>
+  <a class="nav-item" href="../Committee/Committee.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+    Committees
+  </a>
+  <div class="nav-section">Finance</div>
+  <a class="nav-item active" href="Budget.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    Budget
+  </a>
+  <a class="nav-item" href="../Expenses/Expenses.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Expenses
+  </a>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="avatarEl">?</div>
+      <div>
+        <div class="user-name" id="nameEl">Loading…</div>
+        <div class="user-role" id="roleEl">Councilor</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <div class="page-title">Budget Management</div>
+    <div class="page-sub">Set the total SK budget and allocate funds per committee.</div>
+  </div>
+
+  <div class="role-guard" id="roleGuard" style="display:none">
+    ⚠️ You are viewing this page in read-only mode. Only the assigned Treasurer can edit the budget.
+  </div>
+
+  <div class="alert" id="alertMsg"></div>
+
+  <div class="content-grid">
+
+    <!-- FORM PANEL -->
+    <div class="panel">
+      <div class="panel-title">Set SK Budget</div>
+
+      <!-- Total Budget -->
+      <div class="form-group">
+        <label>Total SK Budget for <span id="barangayLabel">—</span></label>
+        <div class="input-prefix-wrap">
+          <span class="input-prefix">₱</span>
+          <input type="number" id="totalBudget" placeholder="0.00" min="0" step="0.01"
+                 oninput="onTotalChange()" />
+        </div>
+      </div>
+
+      <!-- Allocation per committee -->
+      <div class="form-group" style="margin-top:1.5rem">
+        <label>Allocate Per Committee</label>
+        <div class="alloc-header">
+          <span>Committee</span>
+          <span>Amount</span>
+          <span>%</span>
+        </div>
+        <div id="allocRows"></div>
+
+        <!-- Remaining banner -->
+        <div class="remaining-banner" id="remainingBanner">
+          <div class="remaining-label">Unallocated</div>
+          <div class="remaining-val" id="remainingVal">₱0</div>
+        </div>
+
+        <!-- Add custom committee -->
+        <div class="add-committee-row">
+          <input class="add-committee-input" type="text" id="newCommName" placeholder="Add committee name…"/>
+          <button class="btn-add-comm" onclick="addCommitteeRow()">+ Add</button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-reset" onclick="resetForm()">Reset</button>
+        <button class="btn-save" id="saveBtn" onclick="saveBudget()">Save Budget</button>
+      </div>
+    </div>
+
+    <!-- PREVIEW PANEL -->
+    <div>
+      <div class="panel" style="margin-bottom:1.25rem">
+        <div class="panel-title">Live Preview</div>
+        <div class="pie-preview-wrap">
+          <canvas id="piePreview"></canvas>
+          <div class="pie-preview-center">
+            <div class="pie-preview-val" id="previewTotal">₱0</div>
+            <div class="pie-preview-lbl">Total</div>
+          </div>
+        </div>
+        <div class="preview-bars" id="previewBars"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Current Budget</div>
+        <div id="currentBudgetPanel" style="color:var(--muted);font-size:0.84rem">Loading current budget…</div>
+      </div>
+    </div>
+
+  </div><!-- end content-grid -->
+
+  <!-- EXPENSES LIST -->
+  <div class="expenses-section" id="expensesSection" style="display:none;margin-top:1.5rem">
+    <div class="expenses-header">
+      <div class="exp-section-title">Expenses by Committee</div>
+      <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap">
+        <input class="exp-search" type="text" id="expSearch" placeholder="Search…" oninput="filterExpenses()"/>
+        <div class="expenses-filters" id="committeeFilters"></div>
+      </div>
+    </div>
+    <div class="expense-table-wrap">
+      <table class="expense-table">
+        <thead>
+          <tr>
+            <th>Description</th><th>Committee</th><th>Submitted By</th>
+            <th>Type</th><th>Date</th><th style="text-align:right">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="expenseTableBody">
+          <tr><td colspan="6" class="exp-empty">Loading expenses…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <a class="view-all-link" href="../Budget/expenses.html">View full expenses page →</a>
+  </div>
+
+</div>
+
+<script src="Budget.js"></script>
+<script src="shared.js"></script>
+</body>
+</html>

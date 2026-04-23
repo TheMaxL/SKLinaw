@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Committee Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="committee-detail.css"/>
+</head>
+<body class="layout-sidebar">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="nav-section">Main</div>
+  <a class="nav-item active" href="Committee.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+    Committees
+  </a>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="avatarEl">?</div>
+      <div>
+        <div class="user-name" id="nameEl">Loading…</div>
+        <div class="user-role" id="roleEl">Councilor</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="committee-header">
+    <button class="back-btn" onclick="window.location.href='Committee.html'">← Back to All Committees</button>
+    <div class="committee-info">
+      <h1 id="committeeName">Loading...</h1>
+      <p id="committeeHead">Head: <span>—</span></p>
+    </div>
+  </div>
+
+  <!-- Committee Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Budget</div>
+      <div class="stat-value" id="totalBudget">₱0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Spent</div>
+      <div class="stat-value" id="spentBudget">₱0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Remaining</div>
+      <div class="stat-value" id="remainingBudget">₱0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Projects</div>
+      <div class="stat-value" id="projectCount">0</div>
+    </div>
+  </div>
+
+  <!-- Members Section -->
+  <div class="section-card">
+    <div class="section-header">
+      <h2>Committee Members</h2>
+      <button class="btn-add" onclick="openAddMemberModal()">+ Add Member</button>
+    </div>
+    <div id="membersList" class="members-grid">
+      <p class="empty-state">No members yet.</p>
+    </div>
+  </div>
+
+  <!-- Projects Section -->
+  <div class="section-card">
+    <div class="section-header">
+      <h2>Projects</h2>
+      <button class="btn-add" onclick="openAddProjectModal()">+ Add Project</button>
+    </div>
+    <div id="projectsList">
+      <p class="empty-state">No projects yet.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <h2>Add Committee Member</h2>
+    <div class="form-group">
+      <label>Councilor Name</label>
+      <input type="text" id="memberName" placeholder="Enter councilor name"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeMemberModal()">Cancel</button>
+      <button class="btn-submit" onclick="addMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <h2>Add New Project</h2>
+    <div class="form-group">
+      <label>Project Name</label>
+      <input type="text" id="projectName" placeholder="e.g., Basketball Court"/>
+    </div>
+    <div class="form-group">
+      <label>Purpose</label>
+      <textarea id="projectPurpose" rows="3" placeholder="Project purpose and details"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Total Cost (₱)</label>
+      <input type="number" id="projectCost" placeholder="0.00" step="0.01"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeProjectModal()">Cancel</button>
+      <button class="btn-submit" onclick="submitProject()">Submit Project</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="global-toast"></div>
+
+<script src="shared.js"></script>
+<script src="committee-detail.js"></script>
+</body>
+</html>
