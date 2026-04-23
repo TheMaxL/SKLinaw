@@ -4,6 +4,9 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SK Linaw – Public View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="shared.css"/>
   <link rel="stylesheet" href="public.css"/>
 </head>
@@ -24,7 +27,7 @@
     <div class="pub-grid" id="committee-grid"><!-- rendered by JS --></div>
 
     <div class="pub-footer">
-      <button class="pub-back-btn" onclick="location.href='index.html'">Back</button>
+      <button class="pub-back-btn" onclick="location.href='home.html'">← Back</button>
     </div>
   </div>
 
@@ -47,18 +50,61 @@
     </div>
 
     <div class="pub-content-box">
-      <div id="panel-projects" class="pub-tab-panel active"><div class="loader"><span></span><span></span><span></span></div></div>
-      <div id="panel-docs"     class="pub-tab-panel"><p class="pub-empty-msg">No documentation uploaded yet.</p></div>
+      <div id="panel-projects" class="pub-tab-panel active"></div>
+      <div id="panel-docs"     class="pub-tab-panel"></div>
       <div id="panel-files"    class="pub-tab-panel"><p class="pub-empty-msg">No files uploaded yet.</p></div>
     </div>
 
     <div class="pub-footer">
-      <button class="pub-back-btn" onclick="showCommittees()">Back</button>
+      <button class="pub-back-btn" onclick="showCommittees()">← Back</button>
     </div>
   </div>
 
-<div class="toast" id="global-toast"></div>
-<script src="shared.js"></script>
-<script src="public.js"></script>
+  <!-- ── Screen 3: Treasury ── -->
+  <div id="screen-treasury" class="pub-screen">
+    <div class="pub-topbar">
+      <div class="pub-logo"><span class="pub-sk">SK</span><span class="pub-linaw">Linaw</span></div>
+      <div class="pub-topbar-right">
+        <div class="pub-barangay-label">Barangay Lahug</div>
+        <div class="pub-view-label">Public View</div>
+      </div>
+    </div>
+
+    <div class="pub-committee-title">TREASURY</div>
+
+    <div class="treasury-scroll">
+      <div class="treasury-section-label">Budget Allocation per Committee (₱)</div>
+      <div class="chart-wrap" id="budget-chart"></div>
+      <div class="treasury-section-label" style="margin-top:1.5rem">Budget Breakdown Table</div>
+      <div class="budget-table-wrap">
+        <table class="budget-table" id="budget-table">
+          <thead>
+            <tr><th>Committee</th><th>Budget (₱)</th><th>%</th></tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr id="budget-total-row"><td>TOTAL</td><td></td><td>100%</td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="pub-footer">
+      <button class="pub-back-btn" onclick="showCommittees()">← Back</button>
+    </div>
+  </div>
+
+  <!-- ── Lightbox ── -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <div class="lightbox-inner" onclick="event.stopPropagation()">
+      <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+      <img id="lightbox-img" src="" alt=""/>
+      <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="global-toast"></div>
+  <script src="shared.js"></script>
+  <script src="public.js"></script>
 </body>
 </html>
