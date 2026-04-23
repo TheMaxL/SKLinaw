@@ -54,7 +54,7 @@ async function loadCommittees() {
     if (filter) {
       filter.innerHTML = '<option value="">All committees</option>';
       committees.forEach(c => {
-        filter.innerHTML += `<option value="${esc(c.name)}">${esc(c.name)}</option>`;
+        filter.innerHTML += `<option value="${esc(c.committeeName)}">${esc(c.committeeName)}</option>`;
       });
     }
 
@@ -84,7 +84,7 @@ async function loadCommitteesTable() {
 
   tbody.innerHTML = committees.map((c, i) => `
     <tr style="animation-delay:${i * 0.05}s">
-      <td class="project-name-cell">${esc(c.name)}</td>
+      <td class="project-name-cell">${esc(c.committeeName)}</td>
       <td style="color:var(--muted)">—</td>
       <td>
         ${c.headName 
@@ -94,7 +94,7 @@ async function loadCommitteesTable() {
       <td style="color:var(--muted)">—</td>
       <td>
         <button class="action-btn"
-          data-name="${esc(c.name)}"
+          data-name="${esc(c.committeeName)}"
           onclick="assignHead(this.dataset.name)">
           Assign Head
         </button>
@@ -205,12 +205,12 @@ async function submitCommittee() {
   const headInput = document.getElementById('formPurpose');
 
   const body = {
-    name: nameInput?.value.trim(),
+    committeeName: nameInput?.value.trim(),
     barangay: session.barangay,
     headName: headInput?.value.trim() || ""
   };
 
-  if (!body.name) {
+  if (!body.committeeName) {
     Toast.show('Committee name is required.', true);
     return;
   }
@@ -257,7 +257,7 @@ async function assignHead(committeeName) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: committeeName,
+        committeeName: committeeName,
         barangay: session.barangay,
         headName: headName.trim()
       })
@@ -269,8 +269,8 @@ async function assignHead(committeeName) {
       Toast.show('Head assigned successfully!');
       await loadCommittees();
       await loadCommitteesTable();
-    } else if (text === 'COUNCILOR_NOT_FOUND') {
-      Toast.show('Councilor not found.', true);
+    } else if (text === 'COUNCILOR_NOT_IN_BARANGAY') {
+      Toast.show('Councilor not found in this barangay.', true);
     } else if (text === 'ALREADY_HEADS_A_COMMITTEE') {
       Toast.show('Councilor already heads another committee.', true);
     } else {

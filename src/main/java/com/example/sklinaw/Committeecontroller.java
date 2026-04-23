@@ -30,16 +30,16 @@ public class Committeecontroller {
      * Creates a new committee under a barangay.
      * Only the chairman of that barangay should call this.
      *
-     * Request body: { "name": "Sports", "barangay": "Lahug", "headName": "" }
+     * Request body: { "committeeName": "Sports", "barangay": "Lahug", "headName": "" }
      */
     @PostMapping("/createCommittee")
-    public String createCommittee(@RequestBody Committee committee) {
+    public String createCommittee(@RequestBody CommitteeMember committee) {
         try (Connection conn = DriverManager.getConnection(URL)) {
 
             // Check committee doesn't already exist
             String checkSql = "SELECT * FROM Committees WHERE name = ? AND barangay = ?";
             PreparedStatement checkStmt = conn.prepareStatement(checkSql);
-            checkStmt.setString(1, committee.getName());
+            checkStmt.setString(1, committee.getCommitteeName());
             checkStmt.setString(2, committee.getBarangay());
             ResultSet rs = checkStmt.executeQuery();
 
@@ -47,12 +47,36 @@ public class Committeecontroller {
                 return "COMMITTEE_ALREADY_EXISTS";
             }
 
+            // If headName is provided, validate they belong to the barangay
+            if (committee.getHeadName() != null && !committee.getHeadName().trim().isEmpty()) {
+                String verifyHeadSql = "SELECT * FROM Councilors WHERE Name = ? AND Barangay = ? AND approved = 1";
+                PreparedStatement verifyHeadStmt = conn.prepareStatement(verifyHeadSql);
+                verifyHeadStmt.setString(1, committee.getHeadName());
+                verifyHeadStmt.setString(2, committee.getBarangay());
+                ResultSet headRs = verifyHeadStmt.executeQuery();
+                
+                if (!headRs.next()) {
+                    return "COUNCILOR_NOT_IN_BARANGAY";
+                }
+                
+                // Check if councilor already heads another committee
+                String headCheckSql = "SELECT * FROM Committees WHERE head_name = ? AND barangay = ?";
+                PreparedStatement headCheckStmt = conn.prepareStatement(headCheckSql);
+                headCheckStmt.setString(1, committee.getHeadName());
+                headCheckStmt.setString(2, committee.getBarangay());
+                ResultSet existingHeadRs = headCheckStmt.executeQuery();
+                
+                if (existingHeadRs.next()) {
+                    return "ALREADY_HEADS_A_COMMITTEE";
+                }
+            }
+
             // Insert new committee
             String insertSql = "INSERT INTO Committees (name, barangay, head_name) VALUES (?, ?, ?)";
             PreparedStatement insertStmt = conn.prepareStatement(insertSql);
-            insertStmt.setString(1, committee.getName());
+            insertStmt.setString(1, committee.getCommitteeName());
             insertStmt.setString(2, committee.getBarangay());
-            insertStmt.setString(3, committee.getHeadName());
+            insertStmt.setString(3, committee.getHeadName() != null ? committee.getHeadName() : "");
             insertStmt.executeUpdate();
 
             return "SUCCESS";
@@ -67,13 +91,24 @@ public class Committeecontroller {
      * Assigns a registered councilor as head of a committee.
      * Validates that the councilor exists, is approved, and is in the same barangay.
      *
-     * Request body: { "name": "Sports", "barangay": "Lahug", "headName": "Juan Dela Cruz" }
+     * Request body: { "committeeName": "Sports", "barangay": "Lahug", "headName": "Juan Dela Cruz" }
      */
     @PostMapping("/assignCommitteeHead")
-    public String assignCommitteeHead(@RequestBody Committee committee) {
+    public String assignCommitteeHead(@RequestBody CommitteeMember committee) {
         try (Connection conn = DriverManager.getConnection(URL)) {
 
-            // 1. Check councilor exists and is approved in the same barangay
+            // 1. Check if committee exists in the barangay
+            String committeeCheckSql = "SELECT * FROM Committees WHERE name = ? AND barangay = ?";
+            PreparedStatement committeeCheckStmt = conn.prepareStatement(committeeCheckSql);
+            committeeCheckStmt.setString(1, committee.getCommitteeName());
+            committeeCheckStmt.setString(2, committee.getBarangay());
+            ResultSet committeeRs = committeeCheckStmt.executeQuery();
+
+            if (!committeeRs.next()) {
+                return "COMMITTEE_NOT_FOUND";
+            }
+
+            // 2. Check councilor exists, is approved, and is in the SAME barangay
             String verifySql = "SELECT * FROM Councilors WHERE Name = ? AND Barangay = ? AND approved = 1";
             PreparedStatement verifyStmt = conn.prepareStatement(verifySql);
             verifyStmt.setString(1, committee.getHeadName());
@@ -81,25 +116,26 @@ public class Committeecontroller {
             ResultSet rs = verifyStmt.executeQuery();
 
             if (!rs.next()) {
-                return "COUNCILOR_NOT_FOUND";
+                return "COUNCILOR_NOT_IN_BARANGAY";
             }
 
-            // 2. Check councilor is not already heading another committee
-            String headCheckSql = "SELECT * FROM Committees WHERE head_name = ? AND barangay = ?";
+            // 3. Check councilor is not already heading another committee in the same barangay
+            String headCheckSql = "SELECT * FROM Committees WHERE head_name = ? AND barangay = ? AND name != ?";
             PreparedStatement headCheckStmt = conn.prepareStatement(headCheckSql);
             headCheckStmt.setString(1, committee.getHeadName());
             headCheckStmt.setString(2, committee.getBarangay());
+            headCheckStmt.setString(3, committee.getCommitteeName());
             ResultSet headRs = headCheckStmt.executeQuery();
 
             if (headRs.next()) {
                 return "ALREADY_HEADS_A_COMMITTEE";
             }
 
-            // 3. Assign as head
+            // 4. Assign as head
             String updateSql = "UPDATE Committees SET head_name = ? WHERE name = ? AND barangay = ?";
             PreparedStatement updateStmt = conn.prepareStatement(updateSql);
             updateStmt.setString(1, committee.getHeadName());
-            updateStmt.setString(2, committee.getName());
+            updateStmt.setString(2, committee.getCommitteeName());
             updateStmt.setString(3, committee.getBarangay());
             int rows = updateStmt.executeUpdate();
 
@@ -108,6 +144,159 @@ public class Committeecontroller {
             }
 
             return "SUCCESS";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    /**
+     * Adds a councilor as a member of a committee.
+     * Validates that the councilor exists, is approved, and is in the same barangay.
+     *
+     * Request body: { "committeeName": "Sports", "barangay": "Lahug", "councilorName": "Juan Dela Cruz" }
+     */
+    @PostMapping("/addCommitteeMember")
+    public String addCommitteeMember(@RequestBody CommitteeMember member) {
+        try (Connection conn = DriverManager.getConnection(URL)) {
+
+            // 1. Check if committee exists in the barangay
+            String committeeCheckSql = "SELECT * FROM Committees WHERE name = ? AND barangay = ?";
+            PreparedStatement committeeCheckStmt = conn.prepareStatement(committeeCheckSql);
+            committeeCheckStmt.setString(1, member.getCommitteeName());
+            committeeCheckStmt.setString(2, member.getBarangay());
+            ResultSet committeeRs = committeeCheckStmt.executeQuery();
+
+            if (!committeeRs.next()) {
+                return "COMMITTEE_NOT_FOUND";
+            }
+
+            // 2. Check councilor exists, is approved, and is in the SAME barangay
+            String verifySql = "SELECT * FROM Councilors WHERE Name = ? AND Barangay = ? AND approved = 1";
+            PreparedStatement verifyStmt = conn.prepareStatement(verifySql);
+            verifyStmt.setString(1, member.getCouncilorName());
+            verifyStmt.setString(2, member.getBarangay());
+            ResultSet rs = verifyStmt.executeQuery();
+
+            if (!rs.next()) {
+                return "COUNCILOR_NOT_IN_BARANGAY";
+            }
+
+            // 3. Check if councilor is already a member of this committee
+            String memberCheckSql = "SELECT * FROM CommitteeMembers WHERE committee_name = ? AND barangay = ? AND councilor_name = ?";
+            PreparedStatement memberCheckStmt = conn.prepareStatement(memberCheckSql);
+            memberCheckStmt.setString(1, member.getCommitteeName());
+            memberCheckStmt.setString(2, member.getBarangay());
+            memberCheckStmt.setString(3, member.getCouncilorName());
+            ResultSet memberRs = memberCheckStmt.executeQuery();
+
+            if (memberRs.next()) {
+                return "ALREADY_A_MEMBER";
+            }
+
+            // 4. Add councilor as committee member
+            String insertSql = "INSERT INTO CommitteeMembers (committee_name, barangay, councilor_name, joined_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+            PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+            insertStmt.setString(1, member.getCommitteeName());
+            insertStmt.setString(2, member.getBarangay());
+            insertStmt.setString(3, member.getCouncilorName());
+            insertStmt.executeUpdate();
+
+            return "SUCCESS";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    /**
+     * Removes a councilor from a committee.
+     *
+     * Request body: { "committeeName": "Sports", "barangay": "Lahug", "councilorName": "Juan Dela Cruz" }
+     */
+    @PostMapping("/removeCommitteeMember")
+    public String removeCommitteeMember(@RequestBody CommitteeMember member) {
+        try (Connection conn = DriverManager.getConnection(URL)) {
+
+            // Check if the councilor is the head - heads cannot be removed as members
+            String headCheckSql = "SELECT head_name FROM Committees WHERE name = ? AND barangay = ?";
+            PreparedStatement headCheckStmt = conn.prepareStatement(headCheckSql);
+            headCheckStmt.setString(1, member.getCommitteeName());
+            headCheckStmt.setString(2, member.getBarangay());
+            ResultSet headRs = headCheckStmt.executeQuery();
+            
+            if (headRs.next()) {
+                String headName = headRs.getString("head_name");
+                if (member.getCouncilorName().equals(headName)) {
+                    return "CANNOT_REMOVE_COMMITTEE_HEAD";
+                }
+            }
+
+            // Remove member
+            String deleteSql = "DELETE FROM CommitteeMembers WHERE committee_name = ? AND barangay = ? AND councilor_name = ?";
+            PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
+            deleteStmt.setString(1, member.getCommitteeName());
+            deleteStmt.setString(2, member.getBarangay());
+            deleteStmt.setString(3, member.getCouncilorName());
+            int rows = deleteStmt.executeUpdate();
+
+            if (rows == 0) {
+                return "MEMBER_NOT_FOUND";
+            }
+
+            return "SUCCESS";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    /**
+     * Gets all members of a committee.
+     *
+     * Example: GET /api/getCommitteeMembers?barangay=Lahug&committeeName=Sports
+     */
+    @GetMapping("/getCommitteeMembers")
+    public String getCommitteeMembers(@RequestParam String barangay, @RequestParam String committeeName) {
+        try (Connection conn = DriverManager.getConnection(URL)) {
+
+            // Get committee head first
+            String headSql = "SELECT head_name FROM Committees WHERE name = ? AND barangay = ?";
+            PreparedStatement headStmt = conn.prepareStatement(headSql);
+            headStmt.setString(1, committeeName);
+            headStmt.setString(2, barangay);
+            ResultSet headRs = headStmt.executeQuery();
+            
+            String headName = "";
+            if (headRs.next() && headRs.getString("head_name") != null) {
+                headName = headRs.getString("head_name");
+            }
+
+            // Get all members
+            String sql = "SELECT councilor_name, joined_at FROM CommitteeMembers WHERE committee_name = ? AND barangay = ? ORDER BY joined_at";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, committeeName);
+            stmt.setString(2, barangay);
+            ResultSet rs = stmt.executeQuery();
+
+            StringBuilder result = new StringBuilder("{\"head\":\"").append(headName).append("\",\"members\":[");
+            
+            while (rs.next()) {
+                result.append("{")
+                      .append("\"name\":\"").append(rs.getString("councilor_name")).append("\",")
+                      .append("\"joinedAt\":\"").append(rs.getString("joined_at")).append("\"")
+                      .append("},");
+            }
+            
+            if (result.charAt(result.length() - 1) == ',') {
+                result.setLength(result.length() - 1);
+            }
+            
+            result.append("]}");
+            return result.toString();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -132,7 +321,7 @@ public class Committeecontroller {
 
             StringBuilder result = new StringBuilder("[");
             while (rs.next()) {
-                result.append("{\"name\":\"").append(rs.getString("name")).append("\",");
+                result.append("{\"committeeName\":\"").append(rs.getString("name")).append("\",");
                 result.append("\"headName\":\"").append(rs.getString("head_name") != null ? rs.getString("head_name") : "").append("\"},");
             }
             // Remove trailing comma and close array
@@ -170,7 +359,7 @@ public class Committeecontroller {
     public String addProject(@RequestBody Projectcontroller project) {
         try (Connection conn = DriverManager.getConnection(URL)) {
 
-            // 1. Check councilor is registered and approved
+            // 1. Check councilor is registered, approved, and in the SAME barangay
             String verifySql = "SELECT * FROM Councilors WHERE Name = ? AND Barangay = ? AND approved = 1";
             PreparedStatement verifyStmt = conn.prepareStatement(verifySql);
             verifyStmt.setString(1, project.getCouncilorName());
@@ -178,7 +367,7 @@ public class Committeecontroller {
             ResultSet rs = verifyStmt.executeQuery();
 
             if (!rs.next()) {
-                return "COUNCILOR_NOT_FOUND";
+                return "COUNCILOR_NOT_IN_BARANGAY";
             }
 
             // 2. Check that the committee exists in the same barangay

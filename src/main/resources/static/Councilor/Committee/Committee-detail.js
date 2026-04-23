@@ -12,9 +12,13 @@ const session = {
 };
 
 // Update sidebar
-document.getElementById('dash-user-name').textContent = session.name;
-document.getElementById('dash-barangay').textContent = session.barangay;
-document.getElementById('dash-avatar').textContent = session.name.charAt(0).toUpperCase();
+const userNameEl = document.getElementById('dash-user-name');
+const barangayEl = document.getElementById('dash-barangay');
+const avatarEl = document.getElementById('dash-avatar');
+
+if (userNameEl) userNameEl.textContent = session.name;
+if (barangayEl) barangayEl.textContent = session.barangay;
+if (avatarEl) avatarEl.textContent = session.name.charAt(0).toUpperCase();
 
 let committeeData = null;
 
@@ -28,8 +32,16 @@ async function init() {
 async function loadCommitteeData() {
   try {
     const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
-    const committees = await res.json();
-    committeeData = committees.find(c => c.name === committeeName);
+    const text = await res.text();
+    
+    // Handle error response
+    if (text === 'ERROR') {
+      Toast.show('Could not load committee data', true);
+      return;
+    }
+    
+    const committees = JSON.parse(text);
+    committeeData = committees.find(c => c.committeeName === committeeName);
     
     if (!committeeData) {
       Toast.show('Committee not found', true);
@@ -37,8 +49,11 @@ async function loadCommitteeData() {
       return;
     }
     
-    document.getElementById('committeeName').textContent = committeeData.name;
-    document.getElementById('committeeHead').innerHTML = `Head: <span>${committeeData.headName || 'Not assigned'}</span>`;
+    const committeeNameEl = document.getElementById('committeeName');
+    const committeeHeadEl = document.getElementById('committeeHead');
+    
+    if (committeeNameEl) committeeNameEl.textContent = committeeData.committeeName;
+    if (committeeHeadEl) committeeHeadEl.innerHTML = `Head: <span>${committeeData.headName || 'Not assigned'}</span>`;
     
   } catch (e) {
     console.error('Error loading committee:', e);
@@ -49,11 +64,36 @@ async function loadCommitteeData() {
 async function loadMembers() {
   try {
     const res = await fetch(`${API}/getCommitteeMembers?committeeName=${encodeURIComponent(committeeName)}&barangay=${encodeURIComponent(session.barangay)}`);
-    const members = await res.json();
+    const text = await res.text();
     
+    console.log('Members response:', text); // Debug
+    
+    // Handle error response
+    if (text === 'ERROR') {
+      Toast.show('Could not load members', true);
+      return;
+    }
+    
+    // Parse the response (it's an object with head and members array)
+    const data = JSON.parse(text);
     const membersList = document.getElementById('membersList');
     
-    if (!members || members.length === 0) {
+    if (!membersList) return;
+    
+    // Create members array including the head as first member
+    const members = [];
+    if (data.head && data.head !== '') {
+      members.push({ name: data.head, isHead: true, id: 'head' });
+    }
+    
+    // Add regular members (data.members is an array)
+    if (data.members && Array.isArray(data.members)) {
+      data.members.forEach((m, index) => {
+        members.push({ name: m.name, isHead: false, id: index });
+      });
+    }
+    
+    if (members.length === 0) {
       membersList.innerHTML = '<p class="empty-state">No members yet. Click "+ Add Member" to add councilors.</p>';
       return;
     }
@@ -61,28 +101,40 @@ async function loadMembers() {
     membersList.innerHTML = members.map(m => `
       <div class="member-card">
         <div class="member-info">
-          <div class="member-avatar">${m.name.charAt(0).toUpperCase()}</div>
+          <div class="member-avatar">${escapeHtml(m.name.charAt(0).toUpperCase())}</div>
           <div>
-            <div class="member-name">${esc(m.name)}</div>
+            <div class="member-name">${escapeHtml(m.name)}</div>
             <div class="member-role">${m.isHead ? 'Committee Head' : 'Member'}</div>
           </div>
         </div>
-        ${!m.isHead ? `<button class="action-btn" onclick="removeMember(${m.id})">Remove</button>` : ''}
+        ${!m.isHead ? `<button class="action-btn" onclick="removeMember('${escapeHtml(m.name)}')">Remove</button>` : ''}
       </div>
     `).join('');
     
   } catch (e) {
     console.error('Error loading members:', e);
+    Toast.show('Could not load members', true);
   }
 }
 
 async function loadProjects() {
   try {
     const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`);
-    const projects = await res.json();
+    const text = await res.text();
     
+    // Handle error response
+    if (text === 'ERROR') {
+      Toast.show('Could not load projects', true);
+      return;
+    }
+    
+    const projects = JSON.parse(text);
     const projectsList = document.getElementById('projectsList');
-    document.getElementById('projectCount').textContent = projects.length || 0;
+    const projectCountEl = document.getElementById('projectCount');
+    
+    if (projectCountEl) projectCountEl.textContent = projects.length || 0;
+    
+    if (!projectsList) return;
     
     if (!projects || projects.length === 0) {
       projectsList.innerHTML = '<p class="empty-state">No projects yet. Click "+ Add Project" to create one.</p>';
@@ -105,11 +157,11 @@ async function loadProjects() {
           <tbody>
             ${projects.map(p => `
               <tr>
-                <td><strong>${esc(p.projectName)}</strong></td>
-                <td class="purpose-cell">${esc(p.purpose || '—')}</td>
+                <td><strong>${escapeHtml(p.projectName)}</strong></td>
+                <td class="purpose-cell">${escapeHtml(p.purpose || '—')}</td>
                 <td>₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
                 <td><span class="status-pill status-${p.status}">${p.status}</span></td>
-                <td>${esc(p.councilorName)}</td>
+                <td>${escapeHtml(p.councilorName)}</td>
                 <td><button class="action-btn" onclick="viewProject(${p.id})">View</button></td>
               </tr>
             `).join('')}
@@ -120,30 +172,42 @@ async function loadProjects() {
     
   } catch (e) {
     console.error('Error loading projects:', e);
+    Toast.show('Could not load projects', true);
   }
 }
 
 async function loadBudget() {
   try {
     const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
-    const data = await res.json();
+    const text = await res.text();
     
+    if (text === 'ERROR') {
+      Toast.show('Could not load budget', true);
+      return;
+    }
+    
+    const data = JSON.parse(text);
     const committeeBudget = data.committees?.find(c => c.committeeName === committeeName);
     const allocated = committeeBudget?.allocated || 0;
     const spent = committeeBudget?.spent || 0;
     const remaining = allocated - spent;
     
-    document.getElementById('totalBudget').textContent = `₱${allocated.toLocaleString('en-PH')}`;
-    document.getElementById('spentBudget').textContent = `₱${spent.toLocaleString('en-PH')}`;
-    document.getElementById('remainingBudget').textContent = `₱${remaining.toLocaleString('en-PH')}`;
+    const totalBudgetEl = document.getElementById('totalBudget');
+    const spentBudgetEl = document.getElementById('spentBudget');
+    const remainingBudgetEl = document.getElementById('remainingBudget');
+    
+    if (totalBudgetEl) totalBudgetEl.textContent = `₱${allocated.toLocaleString('en-PH')}`;
+    if (spentBudgetEl) spentBudgetEl.textContent = `₱${spent.toLocaleString('en-PH')}`;
+    if (remainingBudgetEl) remainingBudgetEl.textContent = `₱${remaining.toLocaleString('en-PH')}`;
     
   } catch (e) {
     console.error('Error loading budget:', e);
+    Toast.show('Could not load budget', true);
   }
 }
 
 async function addMember() {
-  const memberName = document.getElementById('memberName').value.trim();
+  const memberName = document.getElementById('memberName')?.value.trim();
   if (!memberName) {
     Toast.show('Please enter a councilor name', true);
     return;
@@ -166,6 +230,10 @@ async function addMember() {
       Toast.show('Member added successfully!');
       closeMemberModal();
       await loadMembers();
+    } else if (text === 'COUNCILOR_NOT_IN_BARANGAY') {
+      Toast.show('Councilor not found in this barangay', true);
+    } else if (text === 'ALREADY_A_MEMBER') {
+      Toast.show('Councilor is already a member', true);
     } else {
       Toast.show('Error: ' + text, true);
     }
@@ -177,12 +245,12 @@ async function addMember() {
 
 async function submitProject() {
   const projectData = {
-    projectName: document.getElementById('projectName').value.trim(),
-    purpose: document.getElementById('projectPurpose').value.trim(),
+    projectName: document.getElementById('projectName')?.value.trim(),
+    purpose: document.getElementById('projectPurpose')?.value.trim(),
     committeeName: committeeName,
     barangay: session.barangay,
     councilorName: session.name,
-    totalCost: parseFloat(document.getElementById('projectCost').value) || 0
+    totalCost: parseFloat(document.getElementById('projectCost')?.value) || 0
   };
   
   if (!projectData.projectName) {
@@ -206,9 +274,13 @@ async function submitProject() {
       await loadBudget();
       
       // Reset form
-      document.getElementById('projectName').value = '';
-      document.getElementById('projectPurpose').value = '';
-      document.getElementById('projectCost').value = '';
+      const projectNameInput = document.getElementById('projectName');
+      const projectPurposeInput = document.getElementById('projectPurpose');
+      const projectCostInput = document.getElementById('projectCost');
+      
+      if (projectNameInput) projectNameInput.value = '';
+      if (projectPurposeInput) projectPurposeInput.value = '';
+      if (projectCostInput) projectCostInput.value = '';
     } else {
       Toast.show('Error: ' + text, true);
     }
@@ -219,35 +291,43 @@ async function submitProject() {
 }
 
 function openAddMemberModal() {
-  document.getElementById('memberModal').classList.add('open');
+  const modal = document.getElementById('memberModal');
+  if (modal) modal.classList.add('open');
 }
 
 function closeMemberModal() {
-  document.getElementById('memberModal').classList.remove('open');
-  document.getElementById('memberName').value = '';
+  const modal = document.getElementById('memberModal');
+  if (modal) modal.classList.remove('open');
+  const memberNameInput = document.getElementById('memberName');
+  if (memberNameInput) memberNameInput.value = '';
 }
 
 function openAddProjectModal() {
-  document.getElementById('projectModal').classList.add('open');
+  const modal = document.getElementById('projectModal');
+  if (modal) modal.classList.add('open');
 }
 
 function closeProjectModal() {
-  document.getElementById('projectModal').classList.remove('open');
+  const modal = document.getElementById('projectModal');
+  if (modal) modal.classList.remove('open');
 }
 
 function viewProject(id) {
-  // Navigate to project detail page or open modal
   window.location.href = `/Project/project-detail.html?id=${id}`;
 }
 
-async function removeMember(memberId) {
-  if (!confirm('Remove this member from the committee?')) return;
+async function removeMember(memberName) {
+  if (!confirm(`Remove "${memberName}" from the committee?`)) return;
   
   try {
     const res = await fetch(`${API}/removeCommitteeMember`, {
-      method: 'DELETE',
+      method: 'POST',  // Change from DELETE to POST
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ memberId, committeeName })
+      body: JSON.stringify({ 
+        committeeName: committeeName,
+        barangay: session.barangay,
+        councilorName: memberName
+      })
     });
     
     const text = await res.text();
@@ -255,6 +335,8 @@ async function removeMember(memberId) {
     if (text === 'SUCCESS') {
       Toast.show('Member removed successfully!');
       await loadMembers();
+    } else if (text === 'CANNOT_REMOVE_COMMITTEE_HEAD') {
+      Toast.show('Cannot remove the committee head', true);
     } else {
       Toast.show('Error removing member', true);
     }
@@ -262,6 +344,17 @@ async function removeMember(memberId) {
     console.error('Error removing member:', e);
     Toast.show('Could not remove member', true);
   }
+}
+
+// Helper function to escape HTML
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // Make functions global
@@ -274,4 +367,5 @@ window.submitProject = submitProject;
 window.viewProject = viewProject;
 window.removeMember = removeMember;
 
+// Start initialization
 init();

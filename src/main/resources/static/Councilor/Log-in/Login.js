@@ -23,30 +23,30 @@ async function submitLogin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, password })
     });
-    const text = await res.text();
+    
+    const data = await res.json();  // Parse as JSON instead of text
+    
+    if (data.status === 'SUCCESS') {
+        // ✅ CORRECT: Use the barangay from the response
+        Session.set(data.name, data.barangay, name.toLowerCase() === 'admin');
+        location.href = Session.isAdmin ? '../Admin/admin.html' : '../Dashboard/dashboard.html';
 
-    if (text !== 'INVALID' && text !== 'ERROR') {
-        const barangay = text;
-
-        Session.set(name, barangay, name.toLowerCase() === 'admin');
-        location.href = Session.isAdmin ? '/Admin/admin.html' : '/Dashboard/dashboard.html';
-
-        } else if (text === 'INVALID') {
+    } else if (data.status === 'INVALID') {
         setAlert('login-alert', 'Invalid name or password. Please try again.');
         flashError('login-name');
         flashError('login-password');
 
-        } else {
+    } else {
         setAlert('login-alert', 'Server error. Please try again.');
-        }
+    }
   } catch {
     // Dev preview — no backend
     if (name.toLowerCase() === 'admin') {
       Session.set(name, 'Admin', true);
-      location.href = '/Admin/admin.html';
+      location.href = '/Councilor/Admin/admin.html';
     } else if (name) {
       Session.set(name, 'Lahug', false);
-      location.href = '/Dashboard/dashboard.html';
+      location.href = '/Councilor/Dashboard/dashboard.html';
     } else {
       setAlert('login-alert', '⚠️ Could not connect to server.');
     }
@@ -54,6 +54,29 @@ async function submitLogin() {
 
   btn.disabled  = false;
   btn.innerHTML = 'Log In';
+}
+
+async function handleLogin(name, password) {
+  const response = await fetch(`${API}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, password })
+  });
+  
+  const result = await response.text();
+  
+  if (result === "SUCCESS") {
+      // Store user info in session
+      Session.set(name, barangay, false);
+      
+      // Fetch additional user info if needed
+      await loadUserInfo();
+      
+      // Redirect to dashboard
+      window.location.href = 'dashboard.html';
+  } else {
+      Toast.show('Invalid credentials', true);
+  }
 }
 
 // Enter key support
