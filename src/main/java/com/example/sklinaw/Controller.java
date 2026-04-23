@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -80,34 +82,34 @@ public class Controller {
 
     // LOGIN
     @PostMapping("/login")
-    public String login(@RequestBody Account account) {
-
-        try (Connection conn = DriverManager.getConnection(URL)) {
-
-            String sql = "SELECT * FROM Councilors WHERE Name = ? AND approved = 1";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-
-            pstmt.setString(1, account.getName());
-
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-
-                String storedHash = rs.getString("Password");
-
-                // Compare entered password with stored hash
-                if (encoder.matches(account.getPassword(), storedHash)) {
-                    return "SUCCESS";
-                }
+public Map<String, String> login(@RequestBody Account account) {
+    Map<String, String> response = new HashMap<>();
+    
+    try (Connection conn = DriverManager.getConnection(URL)) {
+        String sql = "SELECT * FROM Councilors WHERE Name = ? AND approved = 1";
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setString(1, account.getName());
+        ResultSet rs = pstmt.executeQuery();
+        
+        if (rs.next()) {
+            String storedHash = rs.getString("Password");
+            if (encoder.matches(account.getPassword(), storedHash)) {
+                response.put("status", "SUCCESS");
+                response.put("barangay", rs.getString("Barangay"));  
+                response.put("name", rs.getString("Name"));
+                return response;
             }
-
-            return "INVALID";
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "ERROR";
         }
+        
+        response.put("status", "INVALID");
+        return response;
+        
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.put("status", "ERROR");
+        return response;
     }
+}
 
     // SUBMIT CREDENTIALS WITH PHOTO
     @PostMapping("/submitCredentials")
@@ -153,4 +155,39 @@ public class Controller {
             return "ERROR";
         }
     }
+
+    @PostMapping("/getUserInfo")
+    public Map<String, String> getUserInfo(@RequestBody Map<String, String> request) {
+        Map<String, String> response = new HashMap<>();
+        
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            String name = request.get("name");
+            String barangay = request.get("barangay");
+            
+            String sql = "SELECT Name, Barangay, approved FROM Councilors WHERE Name = ? AND Barangay = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, name);
+            pstmt.setString(2, barangay);
+            
+            ResultSet rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                response.put("name", rs.getString("Name"));
+                response.put("barangay", rs.getString("Barangay"));
+                response.put("role", "SK Councilor");
+                response.put("status", "approved");
+            } else {
+                response.put("name", name);
+                response.put("role", "Councilor");
+                response.put("status", "pending");
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("error", e.getMessage());
+        }
+        
+        return response;
+    }
+
 }
