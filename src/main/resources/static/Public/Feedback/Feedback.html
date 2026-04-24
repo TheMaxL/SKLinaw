@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Feedback</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="feedback.css"/>
+</head>
+<body>
+
+<header>
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="header-nav">
+    <a class="nav-link" href="../Homepage/homepage.html">Home</a>
+    <a class="nav-link" href="../Public-view/publicview.html">Projects</a>
+    <a class="nav-link" href="../Budget/budget-public.html">Budget</a>
+    <a class="btn-sk" href="../Log-in/login.html">SK Login</a>
+  </div>
+</header>
+
+<div class="hero">
+  <h1>Public <em>Feedback</em></h1>
+  <p>Share your thoughts on SK programs and leave reactions on specific projects.</p>
+</div>
+
+<div class="main">
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('general', this)">💬 General Feedback</button>
+    <button class="tab" onclick="switchTab('projects', this)">📋 Project Comments</button>
+  </div>
+
+  <div class="panel active" id="panel-general">
+
+    <div class="feedback-form-card">
+      <div class="form-title">Leave your feedback</div>
+      <div class="form-subtitle">Your message will be visible to everyone. No account needed.</div>
+
+      <div class="alert" id="generalAlert"></div>
+
+      <div class="form-group">
+        <label>Reaction</label>
+        <div class="reaction-row" id="generalReactions">
+          <button class="reaction-btn" onclick="pickReaction('general','like',this)">👍</button>
+          <button class="reaction-btn" onclick="pickReaction('general','dislike',this)">👎</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Your Message</label>
+        <textarea id="generalMessage" rows="3" maxlength="500"
+          oninput="updateCharCount('generalMessage','generalCount')"></textarea>
+        <div class="char-count"><span id="generalCount">0</span>/500</div>
+      </div>
+
+      <button class="btn-submit" id="generalSubmitBtn"
+        onclick="submitGeneralFeedback()">Post Feedback</button>
+    </div>
+
+    <div class="feed-header">
+      <div class="feed-title">Community Feedback</div>
+      <div class="feed-count" id="feedCount"></div>
+    </div>
+
+    <div id="generalFeed">
+      <div class="loader"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-projects">
+    <div class="project-search-wrap">
+      <input class="project-search" id="projectSearch"
+        placeholder="Search projects…" oninput="filterProjects()"/>
+    </div>
+    <div id="projectCommentsList">
+      <div class="loader"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- External JS -->
+<script src="feedback.js"></script>
+</body>
+</html>
