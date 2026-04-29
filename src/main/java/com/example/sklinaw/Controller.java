@@ -82,34 +82,46 @@ public class Controller {
 
     // LOGIN
     @PostMapping("/login")
-public Map<String, String> login(@RequestBody Account account) {
-    Map<String, String> response = new HashMap<>();
-    
-    try (Connection conn = DriverManager.getConnection(URL)) {
-        String sql = "SELECT * FROM Councilors WHERE Name = ? AND approved = 1";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, account.getName());
-        ResultSet rs = pstmt.executeQuery();
+    public Map<String, String> login(@RequestBody Account account) {
+        Map<String, String> response = new HashMap<>();
         
-        if (rs.next()) {
-            String storedHash = rs.getString("Password");
-            if (encoder.matches(account.getPassword(), storedHash)) {
-                response.put("status", "SUCCESS");
-                response.put("barangay", rs.getString("Barangay"));  
-                response.put("name", rs.getString("Name"));
-                return response;
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            String sql = "SELECT * FROM Councilors WHERE Name = ? AND approved = 1";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, account.getName());
+            ResultSet rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                String storedHash = rs.getString("Password");
+                if (encoder.matches(account.getPassword(), storedHash)) {
+                    response.put("status", "SUCCESS");
+                    response.put("barangay", rs.getString("Barangay"));  
+                    response.put("name", rs.getString("Name"));
+                    
+                    try {
+                        String privilege = rs.getString("privilege");
+                        response.put("privilege", privilege != null ? privilege : "");
+                        System.out.println("Privilege retrieved: " + privilege);
+                    } catch (Exception e) {
+                        System.err.println("Error getting privilege: " + e.getMessage());
+                        response.put("privilege", "");
+                    }
+                    
+                    return response;
+                }
             }
+            
+            response.put("status", "INVALID");
+            return response;
+            
+        } catch (Exception e) {
+            System.err.println("=== LOGIN ERROR ===");
+            e.printStackTrace();
+            response.put("status", "ERROR");
+            response.put("error", e.getMessage());
+            return response;
         }
-        
-        response.put("status", "INVALID");
-        return response;
-        
-    } catch (Exception e) {
-        e.printStackTrace();
-        response.put("status", "ERROR");
-        return response;
     }
-}
 
     // SUBMIT CREDENTIALS WITH PHOTO
     @PostMapping("/submitCredentials")

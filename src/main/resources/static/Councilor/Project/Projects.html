@@ -52,8 +52,11 @@
 
 <!-- MAIN -->
 <div class="main">
-  <div class="page-title">Committee Dashboard</div>
-  <div class="page-subtitle">Track projects, spending, and budget for your committee.</div>
+  <div class="page-title">
+    <span id="pageTitle">Projects Dashboard</span>
+    <span id="chairmanBadge" class="role-badge" style="display: none;">👑 Chairman Mode</span>
+  </div>
+  <div class="page-subtitle" id="pageSubtitle">Track projects, spending, and budget for your committee.</div>
 
   <!-- Budget Overview -->
   <div class="budget-section">
@@ -63,7 +66,15 @@
     </div>
   </div>
 
-  <!-- Project List -->
+  <!-- Chairman Approval Section (Hidden by default) -->
+  <div id="chairmanSection" style="display: none;">
+    <div class="section-heading">📋 Pending Projects for Approval</div>
+    <div class="pending-projects-container" id="pendingProjectsContainer">
+      <div class="loading">Loading pending projects...</div>
+    </div>
+  </div>
+
+  <!-- Project List Section -->
   <div>
     <div class="section-heading">Projects</div>
     <div class="filter-bar">
@@ -77,7 +88,7 @@
         <option value="REJECTED">Rejected</option>
       </select>
       <input type="text" id="searchInput" placeholder="Search projects…" oninput="applyFilters()"/>
-      <button class="btn-add" onclick="openModal()">+ Add Project</button>
+      <button class="btn-add" id="addProjectBtn" onclick="openModal()">+ Add Project</button>
     </div>
 
     <div class="table-wrap">
@@ -95,7 +106,7 @@
         <tbody id="projectTableBody">
           <tr class="loader-row"><td colspan="6"><div class="loader"><span></span><span></span><span></span></div></td></tr>
         </tbody>
-      </table>
+       </table>
     </div>
   </div>
 </div>
@@ -127,8 +138,40 @@
   </div>
 </div>
 
+<!-- APPROVE PROJECT MODAL -->
+<div class="modal-overlay" id="approveModal" style="display: none;">
+  <div class="modal">
+    <h2>Approve Project</h2>
+    <p>Are you sure you want to approve <strong id="approveProjectName"></strong>?</p>
+    <p>Cost: <strong id="approveProjectCost"></strong></p>
+    <p class="warning-text">⚠️ This will deduct the amount from the committee's budget.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeApproveModal()">Cancel</button>
+      <button class="btn-submit" id="confirmApproveBtn">Approve Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- REJECT PROJECT MODAL -->
+<div class="modal-overlay" id="rejectModal" style="display: none;">
+    <div class="modal">
+        <h2>Reject Project</h2>
+        <p>You are about to reject <strong id="rejectProjectName"></strong>.</p>
+        <div class="form-group">
+            <label>Reason for Rejection <span class="required">*</span></label>
+            <textarea id="rejectionReason" rows="4" placeholder="Please provide detailed reason for rejection..."></textarea>
+            <small class="form-hint">This reason will be visible to the councilor who submitted the project.</small>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeRejectModal()">Cancel</button>
+            <button class="btn-submit" id="confirmRejectBtn">Reject Project</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<script src="shared.js"></script>
 <script src="Projects.js"></script>
 </body>
 </html>

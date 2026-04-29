@@ -1,74 +1,183 @@
 // Committee Dashboard JavaScript
-const API = 'http://localhost:8080/api';
+const API = 'http://localhost:8085/api';
+const ADMIN_API = 'http://localhost:8085/admin';
 
 // ── SESSION (read from localStorage set at login) ──
 const session = {
   name: localStorage.getItem('sk_name') || 'Councilor',
-  barangay: localStorage.getItem('sk_barangay') || 'Lahug'
+  barangay: localStorage.getItem('sk_barangay') || 'Lahug',
+  privilege: localStorage.getItem('sk_privilege') || ''
 };
 
+// Check if user is Chairman
+const isChairman = session.privilege === 'CHAIRMAN';
+
 // Update sidebar user info
-document.getElementById('sidebarName').textContent = session.name;
-document.getElementById('sidebarBarangay').textContent = session.barangay;
-document.getElementById('avatarInitial').textContent = session.name.charAt(0).toUpperCase();
+const nameEl = document.getElementById('nameEl');
+const avatarEl = document.getElementById('avatarEl');
+const roleEl = document.getElementById('roleEl');
+
+if (nameEl) nameEl.textContent = session.name;
+if (avatarEl) avatarEl.textContent = session.name.charAt(0).toUpperCase();
+if (roleEl) roleEl.textContent = isChairman ? 'Chairman' : 'Councilor';
+
+// Show Chairman badge and section if applicable
+if (isChairman) {
+  const badge = document.getElementById('chairmanBadge');
+  const chairmanSection = document.getElementById('chairmanSection');
+  if (badge) badge.style.display = 'inline-block';
+  if (chairmanSection) chairmanSection.style.display = 'block';
+  
+  // Update page subtitle for Chairman
+  const subtitle = document.getElementById('pageSubtitle');
+  if (subtitle) subtitle.textContent = 'Review and approve project proposals from councilors.';
+}
 
 let allProjects = [];
 let committees = [];
+let pendingProjects = [];
 
 // ── INIT ──
 async function init() {
   await loadCommittees();
   await loadProjects();
   await loadBudget();
+  if (isChairman) {
+    await loadPendingProjects();
+  }
 }
 
 async function loadCommittees() {
   try {
     const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
-    committees = await res.json();
+    const text = await res.text();
+    if (text === 'ERROR') {
+      committees = [];
+    } else {
+      committees = JSON.parse(text);
+    }
 
     const filter = document.getElementById('committeeFilter');
     const formSel = document.getElementById('formCommittee');
-    filter.innerHTML = '<option value="">All committees</option>';
-    formSel.innerHTML = '';
-
-    committees.forEach(c => {
-      filter.innerHTML += `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`;
-      formSel.innerHTML += `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`;
-    });
+    if (filter) {
+      filter.innerHTML = '<option value="">All committees</option>';
+      committees.forEach(c => {
+        filter.innerHTML += `<option value="${escHtml(c.committeeName)}">${escHtml(c.committeeName)}</option>`;
+      });
+    }
+    if (formSel) {
+      formSel.innerHTML = '';
+      committees.forEach(c => {
+        formSel.innerHTML += `<option value="${escHtml(c.committeeName)}">${escHtml(c.committeeName)}</option>`;
+      });
+    }
   } catch (e) {
-    document.getElementById('committeeFilter').innerHTML = '<option>Could not load</option>';
+    console.error('Error loading committees:', e);
+    if (document.getElementById('committeeFilter')) {
+      document.getElementById('committeeFilter').innerHTML = '<option>Could not load</option>';
+    }
   }
 }
 
 async function loadProjects(committeeName) {
   const tbody = document.getElementById('projectTableBody');
-  tbody.innerHTML = `<tr class="loader-row"><td colspan="6"><div class="loader"><span></span><span></span><span></span></div></td></tr>`;
+  if (tbody) {
+    tbody.innerHTML = `<tr class="loader-row"><td colspan="6"><div class="loader"><span></span><span></span><span></span></div></td></tr>`;
+  }
 
   try {
     allProjects = [];
 
     if (committeeName) {
       const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`);
-      const data = await res.json();
-      if (Array.isArray(data)) allProjects = data.map(p => ({ ...p, committeeName }));
+      const text = await res.text();
+      if (text !== 'ERROR') {
+        const data = JSON.parse(text);
+        if (Array.isArray(data)) allProjects = data.map(p => ({ ...p, committeeName }));
+      }
     } else {
       for (const c of committees) {
-        const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(c.name)}`);
-        const data = await res.json();
-        if (Array.isArray(data)) data.forEach(p => allProjects.push({ ...p, committeeName: c.name }));
+        const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(c.committeeName)}`);
+        const text = await res.text();
+        if (text !== 'ERROR') {
+          const data = JSON.parse(text);
+          if (Array.isArray(data)) data.forEach(p => allProjects.push({ ...p, committeeName: c.committeeName }));
+        }
       }
     }
     applyFilters();
   } catch (e) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">⚠️ Could not connect to the server.</td></tr>`;
+    console.error('Error loading projects:', e);
+    if (tbody) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">⚠️ Could not connect to the server.</td></tr>`;
+    }
   }
+}
+
+// Load pending projects for Chairman approval
+async function loadPendingProjects() {
+  try {
+    const response = await fetch(`${API}/getPendingProjects?barangay=${encodeURIComponent(session.barangay)}`);
+    const text = await response.text();
+    
+    if (text === 'ERROR') {
+      showToast('Could not load pending projects', true);
+      return;
+    }
+    
+    pendingProjects = JSON.parse(text);
+    displayPendingProjects();
+    
+  } catch (error) {
+    console.error('Error loading pending projects:', error);
+    showToast('Could not load pending projects', true);
+  }
+}
+
+function displayPendingProjects() {
+    const container = document.getElementById('pendingProjectsContainer');
+    if (!container) return;
+    
+    if (pendingProjects.length === 0) {
+        container.innerHTML = '<div class="empty-state">No pending projects awaiting approval.</div>';
+        return;
+    }
+    
+    container.innerHTML = pendingProjects.map(project => `
+        <div class="project-card pending" data-project-id="${project.id}">
+            <div class="project-header">
+                <h4>${escHtml(project.projectName)}</h4>
+                <span class="status-badge status-pending">PENDING</span>
+            </div>
+            <div class="project-details">
+                <p><strong>Committee:</strong> ${escHtml(project.committeeName)}</p>
+                <p><strong>Submitted by:</strong> ${escHtml(project.councilorName)}</p>
+                <p><strong>Purpose:</strong> ${escHtml(project.purpose)}</p>
+                <p><strong>Budget Required:</strong> ₱${(project.totalCost || 0).toLocaleString('en-PH')}</p>
+                <p><strong>Submitted:</strong> ${formatDate(project.createdAt)}</p>
+                ${project.committeeHead ? `<p><strong>Committee Head:</strong> ${escHtml(project.committeeHead)}</p>` : ''}
+            </div>
+            <div class="project-actions">
+                <button class="btn-approve" onclick="openApproveModal(${project.id}, '${escHtml(project.projectName)}', ${project.totalCost})">
+                    ✅ Approve
+                </button>
+                <button class="btn-reject" onclick="openRejectModal(${project.id}, '${escHtml(project.projectName)}')">
+                    ❌ Reject
+                </button>
+            </div>
+        </div>
+    `).join('');
 }
 
 async function loadBudget(committeeName) {
   try {
     const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
-    const data = await res.json();
+    const text = await res.text();
+    if (text === 'ERROR') {
+      document.getElementById('budgetCard').innerHTML = `<div style="color:var(--muted);font-size:0.85rem">Budget data unavailable.</div>`;
+      return;
+    }
+    const data = JSON.parse(text);
     renderBudget(data, committeeName);
   } catch (e) {
     document.getElementById('budgetCard').innerHTML = `<div style="color:var(--muted);font-size:0.85rem">Budget data unavailable.</div>`;
@@ -114,8 +223,8 @@ function renderBudget(data, filterCommittee) {
 }
 
 function applyFilters() {
-  const status = document.getElementById('statusFilter').value;
-  const search = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter')?.value || '';
+  const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
   let filtered = allProjects;
   if (status) filtered = filtered.filter(p => p.status === status);
   if (search) filtered = filtered.filter(p =>
@@ -126,25 +235,35 @@ function applyFilters() {
 }
 
 function renderTable(projects) {
-  const tbody = document.getElementById('projectTableBody');
-  if (projects.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = projects.map((p, i) => `
-    <tr style="animation-delay:${i * 0.04}s">
-      <td class="project-name-cell">${escHtml(p.projectName)}</td>
-      <td class="project-purpose-cell">${escHtml(p.purpose || '—')}</td>
-      <td class="cost-cell">₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
-      <td><span class="status-pill status-${p.status}">${p.status}</span></td>
-      <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
-      <td><button class="action-btn" onclick="viewProject(${p.id})">View</button></td>
-    </tr>
-  `).join('');
+    const tbody = document.getElementById('projectTableBody');
+    if (!tbody) return;
+    
+    if (projects.length === 0) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found.</td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = projects.map((p, i) => `
+        <tr style="animation-delay:${i * 0.04}s">
+            <td class="project-name-cell">${escHtml(p.projectName)}</td>
+            <td class="project-purpose-cell">
+                ${escHtml(p.purpose || '—')}
+                ${p.status === 'REJECTED' && p.rejectionReason ? `
+                    <div class="rejection-reason">
+                        <strong>Rejection reason:</strong> ${escHtml(p.rejectionReason)}
+                    </div>
+                ` : ''}
+            </td>
+            <td class="cost-cell">₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
+            <td><span class="status-pill status-${p.status}">${p.status}</span></td>
+            <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
+            <td><button class="action-btn" onclick="viewProject(${p.id})">View</button></td>
+        </tr>
+    `).join('');
 }
 
 function onCommitteeChange() {
-  const val = document.getElementById('committeeFilter').value;
+  const val = document.getElementById('committeeFilter')?.value;
   loadProjects(val || null);
   loadBudget(val || null);
 }
@@ -184,9 +303,11 @@ async function submitProject() {
     if (text === 'SUCCESS') {
       showToast('Project submitted! Awaiting chairman approval.');
       closeModal();
-      // Reset form
       ['formProjectName', 'formPurpose', 'formCost'].forEach(id => document.getElementById(id).value = '');
-      await loadProjects(document.getElementById('committeeFilter').value || null);
+      await loadProjects(document.getElementById('committeeFilter')?.value || null);
+      if (isChairman) {
+        await loadPendingProjects();
+      }
     } else {
       showToast('Submission failed: ' + text, true);
     }
@@ -195,11 +316,306 @@ async function submitProject() {
   }
 }
 
-function viewProject(id) {
-  // Placeholder — expand to open a detail modal
-  alert(`Viewing project ID: ${id}\n(Connect to your project detail endpoint here.)`);
+// ── CHAIRMAN APPROVAL FUNCTIONS ──
+function openApproveModal(projectId, projectName, projectCost) {
+  const modal = document.getElementById('approveModal');
+  const projectNameSpan = document.getElementById('approveProjectName');
+  const projectCostSpan = document.getElementById('approveProjectCost');
+  
+  if (projectNameSpan) projectNameSpan.textContent = projectName;
+  if (projectCostSpan) projectCostSpan.textContent = `₱${(projectCost || 0).toLocaleString('en-PH')}`;
+  
+  const confirmBtn = document.getElementById('confirmApproveBtn');
+  if (confirmBtn) confirmBtn.onclick = () => approveProject(projectId, projectName);
+  
+  if (modal) modal.style.display = 'flex';
 }
 
+function closeApproveModal() {
+  const modal = document.getElementById('approveModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function approveProject(projectId, projectName) {
+    try {
+        const response = await fetch(`${API}/approveProject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projectId: projectId,
+                barangay: session.barangay,
+                approvedBy: session.name
+            })
+        });
+        
+        const result = await response.text();
+        
+        if (result === 'SUCCESS') {
+            showToast(`Project "${projectName}" has been approved and is now public!`);
+            closeApproveModal();
+            await loadPendingProjects();
+            await loadProjects(document.getElementById('committeeFilter')?.value || null);
+            await loadBudget();
+        } else if (result.startsWith('INSUFFICIENT_BUDGET')) {
+            showToast(result, true);
+        } else {
+            showToast('Error approving project: ' + result, true);
+        }
+        
+    } catch (error) {
+        console.error('Error approving project:', error);
+        showToast('Could not approve project', true);
+    }
+}
+
+function openRejectModal(projectId, projectName) {
+    console.log('Opening reject modal for:', projectId, projectName);
+    
+    // Store the project ID globally or on the modal
+    window.currentRejectProjectId = projectId;
+    window.currentRejectProjectName = projectName;
+    
+    const modal = document.getElementById('rejectModal');
+    const projectNameSpan = document.getElementById('rejectProjectName');
+    
+    if (projectNameSpan) {
+        projectNameSpan.textContent = projectName;
+    }
+    
+    // Clear previous reason
+    const reasonTextarea = document.getElementById('rejectionReason');
+    if (reasonTextarea) {
+        reasonTextarea.value = '';
+    }
+    
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeRejectModal() {
+    const modal = document.getElementById('rejectModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    // Clear the stored values
+    window.currentRejectProjectId = null;
+    window.currentRejectProjectName = null;
+}
+
+async function rejectProject(projectId, projectName) {
+    console.log('Rejecting project:', projectId, projectName);
+    
+    const reason = document.getElementById('rejectionReason')?.value.trim();
+    console.log('Reason:', reason);
+    
+    if (!reason) {
+        showToast('Please provide a reason for rejection', true);
+        return;
+    }
+    
+    // Get session data
+    const session = {
+        barangay: localStorage.getItem('sk_barangay') || 'Lahug',
+        name: localStorage.getItem('sk_name') || 'Chairman'
+    };
+    
+    const requestBody = {
+        projectId: projectId,
+        barangay: session.barangay,
+        rejectionReason: reason,
+        rejectedBy: session.name
+    };
+    
+    console.log('Request body:', requestBody);
+    
+    try {
+        const response = await fetch(`${API}/rejectProject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        
+        const result = await response.text();
+        console.log('Response:', result);
+        
+        if (result === 'SUCCESS') {
+            showToast(`Project "${projectName}" has been rejected.`);
+            closeRejectModal();
+            await loadPendingProjects();
+            await loadProjects();
+        } else {
+            showToast('Error: ' + result, true);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Could not reject project', true);
+    }
+}
+
+async function loadProjectFeedback(projectId) {
+  try {
+    const response = await fetch(`${API}/getProjectComments?projectId=${projectId}`);
+    if (!response.ok) throw new Error('Failed to fetch feedback');
+    
+    const feedback = await response.json();
+    return feedback;
+  } catch (error) {
+    console.error('Error loading feedback:', error);
+    return [];
+  }
+}
+
+function renderTable(projects) {
+  const tbody = document.getElementById('projectTableBody');
+  if (!tbody) return;
+  
+  if (projects.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found.</td></tr>`;
+    return;
+  }
+  
+  tbody.innerHTML = projects.map((p, i) => `
+    <tr style="animation-delay:${i * 0.04}s" data-project-id="${p.id}">
+      <td class="project-name-cell">${escHtml(p.projectName)}</td>
+      <td class="project-purpose-cell">
+        ${escHtml(p.purpose || '—')}
+        ${p.status === 'REJECTED' && p.rejectionReason ? `
+          <div class="rejection-reason">
+            <strong>Rejection reason:</strong> ${escHtml(p.rejectionReason)}
+          </div>
+        ` : ''}
+      </td>
+      <td class="cost-cell">₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
+      <td><span class="status-pill status-${p.status}">${p.status}</span></td>
+      <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
+      <td>
+        <button class="action-btn" onclick="viewProject(${p.id})">View</button>
+        <button class="action-btn feedback-btn" onclick="toggleFeedback(${p.id})">💬 Feedback</button>
+      </td>
+    </tr>
+    <tr class="feedback-row" id="feedback-row-${p.id}" style="display: none;">
+      <td colspan="6">
+        <div class="feedback-container" id="feedback-${p.id}">
+          <div class="feedback-loading">Loading feedback...</div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  
+  // Load feedback for each project
+  projects.forEach(async (p) => {
+    const feedback = await loadProjectFeedback(p.id);
+    displayFeedbackInRow(p.id, feedback);
+  });
+}
+
+function displayFeedbackInRow(projectId, feedback) {
+  const container = document.getElementById(`feedback-${projectId}`);
+  if (!container) return;
+  
+  if (!feedback || feedback.length === 0) {
+    container.innerHTML = `
+      <div class="feedback-empty">
+        <p>No feedback yet for this project.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="feedback-header">
+      <h4>Community Feedback (${feedback.length})</h4>
+    </div>
+    <div class="feedback-list">
+      ${feedback.map(f => `
+        <div class="feedback-item">
+          <div class="feedback-meta">
+            <strong>${escHtml(f.authorName || 'Anonymous')}</strong>
+            <span class="feedback-date">${formatDate(f.createdAt)}</span>
+          </div>
+          <div class="feedback-message">${escHtml(f.message)}</div>
+          ${f.rating && f.rating > 0 ? `
+            <div class="feedback-rating">
+              ${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}
+            </div>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// Toggle feedback visibility
+function toggleFeedback(projectId) {
+  const row = document.getElementById(`feedback-row-${projectId}`);
+  if (row) {
+    if (row.style.display === 'none') {
+      row.style.display = 'table-row';
+    } else {
+      row.style.display = 'none';
+    }
+  }
+}
+
+
+function viewProject(id) {
+  // Find the project
+  const project = allProjects.find(p => p.id === id);
+  if (!project) return;
+  
+  // Create modal or expand to show details
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div class="modal project-detail-modal">
+      <h2>${escHtml(project.projectName)}</h2>
+      <div class="project-info">
+        <p><strong>Committee:</strong> ${escHtml(project.committeeName)}</p>
+        <p><strong>Submitted by:</strong> ${escHtml(project.councilorName)}</p>
+        <p><strong>Purpose:</strong> ${escHtml(project.purpose)}</p>
+        <p><strong>Cost:</strong> ₱${(project.totalCost || 0).toLocaleString('en-PH')}</p>
+        <p><strong>Status:</strong> <span class="status-pill status-${project.status}">${project.status}</span></p>
+        ${project.rejectionReason ? `<p><strong>Rejection Reason:</strong> ${escHtml(project.rejectionReason)}</p>` : ''}
+      </div>
+      <div class="feedback-section-modal">
+        <h3>💬 Community Feedback</h3>
+        <div id="modal-feedback-${id}" class="modal-feedback-list">
+          <div class="loading-feedback">Loading feedback...</div>
+        </div>
+      </div>
+      <button class="btn-cancel" onclick="this.closest('.modal-overlay').remove()">Close</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Load feedback for this project
+  loadProjectFeedback(id).then(feedback => {
+    const container = document.getElementById(`modal-feedback-${id}`);
+    if (!container) return;
+    
+    if (!feedback || feedback.length === 0) {
+      container.innerHTML = '<p class="feedback-empty">No feedback yet for this project.</p>';
+      return;
+    }
+    
+    container.innerHTML = feedback.map(f => `
+      <div class="feedback-item">
+        <div class="feedback-meta">
+          <strong>${escHtml(f.authorName || 'Anonymous')}</strong>
+          <span class="feedback-date">${formatDate(f.createdAt)}</span>
+        </div>
+        <div class="feedback-message">${escHtml(f.message)}</div>
+        ${f.rating && f.rating > 0 ? `
+          <div class="feedback-rating">
+            ${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+  });
+}
 // ── HELPERS ──
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');
@@ -226,8 +642,16 @@ function formatDate(str) {
 }
 
 // Close modal on overlay click
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
+document.getElementById('modalOverlay')?.addEventListener('click', function(e) {
   if (e.target === this) closeModal();
+});
+
+document.getElementById('approveModal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeApproveModal();
+});
+
+document.getElementById('rejectModal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeRejectModal();
 });
 
 // Start the app
@@ -240,3 +664,9 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.submitProject = submitProject;
 window.viewProject = viewProject;
+window.openApproveModal = openApproveModal;
+window.closeApproveModal = closeApproveModal;
+window.openRejectModal = openRejectModal;
+window.closeRejectModal = closeRejectModal;
+window.approveProject = approveProject;
+window.rejectProject = rejectProject;

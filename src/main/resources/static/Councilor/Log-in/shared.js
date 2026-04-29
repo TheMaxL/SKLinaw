@@ -45,17 +45,30 @@ function flashError(id) {
 
 // ── Session ────────────────────────────────
 const Session = {
-  get name()     { return localStorage.getItem('sk_name')     || ''; },
-  get barangay() { return localStorage.getItem('sk_barangay') || 'Lahug'; },
-  get isAdmin()  { return localStorage.getItem('sk_admin')    === 'true'; },
-  set(name, barangay, isAdmin = false) {
-    localStorage.setItem('sk_name',     name);
+  get name() {
+    return localStorage.getItem('sk_name') || '';
+  },
+  get barangay() {
+    return localStorage.getItem('sk_barangay') || 'Lahug';
+  },
+  get isAdmin() {
+    return localStorage.getItem('sk_privilege') === 'ADMIN';
+  },
+  get isChairman() {
+    return localStorage.getItem('sk_privilege') === 'CHAIRMAN';
+  },
+  get privilege() {
+    return localStorage.getItem('sk_privilege') || '';
+  },
+  set(name, barangay, privilege = '') {
+    localStorage.setItem('sk_name', name);
     localStorage.setItem('sk_barangay', barangay);
-    localStorage.setItem('sk_admin',    isAdmin ? 'true' : 'false');
+    localStorage.setItem('sk_privilege', privilege);
+    console.log('Session.set called - privilege:', privilege); // Debug
   },
   clear() {
     localStorage.removeItem('sk_name');
     localStorage.removeItem('sk_barangay');
-    localStorage.removeItem('sk_admin');
+    localStorage.removeItem('sk_privilege');
   }
 };

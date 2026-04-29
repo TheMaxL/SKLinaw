@@ -305,6 +305,161 @@ body {
   margin-top: 1.5rem;
 }
 
+/* Role Badge */
+.role-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  margin-left: 1rem;
+  vertical-align: middle;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Pending Projects Section */
+.pending-projects-container {
+  margin-bottom: 2rem;
+}
+
+.project-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--border);
+  transition: all 0.2s;
+}
+
+.project-card.pending {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, var(--surface), rgba(245, 158, 11, 0.05));
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.project-header h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.project-details {
+  margin-bottom: 1rem;
+}
+
+.project-details p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+}
+
+.project-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.btn-approve {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-approve:hover {
+  background: #059669;
+}
+
+.btn-reject {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-reject:hover {
+  background: #dc2626;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.status-badge.status-pending {
+  background: #f59e0b;
+  color: white;
+}
+
+.warning-text {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+  background: var(--surface);
+  border-radius: 12px;
+}
+
+.rejection-reason {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: #fef3c7;
+    border-left: 3px solid #f59e0b;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #92400e;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-hint {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+}
+
+.status-pill.status-APPROVED {
+    background: #10b981;
+    color: white;
+}
+
+.status-pill.status-REJECTED {
+    background: #ef4444;
+    color: white;
+}
+
+.status-pill.status-PENDING {
+    background: #f59e0b;
+    color: white;
+}
+
 .btn-cancel {
   background: none;
   border: 1px solid var(--border);
@@ -331,6 +486,124 @@ body {
 
 .btn-submit:hover {
   background: var(--teal-dark);
+}
+
+/* Feedback styles for committee view */
+.feedback-btn {
+  background: none;
+  border: 1px solid var(--teal);
+  color: var(--teal);
+  margin-left: 0.5rem;
+}
+
+.feedback-btn:hover {
+  background: var(--teal);
+  color: white;
+}
+
+.feedback-row {
+  background: var(--bg);
+}
+
+.feedback-container {
+  padding: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.feedback-header {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.feedback-header h4 {
+  font-size: 0.85rem;
+  margin: 0;
+  color: var(--teal);
+}
+
+.feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.feedback-item {
+  background: var(--surface);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.feedback-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.feedback-meta strong {
+  color: var(--teal);
+}
+
+.feedback-date {
+  color: var(--muted);
+}
+
+.feedback-message {
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.feedback-rating {
+  color: #f59e0b;
+  font-size: 0.7rem;
+}
+
+.feedback-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.loading-feedback {
+  text-align: center;
+  padding: 1rem;
+  color: var(--muted);
+}
+
+/* Project Detail Modal */
+.project-detail-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.project-info {
+  margin-bottom: 1.5rem;
+}
+
+.project-info p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.feedback-section-modal {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.feedback-section-modal h3 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  color: var(--teal);
+}
+
+.modal-feedback-list {
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 /* Responsive */

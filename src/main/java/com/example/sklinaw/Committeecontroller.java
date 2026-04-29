@@ -1,9 +1,11 @@
 package com.example.sklinaw;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -21,17 +23,6 @@ public class Committeecontroller {
 
     private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db";
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SCRUM-23: Add committee function for the chair
-    // Chairman can create a committee and assign a councilor as head.
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Creates a new committee under a barangay.
-     * Only the chairman of that barangay should call this.
-     *
-     * Request body: { "committeeName": "Sports", "barangay": "Lahug", "headName": "" }
-     */
     @PostMapping("/createCommittee")
     public String createCommittee(@RequestBody CommitteeMember committee) {
         try (Connection conn = DriverManager.getConnection(URL)) {
@@ -87,12 +78,6 @@ public class Committeecontroller {
         }
     }
 
-    /**
-     * Assigns a registered councilor as head of a committee.
-     * Validates that the councilor exists, is approved, and is in the same barangay.
-     *
-     * Request body: { "committeeName": "Sports", "barangay": "Lahug", "headName": "Juan Dela Cruz" }
-     */
     @PostMapping("/assignCommitteeHead")
     public String assignCommitteeHead(@RequestBody CommitteeMember committee) {
         try (Connection conn = DriverManager.getConnection(URL)) {
@@ -151,12 +136,6 @@ public class Committeecontroller {
         }
     }
 
-    /**
-     * Adds a councilor as a member of a committee.
-     * Validates that the councilor exists, is approved, and is in the same barangay.
-     *
-     * Request body: { "committeeName": "Sports", "barangay": "Lahug", "councilorName": "Juan Dela Cruz" }
-     */
     @PostMapping("/addCommitteeMember")
     public String addCommitteeMember(@RequestBody CommitteeMember member) {
         try (Connection conn = DriverManager.getConnection(URL)) {
@@ -211,11 +190,6 @@ public class Committeecontroller {
         }
     }
 
-    /**
-     * Removes a councilor from a committee.
-     *
-     * Request body: { "committeeName": "Sports", "barangay": "Lahug", "councilorName": "Juan Dela Cruz" }
-     */
     @PostMapping("/removeCommitteeMember")
     public String removeCommitteeMember(@RequestBody CommitteeMember member) {
         try (Connection conn = DriverManager.getConnection(URL)) {
@@ -304,12 +278,6 @@ public class Committeecontroller {
         }
     }
 
-    /**
-     * Returns all committees for a given barangay.
-     * Used to populate the dropdown when assigning heads or adding projects.
-     *
-     * Example: GET /api/getCommittees?barangay=Lahug
-     */
     @GetMapping("/getCommittees")
     public String getCommittees(@RequestParam String barangay) {
         try (Connection conn = DriverManager.getConnection(URL)) {
@@ -336,25 +304,6 @@ public class Committeecontroller {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SCRUM-24: Add project details in committee
-    // Councilor submits a project linked to their committee.
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Adds a new project entry under a committee.
-     * Validates that the councilor is registered and that the committee exists.
-     *
-     * Request body:
-     * {
-     *   "projectName": "Basketball Court",
-     *   "purpose": "Sports facility for youth",
-     *   "committeeName": "Sports",
-     *   "barangay": "Lahug",
-     *   "councilorName": "Juan Dela Cruz",
-     *   "totalCost": 15000.00
-     * }
-     */
     @PostMapping("/addProject")
     public String addProject(@RequestBody Projectcontroller project) {
         try (Connection conn = DriverManager.getConnection(URL)) {
@@ -401,11 +350,6 @@ public class Committeecontroller {
         }
     }
 
-    /**
-     * Returns all projects under a specific committee for a barangay.
-     *
-     * Example: GET /api/getProjects?barangay=Lahug&committeeName=Sports
-     */
     @GetMapping("/getProjects")
     public String getProjects(@RequestParam String barangay, @RequestParam String committeeName) {
         try (Connection conn = DriverManager.getConnection(URL)) {
@@ -440,27 +384,422 @@ public class Committeecontroller {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SCRUM-25: Set budget and other details
-    // Chairman sets the total SK budget and allocates amounts per committee.
-    // ─────────────────────────────────────────────────────────────────────────
+    @GetMapping("/getPendingProjects")
+    public String getPendingProjects(@RequestParam String barangay) {
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            
+            String sql = "SELECT p.id, p.project_name, p.purpose, p.committee_name, p.councilor_name, " +
+                        "p.total_cost, p.status, p.created_at, c.head_name as committee_head " +
+                        "FROM Projects p " +
+                        "LEFT JOIN Committees c ON p.committee_name = c.name AND p.barangay = c.barangay " +
+                        "WHERE p.barangay = ? AND p.status = 'PENDING' " +
+                        "ORDER BY p.created_at DESC";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, barangay);
+            ResultSet rs = stmt.executeQuery();
+            
+            StringBuilder result = new StringBuilder("[");
+            while (rs.next()) {
+                result.append("{")
+                    .append("\"id\":").append(rs.getInt("id")).append(",")
+                    .append("\"projectName\":\"").append(rs.getString("project_name")).append("\",")
+                    .append("\"purpose\":\"").append(rs.getString("purpose")).append("\",")
+                    .append("\"committeeName\":\"").append(rs.getString("committee_name")).append("\",")
+                    .append("\"councilorName\":\"").append(rs.getString("councilor_name")).append("\",")
+                    .append("\"totalCost\":").append(rs.getDouble("total_cost")).append(",")
+                    .append("\"status\":\"").append(rs.getString("status")).append("\",")
+                    .append("\"createdAt\":\"").append(rs.getString("created_at")).append("\",")
+                    .append("\"committeeHead\":\"").append(rs.getString("committee_head") != null ? rs.getString("committee_head") : "").append("\"")
+                    .append("},");
+            }
+            if (result.length() > 1) result.setLength(result.length() - 1);
+            result.append("]");
+            
+            return result.toString();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
 
-    /**
-     * Sets the total SK budget for a barangay and allocates amounts per committee.
-     * Validates that total allocations do not exceed the total budget.
-     * Validates that every committee in allocations has an assigned head.
-     *
-     * Request body:
-     * {
-     *   "barangay": "Lahug",
-     *   "totalBudget": 100000.00,
-     *   "allocations": {
-     *     "Sports": 30000.00,
-     *     "Education": 40000.00,
-     *     "Environment": 30000.00
-     *   }
-     * }
-     */
+    @GetMapping("/getAllProjects")
+    public String getAllProjects(@RequestParam String barangay, @RequestParam(required = false) String status) {
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            
+            String sql = "SELECT p.id, p.project_name, p.purpose, p.committee_name, p.councilor_name, " +
+                        "p.total_cost, p.status, p.created_at, p.approved_at, " +
+                        "c.head_name as committee_head " +
+                        "FROM Projects p " +
+                        "LEFT JOIN Committees c ON p.committee_name = c.name AND p.barangay = c.barangay " +
+                        "WHERE p.barangay = ?";
+            
+            if (status != null && !status.isEmpty() && !status.equals("ALL")) {
+                sql += " AND p.status = ?";
+            }
+            
+            sql += " ORDER BY p.created_at DESC";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, barangay);
+            
+            if (status != null && !status.isEmpty() && !status.equals("ALL")) {
+                stmt.setString(2, status);
+            }
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            StringBuilder result = new StringBuilder("[");
+            while (rs.next()) {
+                result.append("{")
+                    .append("\"id\":").append(rs.getInt("id")).append(",")
+                    .append("\"projectName\":\"").append(rs.getString("project_name")).append("\",")
+                    .append("\"purpose\":\"").append(rs.getString("purpose")).append("\",")
+                    .append("\"committeeName\":\"").append(rs.getString("committee_name")).append("\",")
+                    .append("\"councilorName\":\"").append(rs.getString("councilor_name")).append("\",")
+                    .append("\"totalCost\":").append(rs.getDouble("total_cost")).append(",")
+                    .append("\"status\":\"").append(rs.getString("status")).append("\",")
+                    .append("\"createdAt\":\"").append(rs.getString("created_at")).append("\",")
+                    .append("\"approvedAt\":\"").append(rs.getString("approved_at") != null ? rs.getString("approved_at") : "").append("\",")
+                    .append("\"committeeHead\":\"").append(rs.getString("committee_head") != null ? rs.getString("committee_head") : "").append("\"")
+                    .append("},");
+            }
+            if (result.length() > 1) result.setLength(result.length() - 1);
+            result.append("]");
+            
+            return result.toString();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    @GetMapping("/getPublicProjects")
+    public String getPublicProjects(@RequestParam String barangay) {
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            
+            String sql = "SELECT p.id, p.project_name, p.purpose, p.committee_name, p.councilor_name, " +
+                        "p.total_cost, p.status, p.created_at, p.approved_at, p.approved_by, " +
+                        "c.head_name as committee_head " +
+                        "FROM Projects p " +
+                        "LEFT JOIN Committees c ON p.committee_name = c.name AND p.barangay = c.barangay " +
+                        "WHERE p.barangay = ? AND p.status = 'APPROVED' " +
+                        "ORDER BY p.approved_at DESC";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, barangay);
+            ResultSet rs = stmt.executeQuery();
+            
+            StringBuilder result = new StringBuilder("[");
+            while (rs.next()) {
+                result.append("{")
+                    .append("\"id\":").append(rs.getInt("id")).append(",")
+                    .append("\"projectName\":\"").append(rs.getString("project_name")).append("\",")
+                    .append("\"purpose\":\"").append(rs.getString("purpose")).append("\",")
+                    .append("\"committeeName\":\"").append(rs.getString("committee_name")).append("\",")
+                    .append("\"councilorName\":\"").append(rs.getString("councilor_name")).append("\",")
+                    .append("\"totalCost\":").append(rs.getDouble("total_cost")).append(",")
+                    .append("\"status\":\"").append(rs.getString("status")).append("\",")
+                    .append("\"createdAt\":\"").append(rs.getString("created_at")).append("\",")
+                    .append("\"approvedAt\":\"").append(rs.getString("approved_at")).append("\",")
+                    .append("\"approvedBy\":\"").append(rs.getString("approved_by") != null ? rs.getString("approved_by") : "").append("\",")
+                    .append("\"committeeHead\":\"").append(rs.getString("committee_head") != null ? rs.getString("committee_head") : "").append("\"")
+                    .append("},");
+            }
+            if (result.length() > 1) result.setLength(result.length() - 1);
+            result.append("]");
+            
+            return result.toString();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    @GetMapping("/getCommitteeProjects")
+    public String getCommitteeProjects(@RequestParam String barangay, @RequestParam String committeeName) {
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            
+            String sql = "SELECT p.id, p.project_name, p.purpose, p.councilor_name, " +
+                        "p.total_cost, p.status, p.created_at, p.approved_at, p.approved_by, p.rejection_reason " +
+                        "FROM Projects p " +
+                        "WHERE p.barangay = ? AND p.committee_name = ? " +
+                        "ORDER BY p.created_at DESC";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, barangay);
+            stmt.setString(2, committeeName);
+            ResultSet rs = stmt.executeQuery();
+            
+            StringBuilder result = new StringBuilder("[");
+            while (rs.next()) {
+                result.append("{")
+                    .append("\"id\":").append(rs.getInt("id")).append(",")
+                    .append("\"projectName\":\"").append(rs.getString("project_name")).append("\",")
+                    .append("\"purpose\":\"").append(rs.getString("purpose")).append("\",")
+                    .append("\"councilorName\":\"").append(rs.getString("councilor_name")).append("\",")
+                    .append("\"totalCost\":").append(rs.getDouble("total_cost")).append(",")
+                    .append("\"status\":\"").append(rs.getString("status")).append("\",")
+                    .append("\"createdAt\":\"").append(rs.getString("created_at")).append("\",")
+                    .append("\"approvedAt\":\"").append(rs.getString("approved_at") != null ? rs.getString("approved_at") : "").append("\",")
+                    .append("\"approvedBy\":\"").append(rs.getString("approved_by") != null ? rs.getString("approved_by") : "").append("\",")
+                    .append("\"rejectionReason\":\"").append(rs.getString("rejection_reason") != null ? rs.getString("rejection_reason") : "").append("\"")
+                    .append("},");
+            }
+            if (result.length() > 1) result.setLength(result.length() - 1);
+            result.append("]");
+            
+            return result.toString();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    @PostMapping("/approveProject")
+    public String approveProject(@RequestBody Map<String, Object> request) {
+        int projectId = (int) request.get("projectId");
+        String barangay = (String) request.get("barangay");
+        String approvedBy = (String) request.get("approvedBy");
+        
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            
+            // Start transaction
+            conn.setAutoCommit(false);
+            
+            try {
+                // 1. Get project details
+                String getProjectSql = "SELECT committee_name, total_cost, status FROM Projects WHERE id = ? AND barangay = ?";
+                PreparedStatement getProjectStmt = conn.prepareStatement(getProjectSql);
+                getProjectStmt.setInt(1, projectId);
+                getProjectStmt.setString(2, barangay);
+                ResultSet projectRs = getProjectStmt.executeQuery();
+                
+                if (!projectRs.next()) {
+                    conn.rollback();
+                    return "PROJECT_NOT_FOUND";
+                }
+                
+                String status = projectRs.getString("status");
+                if (!"PENDING".equals(status)) {
+                    conn.rollback();
+                    return "PROJECT_ALREADY_PROCESSED";
+                }
+                
+                String committeeName = projectRs.getString("committee_name");
+                double projectCost = projectRs.getDouble("total_cost");
+                
+                // 2. Get committee's allocated budget and total spent
+                String budgetSql = "SELECT allocated_amount FROM CommitteeBudget WHERE committee_name = ? AND barangay = ?";
+                PreparedStatement budgetStmt = conn.prepareStatement(budgetSql);
+                budgetStmt.setString(1, committeeName);
+                budgetStmt.setString(2, barangay);
+                ResultSet budgetRs = budgetStmt.executeQuery();
+                
+                if (!budgetRs.next()) {
+                    conn.rollback();
+                    return "NO_BUDGET_ALLOCATED";
+                }
+                
+                double allocatedAmount = budgetRs.getDouble("allocated_amount");
+                
+                // 3. Calculate total spent on approved projects
+                String spentSql = "SELECT COALESCE(SUM(total_cost), 0) as total_spent FROM Projects " +
+                                "WHERE committee_name = ? AND barangay = ? AND status = 'APPROVED'";
+                PreparedStatement spentStmt = conn.prepareStatement(spentSql);
+                spentStmt.setString(1, committeeName);
+                spentStmt.setString(2, barangay);
+                ResultSet spentRs = spentStmt.executeQuery();
+                
+                double totalSpent = 0;
+                if (spentRs.next()) {
+                    totalSpent = spentRs.getDouble("total_spent");
+                }
+                
+                // 4. Check if approving this project would exceed budget
+                if (totalSpent + projectCost > allocatedAmount) {
+                    conn.rollback();
+                    double remaining = allocatedAmount - totalSpent;
+                    return "INSUFFICIENT_BUDGET: Remaining: ₱" + remaining + ", Project Cost: ₱" + projectCost;
+                }
+                
+                // 5. Update project status to APPROVED
+                String updateSql = "UPDATE Projects SET status = 'APPROVED', approved_by = ?, approved_at = CURRENT_TIMESTAMP, rejection_reason = NULL WHERE id = ?";
+                PreparedStatement updateStmt = conn.prepareStatement(updateSql);
+                updateStmt.setString(1, approvedBy);
+                updateStmt.setInt(2, projectId);
+                updateStmt.executeUpdate();
+                
+                conn.commit();
+                return "SUCCESS";
+                
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    @PostMapping("/rejectProject")
+    public String rejectProject(@RequestBody Map<String, Object> request) {
+        System.out.println("=== REJECT PROJECT ===");
+        System.out.println("Request: " + request);
+        
+        // Extract values safely
+        Object projectIdObj = request.get("projectId");
+        String barangay = (String) request.get("barangay");
+        String rejectionReason = (String) request.get("rejectionReason");
+        String rejectedBy = (String) request.get("rejectedBy");
+        
+        if (projectIdObj == null) {
+            return "PROJECT_ID_REQUIRED";
+        }
+        
+        int projectId;
+        if (projectIdObj instanceof Integer) {
+            projectId = (Integer) projectIdObj;
+        } else if (projectIdObj instanceof String) {
+            projectId = Integer.parseInt((String) projectIdObj);
+        } else {
+            return "INVALID_PROJECT_ID";
+        }
+        
+        System.out.println("Project ID: " + projectId);
+        System.out.println("Barangay: " + barangay);
+        System.out.println("Reason: " + rejectionReason);
+        System.out.println("Rejected By: " + rejectedBy);
+        
+        if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+            return "REJECTION_REASON_REQUIRED";
+        }
+        
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            
+            // First, check if the project exists and is pending
+            String checkSql = "SELECT status FROM Projects WHERE id = ? AND barangay = ?";
+            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setInt(1, projectId);
+            checkStmt.setString(2, barangay);
+            ResultSet rs = checkStmt.executeQuery();
+            
+            if (!rs.next()) {
+                System.out.println("Project not found");
+                return "PROJECT_NOT_FOUND";
+            }
+            
+            String currentStatus = rs.getString("status");
+            System.out.println("Current status: " + currentStatus);
+            
+            if (!"PENDING".equals(currentStatus)) {
+                System.out.println("Project already processed");
+                return "PROJECT_ALREADY_PROCESSED";
+            }
+            
+            // Check if columns exist before updating
+            boolean hasRejectionReason = false;
+            boolean hasApprovedBy = false;
+            boolean hasApprovedAt = false;
+            
+            try {
+                DatabaseMetaData meta = conn.getMetaData();
+                ResultSet columns = meta.getColumns(null, null, "Projects", null);
+                while (columns.next()) {
+                    String colName = columns.getString("COLUMN_NAME");
+                    if ("rejection_reason".equals(colName)) hasRejectionReason = true;
+                    if ("approved_by".equals(colName)) hasApprovedBy = true;
+                    if ("approved_at".equals(colName)) hasApprovedAt = true;
+                }
+            } catch (Exception e) {
+                System.out.println("Error checking columns: " + e.getMessage());
+            }
+            
+            System.out.println("Has rejection_reason: " + hasRejectionReason);
+            System.out.println("Has approved_by: " + hasApprovedBy);
+            System.out.println("Has approved_at: " + hasApprovedAt);
+            
+            // Build update SQL based on available columns
+            StringBuilder updateSql = new StringBuilder("UPDATE Projects SET status = 'REJECTED'");
+            
+            if (hasRejectionReason) {
+                updateSql.append(", rejection_reason = ?");
+            }
+            if (hasApprovedBy) {
+                updateSql.append(", approved_by = ?");
+            }
+            if (hasApprovedAt) {
+                updateSql.append(", approved_at = CURRENT_TIMESTAMP");
+            }
+            
+            updateSql.append(" WHERE id = ?");
+            
+            System.out.println("Update SQL: " + updateSql);
+            
+            PreparedStatement updateStmt = conn.prepareStatement(updateSql.toString());
+            int paramIndex = 1;
+            
+            if (hasRejectionReason) {
+                updateStmt.setString(paramIndex++, rejectionReason);
+            }
+            if (hasApprovedBy) {
+                updateStmt.setString(paramIndex++, rejectedBy);
+            }
+            updateStmt.setInt(paramIndex, projectId);
+            
+            int rowsAffected = updateStmt.executeUpdate();
+            System.out.println("Rows affected: " + rowsAffected);
+            
+            if (rowsAffected > 0) {
+                return "SUCCESS";
+            } else {
+                return "UPDATE_FAILED";
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "SQL_ERROR: " + e.getMessage();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    // Add feedback
+    @PostMapping("/addFeedback")
+    public String addFeedback(@RequestBody Map<String, Object> feedback) {
+        String barangay = (String) feedback.get("barangay");
+        String name = (String) feedback.get("name");
+        String message = (String) feedback.get("message");
+        int rating = (int) feedback.getOrDefault("rating", 0);
+        
+        String sql = "INSERT INTO Feedback (barangay, name, message, rating, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)";
+        
+        try (Connection conn = DriverManager.getConnection(URL);
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, barangay);
+            pstmt.setString(2, name);
+            pstmt.setString(3, message);
+            pstmt.setInt(4, rating);
+            pstmt.executeUpdate();
+            
+            return "SUCCESS";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
     @PostMapping("/setBudget")
     public String setBudget(@RequestBody Budget budget) {
         try (Connection conn = DriverManager.getConnection(URL)) {
@@ -522,12 +861,6 @@ public class Committeecontroller {
         }
     }
 
-    /**
-     * Returns the total budget and per-committee allocation for a barangay.
-     * Also shows how much each committee has spent vs their allocation.
-     *
-     * Example: GET /api/getBudget?barangay=Lahug
-     */
     @GetMapping("/getBudget")
     public String getBudget(@RequestParam String barangay) {
         try (Connection conn = DriverManager.getConnection(URL)) {

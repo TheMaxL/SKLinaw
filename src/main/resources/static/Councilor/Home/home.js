@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 🔹 ENTRY CARDS
   document.getElementById('card-public')?.addEventListener('click', () => {
-    location.href = '../Public-view/public.html';
+    location.href = '../../Public/Feedback/Feedback.html';
   });
 
   document.getElementById('card-login')?.addEventListener('click', () => {
