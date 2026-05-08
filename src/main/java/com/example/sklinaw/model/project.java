@@ -1,6 +1,6 @@
-package com.example.sklinaw;
+package com.example.sklinaw.model;
 
-public class Projectcontroller {
+public class project {
     private String projectName;
     private String purpose;
     private String committeeName;

@@ -1,4 +1,4 @@
-package com.example.sklinaw;
+package com.example.sklinaw.model;
 
 public class Account {
     private int id;             

@@ -1,4 +1,4 @@
-package com.example.sklinaw;
+package com.example.sklinaw.controller;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -19,12 +19,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.sklinaw.model.Account;
+
 @RequestMapping("/admin")
-@CrossOrigin
+@CrossOrigin(origins = {
+    "http://localhost:8085",
+    "https://pitcherlike-unformalistic-armandina.ngrok-free.dev"
+}, allowCredentials = "true")
 @RestController
 public class AdminController {
 
-    private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db";
+    private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db?busy_timeout=5000";
 
     // 🔹 Get pending accounts
     @GetMapping("/users")

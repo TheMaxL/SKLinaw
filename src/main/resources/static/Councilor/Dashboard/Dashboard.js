@@ -1,110 +1,386 @@
-document.addEventListener('DOMContentLoaded', () => {
-  if (!Session.name) { location.href = 'dashboard.html'; return; }
+// Get user role from localStorage
+const userPrivilege = localStorage.getItem('sk_privilege') || '';
+const userBarangay = localStorage.getItem('sk_barangay') || '';
 
-  // Populate user info
-  document.getElementById('dash-avatar').textContent     = Session.name.charAt(0).toUpperCase();
-  document.getElementById('dash-user-name').textContent  = Session.name;
-  document.getElementById('dash-barangay').textContent   = Session.barangay;
-  document.getElementById('dash-greet-name').textContent = Session.name.split(' ')[0];
-  document.getElementById('dash-greet-sub').textContent  = `SK Councilor · ${Session.barangay}`;
-  document.getElementById('dash-today').textContent      = new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    Session.clear();
-    Toast.show('Logged out successfully.');
-    setTimeout(() => location.href = 'index.html', 800);
-  });
-
-  loadProjects();
-  loadBudget();
-});
-
-async function loadProjects() {
-  try {
-    const cRes = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(Session.barangay)}`);
-    const coms = await cRes.json();
-    let all = [];
-    for (const c of coms) {
-      const pRes = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(Session.barangay)}&committeeName=${encodeURIComponent(c.name)}`);
-      const ps   = await pRes.json();
-      if (Array.isArray(ps)) ps.forEach(p => all.push({ ...p, committeeName: c.name }));
-    }
-    const mine = all.filter(p => p.councilorName === Session.name);
-    document.getElementById('qs-total').textContent    = mine.length;
-    document.getElementById('qs-pending').textContent  = mine.filter(p => p.status === 'PENDING').length;
-    document.getElementById('qs-approved').textContent = mine.filter(p => p.status === 'APPROVED').length;
-    renderRecent(mine.slice(0, 5));
-  } catch {
-    // Sample data
-    const sample = [
-      { projectName: 'Youth Sports Fest',   committeeName: 'Sports',      totalCost: 12500, status: 'APPROVED', createdAt: new Date() },
-      { projectName: 'Leadership Training', committeeName: 'Education',   totalCost: 8000,  status: 'PENDING',  createdAt: new Date() },
-      { projectName: 'Eco Drive 2025',      committeeName: 'Environment', totalCost: 5000,  status: 'APPROVED', createdAt: new Date() },
-    ];
-    document.getElementById('qs-total').textContent    = sample.length;
-    document.getElementById('qs-pending').textContent  = 1;
-    document.getElementById('qs-approved').textContent = 2;
-    renderRecent(sample);
+// Show appropriate view based on role
+function showRoleView() {
+  // Hide all views first
+  document.getElementById('councilorView').style.display = 'none';
+  document.getElementById('treasurerView').style.display = 'none';
+  document.getElementById('chairmanView').style.display = 'none';
+  
+  // Update role label
+  const roleLabel = document.getElementById('dash-greet-sub');
+  
+  if (userPrivilege === 'TREASURER') {
+    document.getElementById('treasurerView').style.display = 'block';
+    roleLabel.textContent = 'Treasurer';
+    loadTreasurerDashboard();
+  } else if (userPrivilege === 'CHAIRMAN') {
+    document.getElementById('chairmanView').style.display = 'block';
+    roleLabel.textContent = 'Chairman';
+    loadChairmanDashboard();
+  } else {
+    document.getElementById('councilorView').style.display = 'block';
+    roleLabel.textContent = 'Councilor';
+    loadCouncilorDashboard();
   }
 }
 
-function renderRecent(projects) {
-  const el = document.getElementById('recent-projects');
-  if (!projects.length) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:0.84rem;padding:0.5rem 0">No projects submitted yet.</p>';
+// ==================== COUNCILOR VIEW ====================
+async function loadCouncilorDashboard() {
+  await loadRecentProjects();
+  await loadBudgetPanel();
+  await loadQuickStats();
+}
+
+async function loadRecentProjects() {
+  try {
+    const response = await fetch(`/api/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const projects = await response.json();
+    const recent = projects.slice(0, 5);
+    
+    const container = document.getElementById('recent-projects');
+    if (recent.length === 0) {
+      container.innerHTML = '<div class="empty-state">No projects yet.</div>';
+      return;
+    }
+    
+    container.innerHTML = recent.map(p => `
+      <div class="project-item">
+        <div class="project-name">${escapeHtml(p.projectName)}</div>
+        <div class="project-status status-${p.status}">${p.status}</div>
+        <div class="project-cost">₱${(p.totalCost || 0).toLocaleString()}</div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Error loading recent projects:', error);
+  }
+}
+
+async function loadBudgetPanel() {
+    try {
+        const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
+            credentials: 'include'
+        });
+        const text = await response.text();
+        
+        // Check if response is ERROR or empty
+        if (text === 'ERROR' || !text) {
+            document.getElementById('budget-panel').innerHTML = '<div class="empty-state">No budget data available.</div>';
+            return;
+        }
+        
+        // Parse JSON safely
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseError) {
+            console.error('Failed to parse budget response:', text);
+            document.getElementById('budget-panel').innerHTML = '<div class="empty-state">Error loading budget data.</div>';
+            return;
+        }
+        
+        const committees = data.committees || [];
+        const container = document.getElementById('budget-panel');
+        
+        if (committees.length === 0) {
+            container.innerHTML = '<div class="empty-state">No budget data available.</div>';
+            return;
+        }
+        
+        container.innerHTML = committees.map(c => `
+            <div class="budget-item">
+                <div class="budget-name">${escapeHtml(c.committeeName)}</div>
+                <div class="budget-bar-container">
+                    <div class="budget-bar" style="width: ${c.allocated > 0 ? (c.spent / c.allocated * 100) : 0}%"></div>
+                </div>
+                <div class="budget-numbers">
+                    <span>₱${(c.spent || 0).toLocaleString()} / ₱${(c.allocated || 0).toLocaleString()}</span>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading budget panel:', error);
+        document.getElementById('budget-panel').innerHTML = '<div class="empty-state">Error loading budget data.</div>';
+    }
+}
+
+async function loadQuickStats() {
+  try {
+    const response = await fetch(`/api/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const projects = await response.json();
+    
+    const total = projects.length;
+    const pending = projects.filter(p => p.status === 'PENDING').length;
+    const approved = projects.filter(p => p.status === 'APPROVED').length;
+    
+    document.getElementById('qs-total').textContent = total;
+    document.getElementById('qs-pending').textContent = pending;
+    document.getElementById('qs-approved').textContent = approved;
+  } catch (error) {
+    console.error('Error loading quick stats:', error);
+  }
+}
+
+// ==================== TREASURER VIEW ====================
+async function loadTreasurerDashboard() {
+  await loadExpenditureBar();
+  await loadCommitteeCharts();
+  await loadRecentExpenditures();
+}
+
+async function loadExpenditureBar() {
+  try {
+    const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const data = await response.json();
+    
+    const totalBudget = data.totalBudget || 0;
+    const committees = data.committees || [];
+    const totalSpent = committees.reduce((sum, c) => sum + (c.spent || 0), 0);
+    const percentage = totalBudget > 0 ? (totalSpent / totalBudget * 100) : 0;
+    
+    document.getElementById('expenditureBar').style.width = `${Math.min(percentage, 100)}%`;
+    document.getElementById('totalSpent').textContent = `₱${totalSpent.toLocaleString()}`;
+    document.getElementById('totalRemaining').textContent = `₱${(totalBudget - totalSpent).toLocaleString()}`;
+    document.getElementById('expenditurePercent').textContent = `${percentage.toFixed(1)}%`;
+  } catch (error) {
+    console.error('Error loading expenditure bar:', error);
+  }
+}
+
+async function loadCommitteeCharts() {
+  try {
+    const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const data = await response.json();
+    const committees = data.committees || [];
+    
+    const container = document.getElementById('committeeCharts');
+    if (committees.length === 0) {
+      container.innerHTML = '<div class="empty-state">No committee budget data available.</div>';
+      return;
+    }
+    
+    container.innerHTML = committees.map(c => {
+      const percentage = c.allocated > 0 ? (c.spent / c.allocated * 100) : 0;
+      return `
+        <div class="chart-card">
+          <div class="chart-title">${escapeHtml(c.committeeName)}</div>
+          <div class="chart-bar-container">
+            <div class="chart-bar" style="width: ${percentage}%; background: linear-gradient(90deg, #0BBFB5, #10B981);"></div>
+          </div>
+          <div class="chart-numbers">
+            <span>₱${(c.spent || 0).toLocaleString()} / ₱${(c.allocated || 0).toLocaleString()}</span>
+            <span>${percentage.toFixed(1)}%</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Error loading committee charts:', error);
+  }
+}
+
+async function loadRecentExpenditures() {
+  try {
+    const response = await fetch(`/api/getRecentExpenditures?barangay=${encodeURIComponent(userBarangay)}&limit=5`, {
+      credentials: 'include'
+    });
+    const expenditures = await response.json();
+    
+    const container = document.getElementById('recentExpensesBody');
+    if (expenditures.length === 0) {
+      container.innerHTML = '<tr><td colspan="4" class="empty-state">No recent expenditures.</td></tr>';
+      return;
+    }
+    
+    container.innerHTML = expenditures.map(e => `
+      <tr>
+        <td>${escapeHtml(e.projectName)}</td>
+        <td>${escapeHtml(e.committeeName)}</td>
+        <td class="exp-amount">₱${(e.totalCost || 0).toLocaleString()}</td>
+        <td>${formatDate(e.approvedAt)}</td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    console.error('Error loading recent expenditures:', error);
+  }
+}
+
+// ==================== CHAIRMAN VIEW ====================
+async function loadChairmanDashboard() {
+  await loadChairmanStats();
+  await loadCommitteesTable();
+}
+
+async function loadChairmanStats() {
+  try {
+    const response = await fetch(`/api/getAllProjects?barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const projects = await response.json();
+    
+    const total = projects.length;
+    const pending = projects.filter(p => p.status === 'PENDING').length;
+    const approved = projects.filter(p => p.status === 'APPROVED').length;
+    const rejected = projects.filter(p => p.status === 'REJECTED').length;
+    
+    document.getElementById('chairman-total-projects').textContent = total;
+    document.getElementById('chairman-pending-projects').textContent = pending;
+    document.getElementById('chairman-approved-projects').textContent = approved;
+    document.getElementById('chairman-rejected-projects').textContent = rejected;
+  } catch (error) {
+    console.error('Error loading chairman stats:', error);
+  }
+}
+
+async function loadCommitteesTable() {
+  const tbody = document.getElementById('projectTableBody');
+  if (!tbody) return;
+
+  if (!Array.isArray(allCommittees) || allCommittees.length === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="5">
+          No committees found. Click "+ Add Committees" to create one!
+        </td>
+      </tr>`;
     return;
   }
-  el.innerHTML = projects.map(p => `
-    <div class="project-row">
-      <div>
-        <div class="pr-name">${esc(p.projectName)}</div>
-        <div class="pr-meta">${esc(p.committeeName)} · ${fmtDateShort(p.createdAt)}</div>
-      </div>
-      <div class="pr-right">
-        <div class="pr-cost">₱${(p.totalCost || 0).toLocaleString('en-PH')}</div>
-        <span class="pill pill-${(p.status || 'pending').toLowerCase()}">${p.status}</span>
-      </div>
-    </div>`).join('');
+
+  // Get current user's privilege to check if they are chairman
+  const userPrivilege = localStorage.getItem('sk_privilege') || '';
+  const isChairman = userPrivilege === 'CHAIRMAN';
+  const currentUser = localStorage.getItem('sk_name') || '';
+
+  tbody.innerHTML = allCommittees.map((c, i) => `
+    <tr style="animation-delay:${i * 0.05}s">
+      <td class="project-name-cell">${esc(c.committeeName)}</td>
+      <td style="color:var(--muted)">—</td>
+      <td>
+        ${c.headName 
+          ? esc(c.headName) 
+          : '<span style="color:var(--muted)">No head assigned</span>'}
+      </td>
+      <td style="color:var(--muted)">—</td>
+      <td>
+        ${isChairman ? 
+          `<button class="action-btn delete-committee-btn" 
+            data-name="${esc(c.committeeName)}"
+            onclick="deleteCommittee('${esc(c.committeeName)}')">
+            🗑️ Delete Committee
+          </button>` :
+          `<button class="action-btn disabled-btn" disabled>
+            No actions available
+          </button>`
+        }
+      </td>
+    </table>
+  `).join('');
 }
 
-async function loadBudget() {
+// ── DELETE COMMITTEE (Chairman only) ──
+async function deleteCommittee(committeeName) {
+  // Confirmation dialog
+  const confirmMessage = `⚠️ PERMANENT ACTION ⚠️\n\n` +
+    `You are about to delete the committee "${committeeName}".\n\n` +
+    `This will also delete:\n` +
+    `• All committee members\n` +
+    `• All projects (both PENDING and APPROVED)\n` +
+    `• Committee budget allocations\n\n` +
+    `This action CANNOT be undone!\n\n` +
+    `Type "${committeeName}" to confirm:`;
+  
+  const confirmation = prompt(confirmMessage);
+  
+  if (confirmation !== committeeName) {
+    Toast.show('Committee deletion cancelled - confirmation did not match', true);
+    return;
+  }
+  
+  const finalConfirm = confirm(`Are you ABSOLUTELY sure? This will permanently delete all data for committee "${committeeName}".`);
+  if (!finalConfirm) return;
+  
   try {
-    const res  = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(Session.barangay)}`);
-    const data = await res.json();
-    const remaining = (data.totalBudget || 0) - (data.committees || []).reduce((s, c) => s + (c.spent || 0), 0);
-    document.getElementById('qs-budget').textContent = '₱' + Math.max(0, remaining).toLocaleString('en-PH');
-    renderBudget(data);
-  } catch {
-    const sample = {
-      totalBudget: 250000,
-      committees: [
-        { committeeName: 'Sports',      allocated: 60000, spent: 42000 },
-        { committeeName: 'Education',   allocated: 80000, spent: 35000 },
-        { committeeName: 'Environment', allocated: 50000, spent: 18000 },
-      ]
-    };
-    const remaining = sample.totalBudget - sample.committees.reduce((s, c) => s + c.spent, 0);
-    document.getElementById('qs-budget').textContent = '₱' + remaining.toLocaleString('en-PH');
-    renderBudget(sample);
+    const response = await fetch(`${API}/deleteCommittee`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        committeeName: committeeName,
+        barangay: session.barangay
+      })
+    });
+    
+    const result = await response.text();
+    
+    if (result === 'SUCCESS') {
+      Toast.show(`Committee "${committeeName}" has been deleted successfully.`);
+      // Refresh all data
+      await loadAllCommittees();
+      await loadMyCommittees();
+      await loadCommitteesTable();
+      await loadBudget();
+    } else if (result === 'COMMITTEE_NOT_FOUND') {
+      Toast.show('Committee not found', true);
+    } else if (result === 'NOT_AUTHORIZED') {
+      Toast.show('You are not authorized to delete committees', true);
+    } else {
+      Toast.show('Error deleting committee: ' + result, true);
+    }
+  } catch (error) {
+    console.error('Error deleting committee:', error);
+    Toast.show('Could not delete committee', true);
   }
 }
 
-function renderBudget(data) {
-  const panel = document.getElementById('budget-panel');
-  panel.innerHTML = `
-    <div class="budget-total">₱${(data.totalBudget || 0).toLocaleString('en-PH')}</div>
-    <div class="budget-sub">Total SK budget · ${esc(Session.barangay)}</div>
-    ${(data.committees || []).map(c => {
-      const pct = c.allocated > 0 ? Math.min((c.spent / c.allocated) * 100, 100) : 0;
-      return `
-        <div class="budget-bar-item">
-          <div class="bbar-header">
-            <span class="bbar-name">${esc(c.committeeName)}</span>
-            <span class="bbar-amounts">₱${(c.spent || 0).toLocaleString('en-PH')} / ₱${(c.allocated || 0).toLocaleString('en-PH')}</span>
-          </div>
-          <div class="bbar-track"><div class="bbar-fill" style="width:${pct}%"></div></div>
-        </div>`;
-    }).join('')}
-    ${!data.committees?.length ? '<p style="color:var(--muted);font-size:0.82rem;margin-top:0.5rem">No budget data.</p>' : ''}
-  `;
+// Helper functions
+function formatDate(str) {
+  if (!str) return '—';
+  try {
+    return new Date(str).toLocaleDateString('en-PH', {
+      year: 'numeric', month: 'short', day: 'numeric'
+    });
+  } catch { return str; }
 }
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', () => {
+  if (!localStorage.getItem('sk_name')) {
+    window.location.href = '../Log-in/login.html';
+    return;
+  }
+  
+  // Update user info in sidebar
+  document.getElementById('nameEl').textContent = localStorage.getItem('sk_name');
+  document.getElementById('roleEl').textContent = userPrivilege || 'Councilor';
+  document.getElementById('avatarEl').textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
+  
+  // Update greeting
+  const greetingName = localStorage.getItem('sk_name');
+  if (greetingName) {
+    document.getElementById('dash-greet-name').textContent = greetingName.split(' ')[0];
+  }
+  
+  // Update date
+  const today = new Date();
+  document.getElementById('dash-today').textContent = today.toLocaleDateString('en-PH', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  
+  // Show role-specific view
+  showRoleView();
+});

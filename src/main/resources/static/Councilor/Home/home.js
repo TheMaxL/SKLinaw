@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('nav-login')?.addEventListener('click', () => {
-    location.href = '../Log-in/login.html';
+    location.href = '../Log-in/Login.html';
   });
 
   // 🔹 ENTRY CARDS
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('card-login')?.addEventListener('click', () => {
-    location.href = '../Log-in/login.html';
+    location.href = '../Log-in/Login.html';
   });
 
   document.getElementById('card-signup')?.addEventListener('click', () => {

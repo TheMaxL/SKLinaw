@@ -1,7 +1,3 @@
-// Committee Dashboard JavaScript
-const API = 'http://localhost:8085/api';
-const ADMIN_API = 'http://localhost:8085/admin';
-
 // ── SESSION (read from localStorage set at login) ──
 const session = {
   name: localStorage.getItem('sk_name') || 'Councilor',
@@ -109,7 +105,7 @@ async function loadProjects(committeeName) {
   } catch (e) {
     console.error('Error loading projects:', e);
     if (tbody) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">⚠️ Could not connect to the server.</td></tr>`;
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">⚠️ Could not connect to the server. </td></tr>`;
     }
   }
 }
@@ -316,6 +312,10 @@ async function submitProject() {
   }
 }
 
+// Global variables for rejection
+let currentRejectProjectId = null;
+let currentRejectProjectName = null;
+
 // ── CHAIRMAN APPROVAL FUNCTIONS ──
 function openApproveModal(projectId, projectName, projectCost) {
   const modal = document.getElementById('approveModal');
@@ -369,44 +369,43 @@ async function approveProject(projectId, projectName) {
 }
 
 function openRejectModal(projectId, projectName) {
-    console.log('Opening reject modal for:', projectId, projectName);
+    console.log('=== openRejectModal called ===');
+    console.log('Project ID:', projectId);
+    console.log('Project Name:', projectName);
     
-    // Store the project ID globally or on the modal
-    window.currentRejectProjectId = projectId;
-    window.currentRejectProjectName = projectName;
+    currentRejectProjectId = projectId;
+    currentRejectProjectName = projectName;
     
-    const modal = document.getElementById('rejectModal');
-    const projectNameSpan = document.getElementById('rejectProjectName');
-    
-    if (projectNameSpan) {
-        projectNameSpan.textContent = projectName;
-    }
-    
-    // Clear previous reason
     const reasonTextarea = document.getElementById('rejectionReason');
     if (reasonTextarea) {
         reasonTextarea.value = '';
     }
     
+    const modal = document.getElementById('rejectModal');
     if (modal) {
         modal.style.display = 'flex';
     }
 }
 
 function closeRejectModal() {
+    console.log('=== closeRejectModal called ===');
+    
     const modal = document.getElementById('rejectModal');
     if (modal) {
         modal.style.display = 'none';
     }
-    // Clear the stored values
-    window.currentRejectProjectId = null;
-    window.currentRejectProjectName = null;
+    currentRejectProjectId = null;
+    currentRejectProjectName = null;
 }
 
-async function rejectProject(projectId, projectName) {
-    console.log('Rejecting project:', projectId, projectName);
+async function confirmReject() {
+    console.log('=== confirmReject called ===');
+    console.log('currentRejectProjectId:', currentRejectProjectId);
+    console.log('currentRejectProjectName:', currentRejectProjectName);
     
-    const reason = document.getElementById('rejectionReason')?.value.trim();
+    const reasonTextarea = document.getElementById('rejectionReason');
+    let reason = reasonTextarea ? reasonTextarea.value.trim() : '';
+    
     console.log('Reason:', reason);
     
     if (!reason) {
@@ -414,14 +413,13 @@ async function rejectProject(projectId, projectName) {
         return;
     }
     
-    // Get session data
-    const session = {
-        barangay: localStorage.getItem('sk_barangay') || 'Lahug',
-        name: localStorage.getItem('sk_name') || 'Chairman'
-    };
+    if (!currentRejectProjectId) {
+        showToast('Error: No project selected', true);
+        return;
+    }
     
     const requestBody = {
-        projectId: projectId,
+        projectId: currentRejectProjectId,
         barangay: session.barangay,
         rejectionReason: reason,
         rejectedBy: session.name
@@ -433,22 +431,23 @@ async function rejectProject(projectId, projectName) {
         const response = await fetch(`${API}/rejectProject`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(requestBody)
         });
         
         const result = await response.text();
-        console.log('Response:', result);
+        console.log('Server response:', result);
         
         if (result === 'SUCCESS') {
-            showToast(`Project "${projectName}" has been rejected.`);
+            showToast(`Project "${currentRejectProjectName}" has been rejected.`);
             closeRejectModal();
             await loadPendingProjects();
             await loadProjects();
         } else {
-            showToast('Error: ' + result, true);
+            showToast('Error rejecting project: ' + result, true);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error rejecting project:', error);
         showToast('Could not reject project', true);
     }
 }
@@ -466,87 +465,6 @@ async function loadProjectFeedback(projectId) {
   }
 }
 
-function renderTable(projects) {
-  const tbody = document.getElementById('projectTableBody');
-  if (!tbody) return;
-  
-  if (projects.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found.</td></tr>`;
-    return;
-  }
-  
-  tbody.innerHTML = projects.map((p, i) => `
-    <tr style="animation-delay:${i * 0.04}s" data-project-id="${p.id}">
-      <td class="project-name-cell">${escHtml(p.projectName)}</td>
-      <td class="project-purpose-cell">
-        ${escHtml(p.purpose || '—')}
-        ${p.status === 'REJECTED' && p.rejectionReason ? `
-          <div class="rejection-reason">
-            <strong>Rejection reason:</strong> ${escHtml(p.rejectionReason)}
-          </div>
-        ` : ''}
-      </td>
-      <td class="cost-cell">₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
-      <td><span class="status-pill status-${p.status}">${p.status}</span></td>
-      <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
-      <td>
-        <button class="action-btn" onclick="viewProject(${p.id})">View</button>
-        <button class="action-btn feedback-btn" onclick="toggleFeedback(${p.id})">💬 Feedback</button>
-      </td>
-    </tr>
-    <tr class="feedback-row" id="feedback-row-${p.id}" style="display: none;">
-      <td colspan="6">
-        <div class="feedback-container" id="feedback-${p.id}">
-          <div class="feedback-loading">Loading feedback...</div>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-  
-  // Load feedback for each project
-  projects.forEach(async (p) => {
-    const feedback = await loadProjectFeedback(p.id);
-    displayFeedbackInRow(p.id, feedback);
-  });
-}
-
-function displayFeedbackInRow(projectId, feedback) {
-  const container = document.getElementById(`feedback-${projectId}`);
-  if (!container) return;
-  
-  if (!feedback || feedback.length === 0) {
-    container.innerHTML = `
-      <div class="feedback-empty">
-        <p>No feedback yet for this project.</p>
-      </div>
-    `;
-    return;
-  }
-  
-  container.innerHTML = `
-    <div class="feedback-header">
-      <h4>Community Feedback (${feedback.length})</h4>
-    </div>
-    <div class="feedback-list">
-      ${feedback.map(f => `
-        <div class="feedback-item">
-          <div class="feedback-meta">
-            <strong>${escHtml(f.authorName || 'Anonymous')}</strong>
-            <span class="feedback-date">${formatDate(f.createdAt)}</span>
-          </div>
-          <div class="feedback-message">${escHtml(f.message)}</div>
-          ${f.rating && f.rating > 0 ? `
-            <div class="feedback-rating">
-              ${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}
-            </div>
-          ` : ''}
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-// Toggle feedback visibility
 function toggleFeedback(projectId) {
   const row = document.getElementById(`feedback-row-${projectId}`);
   if (row) {
@@ -558,13 +476,9 @@ function toggleFeedback(projectId) {
   }
 }
 
-
 function viewProject(id) {
-  // Find the project
   const project = allProjects.find(p => p.id === id);
   if (!project) return;
-  
-  // Create modal or expand to show details
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.style.display = 'flex';
@@ -616,6 +530,7 @@ function viewProject(id) {
     `).join('');
   });
 }
+
 // ── HELPERS ──
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');
@@ -654,10 +569,7 @@ document.getElementById('rejectModal')?.addEventListener('click', function(e) {
   if (e.target === this) closeRejectModal();
 });
 
-// Start the app
-init();
-
-// Expose global functions
+// Make functions global
 window.onCommitteeChange = onCommitteeChange;
 window.applyFilters = applyFilters;
 window.openModal = openModal;
@@ -669,4 +581,7 @@ window.closeApproveModal = closeApproveModal;
 window.openRejectModal = openRejectModal;
 window.closeRejectModal = closeRejectModal;
 window.approveProject = approveProject;
-window.rejectProject = rejectProject;
+window.confirmReject = confirmReject;
+
+// Start the app
+init();

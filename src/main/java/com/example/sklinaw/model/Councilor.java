@@ -1,4 +1,4 @@
-package com.example.sklinaw;
+package com.example.sklinaw.model;
 
 public class Councilor {
     private int id;

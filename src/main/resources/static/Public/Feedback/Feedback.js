@@ -6,17 +6,18 @@ let currentProjectName = '';
 let currentRating = 0; // Add this for tracking rating
 
 // Load barangays on page load using AdminController
+// Load barangays on page load using public endpoint
 async function loadBarangays() {
-  console.log('Loading barangays from:', `${ADMIN_API}/councilors`);
+  console.log('Loading barangays from public endpoint...');
+  
   try {
-    const response = await fetch(`${ADMIN_API}/councilors`);
+    // Use the public endpoint that works
+    const response = await fetch(`${API}/public/getBarangays`);
+    
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     
-    const councilors = await response.json();
-    console.log('Councilors data:', councilors);
-    
-    const barangays = [...new Set(councilors.map(c => c.barangay).filter(b => b))];
-    console.log('Unique barangays:', barangays);
+    const barangays = await response.json();
+    console.log('Barangays loaded:', barangays);
     
     const select = document.getElementById('barangaySelect');
     if (!select) return;
@@ -29,20 +30,19 @@ async function loadBarangays() {
     if (barangays.length === 0) {
       select.innerHTML = '<option value="">— Select a barangay —</option>' +
         '<option value="Lahug">Lahug</option>' +
-        '<option value="Apas">Apas</option>' +
-        '<option value="Banilad">Banilad</option>';
+        '<option value="Pajac">Pajac</option>';
     }
     
   } catch (error) {
     console.error('Error loading barangays:', error);
     showToast('Could not load barangays.', true);
     
+    // Fallback options
     const select = document.getElementById('barangaySelect');
     if (select) {
       select.innerHTML = '<option value="">— Select a barangay —</option>' +
         '<option value="Lahug">Lahug</option>' +
-        '<option value="Apas">Apas</option>' +
-        '<option value="Banilad">Banilad</option>';
+        '<option value="Pajac">Pajac</option>';
     }
   }
 }
@@ -376,15 +376,17 @@ async function submitFeedback() {
   const name = nameInput ? nameInput.value.trim() : '';
   const rating = currentRating;
   
+  // ✅ FIX: Send rating as separate field, not as reaction
   const feedbackData = {
     projectId: currentProjectId,
     barangay: currentBarangay,
     authorName: name || 'Anonymous',
     message: message,
-    reaction: rating > 0 ? rating.toString() : ''
+    rating: rating,           // ← Send rating directly
+    reaction: ''             // ← Optional field, can be empty
   };
   
-  console.log('Submitting feedback:', feedbackData); // Debug log
+  console.log('Submitting feedback:', feedbackData);
   
   try {
     const response = await fetch(`${API}/submitProjectComment`, {
@@ -394,7 +396,7 @@ async function submitFeedback() {
     });
     
     const result = await response.text();
-    console.log('Server response:', result); // Debug log
+    console.log('Server response:', result);
     
     if (result === 'SUCCESS') {
       showToast('Thank you for your feedback!');

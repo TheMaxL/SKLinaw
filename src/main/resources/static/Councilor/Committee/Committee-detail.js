@@ -34,7 +34,6 @@ async function loadCommitteeData() {
     const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
     const text = await res.text();
     
-    // Handle error response
     if (text === 'ERROR') {
       Toast.show('Could not load committee data', true);
       return;
@@ -66,27 +65,23 @@ async function loadMembers() {
     const res = await fetch(`${API}/getCommitteeMembers?committeeName=${encodeURIComponent(committeeName)}&barangay=${encodeURIComponent(session.barangay)}`);
     const text = await res.text();
     
-    console.log('Members response:', text); // Debug
+    console.log('Members response:', text);
     
-    // Handle error response
     if (text === 'ERROR') {
       Toast.show('Could not load members', true);
       return;
     }
     
-    // Parse the response (it's an object with head and members array)
     const data = JSON.parse(text);
     const membersList = document.getElementById('membersList');
     
     if (!membersList) return;
     
-    // Create members array including the head as first member
     const members = [];
     if (data.head && data.head !== '') {
       members.push({ name: data.head, isHead: true, id: 'head' });
     }
     
-    // Add regular members (data.members is an array)
     if (data.members && Array.isArray(data.members)) {
       data.members.forEach((m, index) => {
         members.push({ name: m.name, isHead: false, id: index });
@@ -119,10 +114,11 @@ async function loadMembers() {
 
 async function loadProjects() {
   try {
-    const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`);
+    const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`, {
+      credentials: 'include'
+    });
     const text = await res.text();
     
-    // Handle error response
     if (text === 'ERROR') {
       Toast.show('Could not load projects', true);
       return;
@@ -162,7 +158,15 @@ async function loadProjects() {
                 <td>₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
                 <td><span class="status-pill status-${p.status}">${p.status}</span></td>
                 <td>${escapeHtml(p.councilorName)}</td>
-                <td><button class="action-btn" onclick="viewProject(${p.id})">View</button></td>
+                <td>
+                  <div style="display: flex; gap: 0.5rem;">
+                    ${p.status === 'PENDING' ? 
+                      `<button class="action-btn edit-btn" onclick="editProject(${p.id})">✏️ Edit</button>
+                       <button class="action-btn delete-btn" onclick="deleteProject(${p.id}, '${escapeHtml(p.projectName)}')">🗑️ Delete</button>` : 
+                      `<button class="action-btn view-btn" onclick="viewProject(${p.id})">👁️ View</button>`
+                    }
+                  </div>
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -203,6 +207,42 @@ async function loadBudget() {
   } catch (e) {
     console.error('Error loading budget:', e);
     Toast.show('Could not load budget', true);
+  }
+}
+
+// ==================== DELETE PROJECT ====================
+async function deleteProject(projectId, projectName) {
+  if (!confirm(`Are you sure you want to delete project "${projectName}"? This action cannot be undone.`)) {
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${API}/deleteProject`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ 
+        projectId: projectId,
+        barangay: session.barangay
+      })
+    });
+    
+    const result = await response.text();
+    
+    if (result === 'SUCCESS') {
+      Toast.show(`Project "${projectName}" has been deleted.`);
+      await loadProjects();
+      await loadBudget();
+    } else if (result === 'PROJECT_NOT_FOUND') {
+      Toast.show('Project not found', true);
+    } else if (result === 'CANNOT_DELETE_APPROVED_PROJECT') {
+      Toast.show('Cannot delete an approved project', true);
+    } else {
+      Toast.show('Error deleting project: ' + result, true);
+    }
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    Toast.show('Could not delete project', true);
   }
 }
 
@@ -273,7 +313,6 @@ async function submitProject() {
       await loadProjects();
       await loadBudget();
       
-      // Reset form
       const projectNameInput = document.getElementById('projectName');
       const projectPurposeInput = document.getElementById('projectPurpose');
       const projectCostInput = document.getElementById('projectCost');
@@ -312,8 +351,222 @@ function closeProjectModal() {
   if (modal) modal.classList.remove('open');
 }
 
-function viewProject(id) {
-  window.location.href = `/Project/project-detail.html?id=${id}`;
+async function viewProject(projectId) {
+  console.log('Viewing project ID:', projectId);
+  
+  try {
+    // Fetch project details directly from API
+    const response = await fetch(`${API}/getProjectById?projectId=${projectId}`, {
+      credentials: 'include'
+    });
+    const project = await response.json();
+    
+    console.log('Project data:', project);
+    
+    if (!project || project === 'PROJECT_NOT_FOUND') {
+      Toast.show('Project not found', true);
+      return;
+    }
+    
+    // Create modal to show project details
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    
+    // Show rejection reason if project is rejected
+    let rejectionReasonHtml = '';
+    if (project.status === 'REJECTED' && project.rejectionReason) {
+      rejectionReasonHtml = `
+        <div class="rejection-box">
+          <h4>❌ Rejection Reason</h4>
+          <div class="rejection-message">${escapeHtml(project.rejectionReason)}</div>
+          <div class="rejection-note">This project has been rejected by the Chairman.</div>
+        </div>
+      `;
+    }
+    
+    // For rejected projects, don't show community feedback section
+    let feedbackSectionHtml = '';
+    if (project.status !== 'REJECTED') {
+      feedbackSectionHtml = `
+        <div class="feedback-section-modal">
+          <h3>💬 Community Feedback</h3>
+          <div id="modal-feedback-${project.id}" class="modal-feedback-list">
+            <div class="loading-feedback">Loading feedback...</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    modal.innerHTML = `
+      <div class="modal project-detail-modal">
+        <h2>${escapeHtml(project.projectName)}</h2>
+        <div class="project-info">
+          <p><strong>Committee:</strong> ${escapeHtml(project.committeeName)}</p>
+          <p><strong>Submitted by:</strong> ${escapeHtml(project.councilorName)}</p>
+          <p><strong>Purpose:</strong> ${escapeHtml(project.purpose)}</p>
+          <p><strong>Cost:</strong> ₱${(project.totalCost || 0).toLocaleString('en-PH')}</p>
+          <p><strong>Status:</strong> <span class="status-pill status-${project.status}">${project.status}</span></p>
+          ${rejectionReasonHtml}
+        </div>
+        ${feedbackSectionHtml}
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="this.closest('.modal-overlay').remove()">Close</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Only load feedback for non-rejected projects
+    if (project.status !== 'REJECTED') {
+      loadProjectFeedback(project.id).then(feedback => {
+        const container = document.getElementById(`modal-feedback-${project.id}`);
+        if (!container) return;
+        
+        if (!feedback || feedback.length === 0) {
+          container.innerHTML = '<p class="feedback-empty">No feedback yet for this project.</p>';
+          return;
+        }
+        
+        container.innerHTML = feedback.map(f => `
+          <div class="feedback-item">
+            <div class="feedback-meta">
+              <strong>${escapeHtml(f.authorName || 'Anonymous')}</strong>
+              <span class="feedback-date">${formatDate(f.createdAt)}</span>
+            </div>
+            <div class="feedback-message">${escapeHtml(f.message)}</div>
+            ${f.rating && f.rating > 0 ? `
+              <div class="feedback-rating">
+                ${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error loading project:', error);
+    Toast.show('Could not load project details', true);
+  }
+}
+
+function openEditModal(project) {
+  const modal = document.getElementById('editProjectModal');
+  if (!modal) return;
+  
+  document.getElementById('editProjectId').value = project.id;
+  document.getElementById('editProjectName').value = project.projectName;
+  document.getElementById('editProjectPurpose').value = project.purpose || '';
+  document.getElementById('editProjectCost').value = project.totalCost || 0;
+  
+  modal.style.display = 'flex';
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('editProjectModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderTable(projects) {
+  const tbody = document.getElementById('projectTableBody');
+  if (!tbody) return;
+  
+  if (projects.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found. </td></tr>`;
+    return;
+  }
+  
+  tbody.innerHTML = projects.map((p, i) => `
+    <tr style="animation-delay:${i * 0.04}s" data-project-id="${p.id}">
+      <td class="project-name-cell">${escHtml(p.projectName)}</td>
+      <td class="project-purpose-cell">
+        ${escHtml(p.purpose || '—')}
+        ${p.status === 'REJECTED' && p.rejectionReason ? `
+          <div class="rejection-reason">
+            <strong>Rejection reason:</strong> ${escHtml(p.rejectionReason)}
+          </div>
+        ` : ''}
+      </td>
+      <td class="cost-cell">₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
+      <td><span class="status-pill status-${p.status}">${p.status}</span></td>
+      <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
+      <td>
+        <button class="action-btn view-btn" onclick="viewProject(${p.id})">👁️ View</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function editProject(projectId) {
+  console.log('Editing project ID:', projectId);
+  try {
+    const response = await fetch(`${API}/getProjectById?projectId=${projectId}`, {
+      credentials: 'include'
+    });
+    const project = await response.json();
+    console.log('Project data:', project);
+    openEditModal(project);
+  } catch (error) {
+    console.error('Error loading project:', error);
+    Toast.show('Could not load project details', true);
+  }
+}
+
+async function updateProject() {
+  const projectId = document.getElementById('editProjectId').value;
+  const projectName = document.getElementById('editProjectName').value.trim();
+  const purpose = document.getElementById('editProjectPurpose').value.trim();
+  const totalCost = parseFloat(document.getElementById('editProjectCost').value) || 0;
+  
+  console.log('=== UPDATE PROJECT DEBUG ===');
+  console.log('Project ID:', projectId);
+  console.log('Project Name:', projectName);
+  console.log('Purpose:', purpose);
+  console.log('Total Cost:', totalCost);
+  
+  if (!projectName) {
+    Toast.show('Project name is required', true);
+    return;
+  }
+  
+  // ✅ Make sure barangay is included
+  const barangay = localStorage.getItem('sk_barangay') || 'Lahug';
+  console.log('Barangay being sent:', barangay);
+  
+  const requestBody = {
+    id: parseInt(projectId),
+    projectName: projectName,
+    purpose: purpose,
+    totalCost: totalCost,
+    barangay: barangay  // ← Add this line
+  };
+  
+  console.log('Request body:', requestBody);
+  
+  try {
+    const response = await fetch(`${API}/updateProject`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(requestBody)
+    });
+    
+    const result = await response.text();
+    console.log('Server response:', result);
+    
+    if (result === 'SUCCESS') {
+      Toast.show('Project updated successfully!');
+      closeEditModal();
+      await loadProjects();
+      await loadBudget();
+    } else {
+      Toast.show('Error updating project: ' + result, true);
+    }
+  } catch (error) {
+    console.error('Error updating project:', error);
+    Toast.show('Could not update project', true);
+  }
 }
 
 async function removeMember(memberName) {
@@ -321,7 +574,7 @@ async function removeMember(memberName) {
   
   try {
     const res = await fetch(`${API}/removeCommitteeMember`, {
-      method: 'POST',  // Change from DELETE to POST
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         committeeName: committeeName,
@@ -346,7 +599,34 @@ async function removeMember(memberName) {
   }
 }
 
-// Helper function to escape HTML
+async function loadProjectFeedback(projectId) {
+  try {
+    const response = await fetch(`${API}/getProjectComments?projectId=${projectId}`, {
+      credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Failed to fetch feedback');
+    
+    const feedback = await response.json();
+    return feedback;
+  } catch (error) {
+    console.error('Error loading feedback:', error);
+    return [];
+  }
+}
+
+function formatDate(str) {
+  if (!str) return '—';
+  try {
+    return new Date(str).toLocaleDateString('en-PH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return str;
+  }
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -366,6 +646,7 @@ window.closeProjectModal = closeProjectModal;
 window.submitProject = submitProject;
 window.viewProject = viewProject;
 window.removeMember = removeMember;
+window.deleteProject = deleteProject;  
 
 // Start initialization
 init();

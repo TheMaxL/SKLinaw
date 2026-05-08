@@ -1,4 +1,4 @@
-package com.example.sklinaw;
+package com.example.sklinaw.controller;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -15,7 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {
+    "http://localhost:8085",
+    "https://pitcherlike-unformalistic-armandina.ngrok-free.dev"
+}, allowCredentials = "true")
 public class FeedbackController {
 
     private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db";
@@ -57,6 +60,29 @@ public class FeedbackController {
             e.printStackTrace();
             System.err.println("Error in submitProjectComment: " + e.getMessage());
             return "ERROR: " + e.getMessage();
+        }
+    }
+
+    @GetMapping("/public/getBarangays")
+    public String getPublicBarangays() {
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            // Get distinct barangays from approved councilors
+            String sql = "SELECT DISTINCT Barangay as barangay FROM Councilors WHERE approved = 1";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+            
+            StringBuilder result = new StringBuilder("[");
+            boolean first = true;
+            while (rs.next()) {
+                if (!first) result.append(",");
+                result.append("\"").append(escape(rs.getString("barangay"))).append("\"");
+                first = false;
+            }
+            result.append("]");
+            return result.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "[]";
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.sklinaw;
+package com.example.sklinaw.model;
 
 public class CommitteeMember {
     private String committeeName;           // Committee name (for head assignment)

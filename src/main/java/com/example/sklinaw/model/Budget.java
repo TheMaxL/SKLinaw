@@ -1,4 +1,4 @@
-package com.example.sklinaw;
+package com.example.sklinaw.model;
 
 import java.util.Map;
 

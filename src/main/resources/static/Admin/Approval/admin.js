@@ -1,4 +1,3 @@
-const ADMIN_API = 'http://localhost:8085/admin';
 let currentView = 'pending'; // 'pending', 'approved', or 'all'
 let currentMainView = 'user-mgmt'; // 'user-mgmt' or 'turnover'
 
@@ -8,6 +7,8 @@ async function loadPendingUsers() {
     try {
         const res = await fetch(`${ADMIN_API}/users`);
         let users = await res.json();
+        console.log('Pending users count:', users.length);
+
 
         // Apply status filter if needed
         const filterEl = document.getElementById('filter');
@@ -32,7 +33,7 @@ async function loadPendingUsers() {
         users.forEach(u => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-              <td>${u.id}${u.name}</td>
+              <td>${u.id}</td>
               <td>${escapeHtml(u.name)}</td>
               <td>${escapeHtml(u.barangay)}</td>
               <td><span class="status-badge status-pending">Pending</span></td>
@@ -467,14 +468,25 @@ async function loadStats() {
 }
 
 async function approveUser(id, name) {
+    console.log('=== APPROVE USER START ===');
+    console.log('Current view BEFORE approval:', currentView);
+    
     try {
         const response = await fetch(`${ADMIN_API}/users/${id}/approve`, { method: 'POST' });
         if (response.ok) {
             Toast.show(`${name} has been approved`);
-            loadPendingUsers();
-            loadApprovedUsers();
-            loadStats();
-            loadBarangayFilter();
+            
+            console.log('Calling loadPendingUsers...');
+            await loadPendingUsers();
+            
+            console.log('Calling loadStats...');
+            await loadStats();
+            
+            console.log('Calling loadBarangayFilter...');
+            await loadBarangayFilter();
+            
+            console.log('Current view AFTER all loads:', currentView);
+            checkTabVisualState();
         } else {
             Toast.show(`Error approving ${name}`, true);
         }
@@ -482,6 +494,7 @@ async function approveUser(id, name) {
         console.error('Error approving user:', err);
         Toast.show('Error approving user', true);
     }
+    console.log('=== APPROVE USER END ===');
 }
 
 async function rejectUser(id, name) {
@@ -657,6 +670,14 @@ function init() {
     loadBarangayFilter();
     switchView('pending');
     switchMainSection('user-mgmt');
+}
+
+function checkTabVisualState() {
+    const pendingTab = document.getElementById('tab-pending');
+    const approvedTab = document.getElementById('tab-approved');
+    console.log('Pending tab active class:', pendingTab?.classList.contains('active'));
+    console.log('Approved tab active class:', approvedTab?.classList.contains('active'));
+    console.log('currentView variable:', currentView);
 }
 
 // Helper function
