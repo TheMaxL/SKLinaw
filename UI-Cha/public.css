@@ -42,12 +42,37 @@ body { background: var(--bg); }
 .pub-tab-panel.active { display: block; animation: fadeUp 0.22s ease; }
 
 /* ── Project rows ── */
-.pub-project-row { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.12); gap: 0.75rem; border-radius: 5px; transition: background 0.12s; cursor: pointer; }
+.pub-project-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 0.65rem 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.12); gap: 0.75rem; border-radius: 5px; transition: background 0.12s; cursor: pointer; }
 .pub-project-row:last-child { border-bottom: none; }
 .pub-project-row:hover      { background: rgba(255,255,255,0.12); }
 .pub-project-row .pr-name   { font-weight: 600; font-size: 0.86rem; color: #1a2e2c; }
-.pub-project-row .pr-meta   { font-size: 0.72rem; color: rgba(0,0,0,0.55); margin-top: 2px; }
+.pub-project-row .pr-meta   { font-size: 0.72rem; color: rgba(0,0,0,0.55); margin-top: 2px; line-height: 1.5; }
+.pub-project-row .pr-right  { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 .pub-project-row .pr-cost   { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; color: #0a4a3a; flex-shrink: 0; }
+
+/* ── Published pill — RED ── */
+.pill-published { font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700; color: #EF3340; letter-spacing: 0.3px; text-transform: uppercase; flex-shrink: 0; }
+
+/* ── Projects total row ── */
+.pr-total-row { display: flex; justify-content: flex-end; padding: 0.5rem 0.5rem 0; border-top: 1px solid rgba(0,0,0,0.15); margin-top: 0.25rem; }
+.pr-total-row span { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.82rem; color: #0a4a3a; }
+
+/* ── File detail cards ── */
+.pub-detail-card { background: rgba(255,255,255,0.1); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.6rem; }
+.pub-detail-card:last-child { margin-bottom: 0; }
+.pub-detail-card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem; color: #1a2e2c; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.3px; }
+.pub-detail-row { display: flex; justify-content: space-between; align-items: flex-start; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.08); gap: 0.5rem; }
+.pub-detail-row:last-child { border-bottom: none; }
+.pub-detail-label { color: rgba(0,0,0,0.5); flex-shrink: 0; min-width: 90px; }
+.pub-detail-value { color: #1a2e2c; text-align: right; font-weight: 600; }
+
+/* ── Budget table (Files tab) ── */
+.pub-budget-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; margin-top: 0.5rem; }
+.pub-budget-table th { background: rgba(0,0,0,0.15); color: #0a4a3a; font-weight: 700; padding: 4px 6px; text-align: center; font-size: 0.68rem; text-transform: uppercase; }
+.pub-budget-table td { padding: 4px 6px; text-align: center; color: #1a2e2c; border-top: 1px solid rgba(0,0,0,0.08); }
+.pub-budget-table .total-row td { font-weight: 700; background: rgba(0,0,0,0.1); color: #0a4a3a; }
+
+/* ── Empty / loader ── */
 .pub-empty-msg { color: rgba(0,0,0,0.4); font-size: 0.85rem; text-align: center; padding: 3rem 1rem; font-style: italic; }
 
 /* ── Responsive ── */
