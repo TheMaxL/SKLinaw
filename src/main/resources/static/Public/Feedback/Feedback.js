@@ -3,15 +3,12 @@ const ADMIN_API = 'http://localhost:8085/admin';
 let currentBarangay = '';
 let currentProjectId = null;
 let currentProjectName = '';
-let currentRating = 0; // Add this for tracking rating
+let currentRating = 0;
 
-// Load barangays on page load using AdminController
-// Load barangays on page load using public endpoint
 async function loadBarangays() {
   console.log('Loading barangays from public endpoint...');
   
   try {
-    // Use the public endpoint that works
     const response = await fetch(`${API}/public/getBarangays`);
     
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -27,17 +24,16 @@ async function loadBarangays() {
       select.innerHTML += `<option value="${escapeHtml(barangay)}">${escapeHtml(barangay)}</option>`;
     });
     
-    if (barangays.length === 0) {
-      select.innerHTML = '<option value="">— Select a barangay —</option>' +
-        '<option value="Lahug">Lahug</option>' +
-        '<option value="Pajac">Pajac</option>';
+    // ✅ If there's only one barangay, auto-select it and load committees
+    if (barangays.length === 1) {
+      select.value = barangays[0];
+      loadCommittees(barangays[0]);
     }
     
   } catch (error) {
     console.error('Error loading barangays:', error);
     showToast('Could not load barangays.', true);
     
-    // Fallback options
     const select = document.getElementById('barangaySelect');
     if (select) {
       select.innerHTML = '<option value="">— Select a barangay —</option>' +
@@ -62,16 +58,14 @@ function handleStarClick() {
   const rating = parseInt(this.dataset.rating);
   currentRating = rating;
   
-  // Update the hidden input
   const ratingInput = document.getElementById('feedbackRating');
   if (ratingInput) ratingInput.value = rating;
   
-  // Update all stars in the modal
   const stars = document.querySelectorAll('#feedbackModal .star');
   stars.forEach((star, index) => {
     if (index < rating) {
       star.classList.add('active');
-      star.textContent = '★';
+      star.textCode = '★';
     } else {
       star.classList.remove('active');
       star.textContent = '☆';
@@ -81,7 +75,6 @@ function handleStarClick() {
   console.log('Rating set to:', rating);
 }
 
-// Load committees when barangay changes
 async function loadCommittees(barangay) {
   const sel = document.getElementById('committeeSelect');
   if (!sel) return;
@@ -112,7 +105,6 @@ async function loadCommittees(barangay) {
   }
 }
 
-// Load comments for a specific project
 async function loadProjectComments(projectId) {
   try {
     const response = await fetch(`${API}/getProjectComments?projectId=${projectId}`);
@@ -123,6 +115,19 @@ async function loadProjectComments(projectId) {
   } catch (error) {
     console.error('Error loading comments:', error);
     return [];
+  }
+}
+
+async function loadProjectScore(projectId) {
+  try {
+    const response = await fetch(`${API}/getProjectScore?projectId=${projectId}`);
+    if (!response.ok) throw new Error('Failed to fetch score');
+    
+    const scoreData = await response.json();
+    return scoreData;
+  } catch (error) {
+    console.error('Error loading project score:', error);
+    return { average: 0, totalVotes: 0, breakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
   }
 }
 
@@ -177,10 +182,8 @@ async function loadProjects() {
       }
     }
 
-    // Only show APPROVED to public
     let visible = allProjects.filter(p => p.status === 'APPROVED');
 
-    // Apply search filter
     if (search) {
       visible = visible.filter(p =>
         (p.projectName || '').toLowerCase().includes(search) ||
@@ -235,6 +238,7 @@ async function renderProjectsWithComments(projects) {
     const p = projects[i];
     const commentContainerId = `comments-${p.id}`;
     const comments = await loadProjectComments(p.id);
+    const ratingData = await loadProjectRating(p.id);  // ← Changed from loadProjectScore
     
     html += `
       <div class="project-card" data-project-id="${p.id}" style="animation-delay:${i * 0.05}s">
@@ -272,6 +276,17 @@ async function renderProjectsWithComments(projects) {
             </div>
           </div>
           
+          <div class="rating-section">
+            <div class="rating-header">
+              <h4>⭐ Community Rating</h4>
+              <span class="average-rating">${ratingData.average ? ratingData.average.toFixed(1) : '0.0'} / 5</span>
+            </div>
+            <div class="rating-stars-display">
+              ${renderRatingStars(ratingData.average || 0)}
+            </div>
+            <div class="rating-count">Based on ${ratingData.totalVotes || 0} rating(s)</div>
+          </div>
+          
           <div class="comments-section">
             <div class="comments-header">
               <h4>💬 Community Feedback</h4>
@@ -291,6 +306,24 @@ async function renderProjectsWithComments(projects) {
   listEl.innerHTML = html;
 }
 
+function renderRatingStars(averageRating) {
+  const fullStars = Math.floor(averageRating);
+  const hasHalfStar = averageRating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  
+  let starsHtml = '';
+  for (let i = 0; i < fullStars; i++) {
+    starsHtml += '★';
+  }
+  if (hasHalfStar) {
+    starsHtml += '½';
+  }
+  for (let i = 0; i < emptyStars; i++) {
+    starsHtml += '☆';
+  }
+  return `<span class="rating-stars">${starsHtml}</span>`;
+}
+
 function renderCommentsHtml(comments) {
   if (!comments || comments.length === 0) {
     return '<div class="no-comments">No feedback yet. Click "+ Add Feedback" to share your thoughts!</div>';
@@ -303,8 +336,6 @@ function renderCommentsHtml(comments) {
         <span class="comment-date">${formatDate(c.createdAt)}</span>
       </div>
       <div class="comment-message">${escapeHtml(c.message)}</div>
-      ${c.rating ? `<div class="comment-rating">${'★'.repeat(c.rating)}${'☆'.repeat(5-c.rating)}</div>` : ''}
-      ${c.reaction && !c.rating ? `<div class="comment-reaction">👍 ${escapeHtml(c.reaction)}</div>` : ''}
     </div>
   `).join('');
 }
@@ -313,11 +344,10 @@ function toggleCard(card) {
   card.classList.toggle('open');
 }
 
-// Feedback functions for individual projects
 function openFeedbackModal(projectId, projectName) {
   currentProjectId = projectId;
   currentProjectName = projectName;
-  currentRating = 0; // Reset rating
+  currentRating = 0;
   
   const modal = document.getElementById('feedbackModal');
   const projectNameSpan = document.getElementById('feedbackProjectName');
@@ -326,7 +356,6 @@ function openFeedbackModal(projectId, projectName) {
     projectNameSpan.textContent = `Project: ${projectName}`;
   }
   
-  // Reset form
   const feedbackName = document.getElementById('feedbackName');
   const feedbackMessage = document.getElementById('feedbackMessage');
   const ratingInput = document.getElementById('feedbackRating');
@@ -335,7 +364,6 @@ function openFeedbackModal(projectId, projectName) {
   if (feedbackMessage) feedbackMessage.value = '';
   if (ratingInput) ratingInput.value = '0';
   
-  // Reset stars
   const stars = document.querySelectorAll('#feedbackModal .star');
   stars.forEach(star => {
     star.classList.remove('active');
@@ -344,7 +372,6 @@ function openFeedbackModal(projectId, projectName) {
   
   if (modal) modal.style.display = 'flex';
   
-  // Re-initialize stars when modal opens
   setTimeout(() => {
     initRatingStars();
   }, 100);
@@ -376,14 +403,13 @@ async function submitFeedback() {
   const name = nameInput ? nameInput.value.trim() : '';
   const rating = currentRating;
   
-  // ✅ FIX: Send rating as separate field, not as reaction
   const feedbackData = {
     projectId: currentProjectId,
     barangay: currentBarangay,
     authorName: name || 'Anonymous',
     message: message,
-    rating: rating,           // ← Send rating directly
-    reaction: ''             // ← Optional field, can be empty
+    rating: rating,  // Include rating in the comment
+    reaction: ''
   };
   
   console.log('Submitting feedback:', feedbackData);
@@ -399,14 +425,16 @@ async function submitFeedback() {
     console.log('Server response:', result);
     
     if (result === 'SUCCESS') {
-      showToast('Thank you for your feedback!');
+      if (rating > 0) {
+        showToast('Thank you for your feedback and rating!');
+      } else {
+        showToast('Thank you for your feedback!');
+      }
       closeFeedbackModal();
       
-      const commentsContainer = document.getElementById(`comments-${currentProjectId}`);
-      if (commentsContainer) {
-        const comments = await loadProjectComments(currentProjectId);
-        commentsContainer.innerHTML = renderCommentsHtml(comments);
-      }
+      // Refresh the projects to show updated rating
+      await loadProjects();
+      
     } else if (result === 'EMPTY_MESSAGE') {
       showToast('Please enter a message.', true);
     } else if (result === 'MESSAGE_TOO_LONG') {
@@ -417,6 +445,19 @@ async function submitFeedback() {
   } catch (error) {
     console.error('Error submitting feedback:', error);
     showToast('Could not submit feedback: ' + error.message, true);
+  }
+}
+
+async function loadProjectRating(projectId) {
+  try {
+    const response = await fetch(`${API}/getProjectRating?projectId=${projectId}`);
+    if (!response.ok) throw new Error('Failed to fetch rating');
+    
+    const ratingData = await response.json();
+    return ratingData;
+  } catch (error) {
+    console.error('Error loading project rating:', error);
+    return { average: 0, totalVotes: 0, breakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
   }
 }
 
@@ -454,19 +495,47 @@ function showToast(msg, isError = false) {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM fully loaded');
+  
   const barangaySelect = document.getElementById('barangaySelect');
+  const loadBtn = document.getElementById('loadBtn');
+  const searchInput = document.getElementById('searchInput');
+  
+  console.log('barangaySelect found:', !!barangaySelect);
+  console.log('loadBtn found:', !!loadBtn);
+  
   if (barangaySelect) {
-    barangaySelect.addEventListener('change', (e) => {
-      loadCommittees(e.target.value);
+    // Remove any existing listeners to avoid duplicates
+    const newSelect = barangaySelect.cloneNode(true);
+    barangaySelect.parentNode.replaceChild(newSelect, barangaySelect);
+    
+    // Add fresh event listener
+    newSelect.addEventListener('change', (e) => {
+      const selectedBarangay = e.target.value;
+      console.log('=== BARANGAY CHANGED ===');
+      console.log('Selected barangay:', selectedBarangay);
+      if (selectedBarangay) {
+        loadCommittees(selectedBarangay);
+      } else {
+        // Reset committee dropdown if "All barangays" is selected
+        const committeeSelect = document.getElementById('committeeSelect');
+        if (committeeSelect) {
+          committeeSelect.innerHTML = '<option value="">All committees</option>';
+        }
+      }
     });
+    
+    // If a barangay is already selected, load committees
+    if (newSelect.value) {
+      console.log('Initial barangay value:', newSelect.value);
+      loadCommittees(newSelect.value);
+    }
   }
   
-  const loadBtn = document.getElementById('loadBtn');
   if (loadBtn) {
     loadBtn.addEventListener('click', loadProjects);
   }
   
-  const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchInput.addEventListener('input', function() {
       const cards = document.querySelectorAll('.project-card');
@@ -478,14 +547,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Initialize rating stars
   initRatingStars();
-  
-  // Load barangays
   loadBarangays();
 });
 
-// Make functions global for onclick handlers
 window.openFeedbackModal = openFeedbackModal;
 window.closeFeedbackModal = closeFeedbackModal;
 window.submitFeedback = submitFeedback;

@@ -218,7 +218,22 @@ async function loadRecentExpenditures() {
 // ==================== CHAIRMAN VIEW ====================
 async function loadChairmanDashboard() {
   await loadChairmanStats();
-  await loadCommitteesTable();
+  await loadCommitteesList();  
+  await loadCommitteesTable(); 
+}
+
+async function loadCommitteesList() {
+  try {
+    const response = await fetch(`/api/getCommittees?barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const committees = await response.json();
+    window.allCommittees = committees;  // Store globally
+    console.log('Committees loaded:', committees);
+  } catch (error) {
+    console.error('Error loading committees:', error);
+    window.allCommittees = [];
+  }
 }
 
 async function loadChairmanStats() {
@@ -243,51 +258,42 @@ async function loadChairmanStats() {
 }
 
 async function loadCommitteesTable() {
-  const tbody = document.getElementById('projectTableBody');
-  if (!tbody) return;
-
-  if (!Array.isArray(allCommittees) || allCommittees.length === 0) {
-    tbody.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="5">
-          No committees found. Click "+ Add Committees" to create one!
-        </td>
-      </tr>`;
+  const tbody = document.getElementById('committeesTableBody');  // ← Changed from 'projectTableBody'
+  if (!tbody) {
+    console.error('committeesTableBody not found!');
     return;
   }
 
-  // Get current user's privilege to check if they are chairman
+  const committees = window.allCommittees || [];
+  console.log('Committees for table:', committees);
+
+  if (!Array.isArray(committees) || committees.length === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="7">No committees found.</td>
+      </tr>
+    `;
+    return;
+  }
+
   const userPrivilege = localStorage.getItem('sk_privilege') || '';
   const isChairman = userPrivilege === 'CHAIRMAN';
-  const currentUser = localStorage.getItem('sk_name') || '';
 
-  tbody.innerHTML = allCommittees.map((c, i) => `
+  tbody.innerHTML = committees.map((c, i) => `
     <tr style="animation-delay:${i * 0.05}s">
-      <td class="project-name-cell">${esc(c.committeeName)}</td>
-      <td style="color:var(--muted)">—</td>
-      <td>
-        ${c.headName 
-          ? esc(c.headName) 
-          : '<span style="color:var(--muted)">No head assigned</span>'}
-      </td>
-      <td style="color:var(--muted)">—</td>
-      <td>
-        ${isChairman ? 
-          `<button class="action-btn delete-committee-btn" 
-            data-name="${esc(c.committeeName)}"
-            onclick="deleteCommittee('${esc(c.committeeName)}')">
-            🗑️ Delete Committee
-          </button>` :
-          `<button class="action-btn disabled-btn" disabled>
-            No actions available
-          </button>`
-        }
-      </td>
-    </table>
+      <td class="project-name-cell">${escapeHtml(c.committeeName)}</td>
+      <td>${c.headName ? escapeHtml(c.headName) : '<span style="color:var(--muted)">Not assigned</span>'}</td>
+      <td class="pending-count">—</td>
+      <td class="approved-count">—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
   `).join('');
+  
+  console.log('Table rendered with', committees.length, 'committees');
 }
 
-// ── DELETE COMMITTEE (Chairman only) ──
 async function deleteCommittee(committeeName) {
   // Confirmation dialog
   const confirmMessage = `⚠️ PERMANENT ACTION ⚠️\n\n` +

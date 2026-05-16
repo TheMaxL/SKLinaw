@@ -302,10 +302,12 @@ async function submitProject() {
     const res = await fetch(`${API}/addProject`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(projectData)
     });
     
     const text = await res.text();
+    console.log('Add project response:', text);  // Debug log
     
     if (text === 'SUCCESS') {
       Toast.show('Project submitted for approval!');
@@ -313,6 +315,7 @@ async function submitProject() {
       await loadProjects();
       await loadBudget();
       
+      // Reset form
       const projectNameInput = document.getElementById('projectName');
       const projectPurposeInput = document.getElementById('projectPurpose');
       const projectCostInput = document.getElementById('projectCost');
@@ -320,6 +323,18 @@ async function submitProject() {
       if (projectNameInput) projectNameInput.value = '';
       if (projectPurposeInput) projectPurposeInput.value = '';
       if (projectCostInput) projectCostInput.value = '';
+      
+    } else if (text.includes('INSUFFICIENT_BUDGET')) {
+      // Use includes() instead of startsWith() to be safe
+      Toast.show(text, true);
+    } else if (text === 'NO_BUDGET_ALLOCATED') {
+      Toast.show('No budget has been allocated for this committee yet.', true);
+    } else if (text === 'NOT_A_COMMITTEE_MEMBER') {
+      Toast.show('You are not a member of this committee.', true);
+    } else if (text === 'COUNCILOR_NOT_IN_BARANGAY') {
+      Toast.show('Councilor not found in this barangay.', true);
+    } else if (text === 'COMMITTEE_NOT_FOUND') {
+      Toast.show('Committee not found.', true);
     } else {
       Toast.show('Error: ' + text, true);
     }

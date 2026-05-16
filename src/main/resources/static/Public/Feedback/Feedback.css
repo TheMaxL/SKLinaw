@@ -523,6 +523,48 @@ header {
   color: #fbbf24;
 }
 
+/* Rating Section */
+.rating-section {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.rating-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.rating-header h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--muted);
+}
+
+.average-rating {
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.rating-stars-display {
+  margin: 0.25rem 0;
+}
+
+.rating-stars {
+  color: #f59e0b;
+  font-size: 1rem;
+  letter-spacing: 2px;
+}
+
+.rating-count {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
 /* ── TOAST ── */
 .toast {
   position: fixed;
