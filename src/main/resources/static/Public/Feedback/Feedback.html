@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Project Transparency</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="Feedback.css"/>
+</head>
+<body>
+
+<header>
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="header-badge">Public Transparency</div>
+</header>
+
+<div class="hero">
+  <h1>Barangay SK <em>Project List</em></h1>
+  <p>View all implemented programs and share your feedback on each project.</p>
+</div>
+
+<div class="controls">
+  <div class="controls-card">
+    <div class="control-group">
+      <label>Barangay</label>
+      <select id="barangaySelect">
+        <option value="">— Select a barangay —</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Committee</label>
+      <select id="committeeSelect">
+        <option value="">All committees</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Search</label>
+      <input type="text" id="searchInput" placeholder="Project name or keyword..."/>
+    </div>
+    <button class="btn-load" id="loadBtn">Load Projects</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label">Total Projects</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statApproved">0</div>
+      <div class="stat-label">Published</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statCost">₱0</div>
+      <div class="stat-label">Total Expenditure</div>
+    </div>
+  </div>
+
+  <div class="section-title" id="listLabel" style="display:none">Projects</div>
+  <div id="projectList">
+    <div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+      </svg>
+      <p>Select a barangay and click <strong>Load Projects</strong> to get started.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback Modal for individual project -->
+<!-- Feedback Modal for individual project -->
+<div class="modal-overlay" id="feedbackModal" style="display: none;">
+  <div class="modal">
+    <h3>💬 Share Feedback</h3>
+    <p id="feedbackProjectName" style="color: var(--teal); margin-bottom: 1rem;"></p>
+    <div class="form-group">
+      <label>Your Name (optional)</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous"/>
+    </div>
+    <div class="form-group">
+      <label>Rating</label>
+      <div class="rating-stars">
+        <span class="star" data-rating="1">☆</span>
+        <span class="star" data-rating="2">☆</span>
+        <span class="star" data-rating="3">☆</span>
+        <span class="star" data-rating="4">☆</span>
+        <span class="star" data-rating="5">☆</span>
+      </div>
+      <input type="hidden" id="feedbackRating" value="0"/>
+    </div>
+    <div class="form-group">
+      <label>Your Feedback <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="4" placeholder="Share your thoughts about this project..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeFeedbackModal()">Cancel</button>
+      <button class="btn-submit" onclick="submitFeedback()">Submit Feedback</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="Feedback.js"></script>
+</body>
+</html>

@@ -1,0 +1,446 @@
+const API = `${window.location.origin}/api`;
+const ADMIN_API = `${window.location.origin}/admin`;
+
+// ── Toast ──────────────────────────────────
+const Toast = {
+  el: document.getElementById('global-toast'),
+  timer: null,
+  show(msg, isError = false) {
+    if (!this.el) return;
+    this.el.textContent = msg;
+    this.el.className = 'toast show' + (isError ? ' toast-error' : '');
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.el.classList.remove('show'), 3500);
+  }
+};
+
+// ── Helpers ────────────────────────────────
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  try {
+    return new Date(s).toLocaleDateString('en-PH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return s;
+  }
+}
+
+function fmtDateShort(s) {
+  if (!s) return '—';
+  try {
+    return new Date(s).toLocaleDateString('en-PH', {
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return s;
+  }
+}
+
+function setAlert(id, msg, type = 'error') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `alert alert-${type} show`;
+}
+
+function hideAlert(id) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'alert';
+}
+
+function flashError(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = 'var(--error)';
+  setTimeout(() => (el.style.borderColor = ''), 2000);
+}
+
+// ── Authenticated Fetch Wrapper ────────────────────────────────
+async function authFetch(url, options = {}) {
+  const defaultOptions = {
+    credentials: 'include', // Important for session cookies
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+  };
+  
+  const mergedOptions = { ...defaultOptions, ...options };
+  
+  try {
+    const response = await fetch(url, mergedOptions);
+    
+    // If unauthorized, redirect to login
+    if (response.status === 401) {
+      const publicPages = ['public.html', 'index.html', 'login.html', 'signup.html'];
+      const currentPage = window.location.pathname.split('/').pop();
+      
+      if (!publicPages.includes(currentPage) && !Session.name) {
+        Toast.show('Session expired. Please login again.', true);
+        Session.clear();
+        setTimeout(() => {
+          window.location.href = '/Councilor/Log-in/login.html';
+        }, 1500);
+      }
+      throw new Error('Unauthorized');
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Auth fetch error:', error);
+    throw error;
+  }
+}
+
+async function ngrokFetch(url, options = {}) {
+    const defaultHeaders = {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+    };
+    
+    const mergedOptions = {
+        ...options,
+        headers: {
+            ...defaultHeaders,
+            ...options.headers
+        }
+    };
+    
+    return fetch(url, mergedOptions);
+}
+
+// ── Session with Role Management ────────────────────────────────
+const Session = {
+  get name() {
+    return localStorage.getItem('sk_name') || '';
+  },
+  get barangay() {
+    return localStorage.getItem('sk_barangay') || '';
+  },
+  get privilege() {
+    return localStorage.getItem('sk_privilege') || '';
+  },
+  get userId() {
+    return localStorage.getItem('sk_user_id') || '';
+  },
+  
+  // Role check helpers
+  isAdmin() {
+    return this.privilege === 'ADMIN';
+  },
+  isChairman() {
+    return this.privilege === 'CHAIRMAN';
+  },
+  isTreasurer() {
+    return this.privilege === 'TREASURER';
+  },
+  isCouncilor() {
+    return !this.privilege || this.privilege === '';
+  },
+  isDeveloper() {
+    return this.privilege === 'DEVELOPER';
+  },
+  
+  // Check if user has access to a specific view
+  canAccess(view) {
+    switch(view) {
+      case 'admin':
+        return this.isAdmin() || this.isDeveloper();
+      case 'chairman':
+        return this.isChairman() || this.isAdmin() || this.isDeveloper();
+      case 'treasurer':
+        return this.isTreasurer() || this.isAdmin() || this.isDeveloper();
+      case 'councilor':
+        return this.isCouncilor() || this.isAdmin() || this.isDeveloper();
+      default:
+        return false;
+    }
+  },
+  
+  // Get display role title
+  getRoleTitle() {
+    if (this.isAdmin()) return 'Administrator';
+    if (this.isChairman()) return 'Chairman';
+    if (this.isTreasurer()) return 'Treasurer';
+    if (this.isDeveloper()) return 'Developer';
+    return 'Councilor';
+  },
+  
+  set(name, barangay, privilege = '', userId = null) {
+    localStorage.setItem('sk_name', name);
+    localStorage.setItem('sk_barangay', barangay);
+    localStorage.setItem('sk_privilege', privilege || '');
+    if (userId) {
+      localStorage.setItem('sk_user_id', userId);
+    }
+  },
+  
+  clear() {
+    localStorage.removeItem('sk_name');
+    localStorage.removeItem('sk_barangay');
+    localStorage.removeItem('sk_privilege');
+    localStorage.removeItem('sk_user_id');
+  }
+};
+
+// ── Check if Current Page is Public ────────────────────────────────
+function isPublicPage() {
+  const publicPages = [
+    'public.html', 
+    'index.html', 
+    'feedback.html', 
+    'login.html', 
+    'signup.html',
+    'home.html'
+  ];
+  const currentPage = window.location.pathname.split('/').pop();
+  return publicPages.includes(currentPage);
+}
+
+// ── Authentication Check ────────────────────────────────
+async function checkAuth() {
+  // Skip auth check for public pages
+  if (isPublicPage()) {
+    return true;
+  }
+  
+  try {
+    const response = await fetch(`${API}/auth/session`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (response.status === 401) {
+      return false;
+    }
+    
+    const sessionData = await response.json();
+    return sessionData.authenticated === true;
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return false;
+  }
+}
+
+// ── Protect Page Based on Role ────────────────────────────────
+async function protectPage(requiredView) {
+  // Skip protection for public pages
+  if (isPublicPage()) {
+    return true;
+  }
+  
+  // Check if user is logged in
+  if (!Session.name) {
+    Toast.show('Please login to access this page', true);
+    setTimeout(() => {
+      window.location.href = '/Councilor/Log-in/login.html';
+    }, 1500);
+    return false;
+  }
+  
+  // Verify session with server
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    Toast.show('Session expired. Please login again.', true);
+    Session.clear();
+    setTimeout(() => {
+      window.location.href = '/Councilor/Log-in/login.html';
+    }, 1500);
+    return false;
+  }
+  
+  // Check role-based access
+  if (!Session.canAccess(requiredView)) {
+    Toast.show('You do not have permission to access this page', true);
+    setTimeout(() => {
+      window.location.href = getDefaultRedirect();
+    }, 2000);
+    return false;
+  }
+  
+  return true;
+}
+
+// ── Get Default Redirect Based on Role ────────────────────────────────
+function getDefaultRedirect() {
+  if (Session.isAdmin()) {
+    return '/Councilor/Admin/admin.html';
+  } else if (Session.isChairman()) {
+    return '/Councilor/Projects/Projects.html';
+  } else if (Session.isTreasurer()) {
+    return '/Councilor/Budget/Budget.html';
+  } else {
+    return '/Councilor/Dashboard/dashboard.html';
+  }
+}
+
+// ── User Info Loader ────────────────────────────────
+async function loadUserInfo() {
+  try {
+    const userName = Session.name;
+    const userBarangay = Session.barangay;
+    
+    if (!userName || isPublicPage()) {
+      console.warn('No user logged in or public page');
+      updateUserDisplay('Guest', 'Not logged in', '?', '');
+      return;
+    }
+    
+    // Get user role title
+    const roleTitle = Session.getRoleTitle();
+    const displayRole = roleTitle + (userBarangay ? ` (${userBarangay})` : '');
+    
+    updateUserDisplay(userName, displayRole, getUserInitials(userName), roleTitle);
+    
+  } catch (error) {
+    console.error('Error loading user info:', error);
+    updateUserDisplay(Session.name || 'Guest', 'Councilor', getUserInitials(Session.name), '');
+  }
+}
+
+function getUserInitials(name) {
+  if (!name || name === 'Loading…' || name === '—' || name === 'Guest') return '?';
+  return name.charAt(0).toUpperCase();
+}
+
+function updateUserDisplay(name, roleDisplay, avatarText, roleType) {
+  // Update sidebar footer elements
+  const nameEl = document.getElementById('nameEl');
+  const roleEl = document.getElementById('roleEl');
+  const avatarEl = document.getElementById('avatarEl');
+  
+  if (nameEl) nameEl.textContent = name;
+  if (roleEl) roleEl.textContent = roleDisplay;
+  if (avatarEl) avatarEl.textContent = avatarText;
+  
+  // Update topbar greeting elements
+  const greetNameEl = document.getElementById('dash-greet-name');
+  const greetSubEl = document.getElementById('dash-greet-sub');
+  
+  if (greetNameEl) greetNameEl.textContent = name;
+  if (greetSubEl) greetSubEl.textContent = roleDisplay;
+  
+  // Update topbar date
+  updateTopbarDate();
+  
+  // Show role-specific UI elements
+  showRoleSpecificElements(roleType);
+}
+
+function showRoleSpecificElements(roleType) {
+  const roleClass = roleType ? roleType.toLowerCase() : '';
+  
+  // Hide all role-specific elements first
+  document.querySelectorAll('.role-specific').forEach(el => {
+    el.style.display = 'none';
+  });
+  
+  // Show elements for current role
+  if (roleClass) {
+    const elementsToShow = document.querySelectorAll(`.role-${roleClass}`);
+    elementsToShow.forEach(el => {
+      el.style.display = 'block';
+    });
+  }
+}
+
+function updateTopbarDate() {
+  const dateEl = document.getElementById('dash-today');
+  if (dateEl) {
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    dateEl.textContent = now.toLocaleDateString('en-PH', options);
+  }
+}
+
+// ── Role-Based Navigation Items ────────────────────────────────
+function setupRoleBasedNavigation() {
+  const navItems = document.querySelectorAll('[data-role]');
+  navItems.forEach(item => {
+    const requiredRole = item.dataset.role;
+    if (Session.canAccess(requiredRole)) {
+      item.style.display = '';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+// ── Logout Function ────────────────────────────────
+async function logout() {
+  try {
+    // Call logout endpoint
+    await fetch(`${API}/logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    }).catch(err => console.warn('Logout notification failed:', err));
+    
+    // Clear local session
+    Session.clear();
+    
+    Toast.show('Logged out successfully');
+    
+    // Redirect to home page
+    setTimeout(() => {
+      window.location.href = '/Councilor/Home/home.html';
+    }, 500);
+  } catch (error) {
+    console.error('Logout error:', error);
+    Session.clear();
+    window.location.href = '/Councilor/Home/home.html';
+  }
+}
+
+// ── NAVIGATION ─────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Load user info when page loads (skip for public pages)
+  if (!isPublicPage()) {
+    loadUserInfo();
+    setupRoleBasedNavigation();
+  }
+  
+  const buttons = document.querySelectorAll('.nav-item[data-page]');
+  const currentPage = window.location.pathname.split('/').pop();
+
+  buttons.forEach(btn => {
+    const target = btn.dataset.page;
+
+    // Set active state
+    if (target === currentPage) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+
+    // Prevent form submission behavior
+    btn.setAttribute('type', 'button');
+
+    // Attach safe click handler
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const current = window.location.pathname.split('/').pop();
+      if (current === target) return;
+      window.location.href = target;
+    });
+  });
+});
+
+// Export functions for use in other files
+window.authFetch = authFetch;
+window.Session = Session;
+window.Toast = Toast;
+window.logout = logout;
+window.protectPage = protectPage;
+window.checkAuth = checkAuth;

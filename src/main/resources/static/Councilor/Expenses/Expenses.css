@@ -1,0 +1,295 @@
+/* Expenses page specific styles */
+/* shared.css provides: root variables, sidebar, buttons, tables, animations, etc. */
+
+body {
+  display: flex;
+}
+
+/* Override main class (expenses uses .main, shared uses .main-content) */
+.main {
+  flex: 1;
+  padding: 2rem 2.5rem;
+  overflow-y: auto;
+}
+
+/* PAGE HEADER */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.page-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.page-sub {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-top: 3px;
+}
+
+/* SUMMARY CARDS */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+.sum-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 1rem 1.2rem;
+  animation: fadeUp 0.4s ease both;
+}
+.sum-card:nth-child(2) { animation-delay: 0.07s; }
+.sum-card:nth-child(3) { animation-delay: 0.14s; }
+.sum-card:nth-child(4) { animation-delay: 0.21s; }
+.sum-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--teal-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--teal);
+  margin-bottom: 0.6rem;
+}
+.sum-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.sum-lbl {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* TOOLBAR */
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.toolbar-left {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.search-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.86rem;
+  padding: 0.5rem 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 200px;
+}
+.search-input:focus {
+  border-color: var(--teal);
+}
+.select-filter {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.84rem;
+  padding: 0.5rem 0.8rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.select-filter:focus {
+  border-color: var(--teal);
+}
+
+/* SORT BUTTONS */
+.sort-bar {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.sort-btn {
+  border: 1px solid var(--border);
+  background: none;
+  border-radius: 7px;
+  padding: 0.38rem 0.85rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sort-btn:hover,
+.sort-btn.active {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: var(--teal-dim);
+}
+.sort-arrow {
+  font-size: 0.7rem;
+}
+
+/* COMMITTEE TABS */
+.committee-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+.ctab {
+  border: 1.5px solid var(--border);
+  background: none;
+  border-radius: 8px;
+  padding: 0.4rem 1rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.ctab:hover,
+.ctab.active {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: var(--teal-dim);
+}
+.ctab-count {
+  font-size: 0.68rem;
+  background: var(--surface2);
+  border-radius: 99px;
+  padding: 1px 6px;
+}
+.ctab.active .ctab-count {
+  background: rgba(11, 191, 181, 0.2);
+}
+
+/* Expenses table specific overrides */
+thead th {
+  cursor: pointer;
+  user-select: none;
+}
+thead th:hover {
+  color: var(--teal);
+}
+thead th .th-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.td-name {
+  font-weight: 600;
+  max-width: 220px;
+}
+.td-committee {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: var(--teal-dim);
+  color: var(--teal);
+  white-space: nowrap;
+}
+.td-amount {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  color: var(--teal);
+  white-space: nowrap;
+  text-align: right;
+}
+.type-pill {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.type-PROJECT {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818CF8;
+}
+.type-PAYMENT {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+}
+.td-muted {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+/* PAGINATION */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.page-btns {
+  display: flex;
+  gap: 0.4rem;
+}
+.page-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.page-btn:hover,
+.page-btn.active {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: var(--teal-dim);
+}
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Responsive overrides */
+@media (max-width: 900px) {
+  .summary-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 650px) {
+  .sidebar {
+    display: none;
+  }
+  .main {
+    padding: 1.25rem;
+  }
+  .summary-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}

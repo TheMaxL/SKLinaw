@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Highlighted Concerns</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --teal:      #0BBFB5;
+      --teal-dark: #089991;
+      --teal-dim:  rgba(11,191,181,0.1);
+      --bg:        #0D1F1E;
+      --surface:   #142322;
+      --surface2:  #1C302E;
+      --border:    rgba(11,191,181,0.18);
+      --text:      #E8F5F4;
+      --muted:     #6AACAA;
+      --warning:   #F59E0B;
+      --error:     #EF4444;
+      --success:   #10B981;
+      --warn-dim:  rgba(245,158,11,0.1);
+      --error-dim: rgba(239,68,68,0.1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    
+    .sidebar { width: 230px; min-width: 230px; background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.3rem; position: sticky; top: 0; height: 100vh; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--teal); padding: 0.5rem 0.75rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+    .logo span { color: var(--text); }
+    .nav-section { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 0.6rem 0.75rem 0.3rem; }
+    .nav-item { display: flex; align-items: center; gap: 0.65rem; padding: 0.6rem 0.75rem; border-radius: 9px; font-size: 0.86rem; font-weight: 500; color: var(--muted); cursor: pointer; transition: background 0.2s, color 0.2s; text-decoration: none; }
+    .nav-item:hover, .nav-item.active { background: var(--teal-dim); color: var(--teal); }
+    .nav-item .badge { margin-left: auto; background: var(--error); color: #fff; border-radius: 99px; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; min-width: 18px; text-align: center; }
+    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .user-chip { display: flex; align-items: center; gap: 0.65rem; padding: 0.6rem 0.75rem; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--teal-dim); border: 1.5px solid var(--teal); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.85rem; color: var(--teal); flex-shrink: 0; }
+    .user-name { font-size: 0.84rem; font-weight: 600; }
+    .user-role { font-size: 0.7rem; color: var(--muted); }
+    .btn-logout { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; color: var(--muted); font-size: 0.82rem; cursor: pointer; border: none; background: none; border-radius: 8px; width: 100%; transition: color 0.2s; }
+    .btn-logout:hover { color: var(--error); }
+
+    
+    .main { flex: 1; padding: 2rem 2.5rem; overflow-y: auto; }
+    .page-header { margin-bottom: 2rem; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem; }
+    .page-sub { color: var(--muted); font-size: 0.88rem; margin-top: 4px; }
+
+    
+    .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .sum-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 13px; padding: 1rem 1.25rem; animation: fadeUp 0.4s ease both; }
+    .sum-chip:nth-child(2) { animation-delay: 0.07s; }
+    .sum-chip:nth-child(3) { animation-delay: 0.14s; }
+    .sum-chip.warn  { border-color: rgba(245,158,11,0.35); background: var(--warn-dim); }
+    .sum-chip.alert { border-color: rgba(239,68,68,0.35);  background: var(--error-dim); }
+    .sum-icon { font-size: 1.3rem; margin-bottom: 0.4rem; }
+    .sum-val { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+    .sum-val.warn  { color: var(--warning); }
+    .sum-val.alert { color: var(--error); }
+    .sum-val.ok    { color: var(--success); }
+    .sum-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    
+    .section-title { font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
+    .section-title .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-warn  { background: var(--warning); }
+    .dot-alert { background: var(--error); }
+
+    
+    .concern-card { background: var(--surface); border: 1px solid var(--border); border-radius: 13px; margin-bottom: 0.75rem; overflow: hidden; animation: fadeUp 0.35s ease both; transition: border-color 0.2s; }
+    .concern-card:hover { border-color: var(--teal); }
+    .concern-card.level-high   { border-left: 4px solid var(--error); }
+    .concern-card.level-medium { border-left: 4px solid var(--warning); }
+
+    .cc-header { display: flex; align-items: center; gap: 0.75rem; padding: 0.9rem 1.1rem; cursor: pointer; }
+    .cc-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .cc-icon.budget  { background: var(--warn-dim); }
+    .cc-icon.comment { background: var(--error-dim); }
+    .cc-title-block { flex: 1; min-width: 0; }
+    .cc-title { font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cc-sub { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+    .cc-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+    .severity-pill { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; }
+    .sev-high   { background: var(--error-dim); color: var(--error); }
+    .sev-medium { background: var(--warn-dim);  color: var(--warning); }
+    .chevron { color: var(--muted); transition: transform 0.2s; }
+    .concern-card.open .chevron { transform: rotate(180deg); }
+
+    
+    .cc-body { display: none; padding: 0 1.1rem 1rem; border-top: 1px solid var(--border); }
+    .concern-card.open .cc-body { display: block; animation: fadeDown 0.2s ease; }
+
+    
+    .budget-detail-row { display: flex; justify-content: space-between; font-size: 0.82rem; margin-top: 0.85rem; gap: 1rem; flex-wrap: wrap; }
+    .bd-item { background: var(--surface2); border-radius: 8px; padding: 0.6rem 0.85rem; flex: 1; min-width: 100px; }
+    .bd-lbl { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+    .bd-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin-top: 2px; }
+    .bd-val.over { color: var(--error); }
+    .bd-val.ok   { color: var(--success); }
+    .progress-track { height: 7px; background: var(--surface2); border-radius: 99px; overflow: hidden; margin-top: 0.85rem; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+    .progress-fill.over { background: var(--error); }
+    .progress-fill.warn { background: var(--warning); }
+    .progress-fill.ok   { background: var(--success); }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+
+    
+    .comment-list { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .comment-item { background: var(--surface2); border-radius: 8px; padding: 0.65rem 0.85rem; }
+    .ci-top { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 3px; }
+    .ci-reaction { font-size: 0.9rem; }
+    .ci-author { font-size: 0.76rem; font-weight: 700; }
+    .ci-time { font-size: 0.68rem; color: var(--muted); margin-left: auto; }
+    .ci-text { font-size: 0.83rem; line-height: 1.55; color: var(--text); }
+
+    
+    .empty-section { background: var(--surface); border: 1px solid var(--border); border-radius: 13px; padding: 2.5rem; text-align: center; color: var(--muted); font-size: 0.88rem; margin-bottom: 1.5rem; }
+    .empty-section .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+    
+    .loader { display: flex; justify-content: center; padding: 2rem; gap: 6px; }
+    .loader span { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); animation: bounce 0.8s infinite alternate; }
+    .loader span:nth-child(2) { animation-delay: 0.2s; }
+    .loader span:nth-child(3) { animation-delay: 0.4s; }
+
+    
+    .all-clear { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; padding: 2rem; text-align: center; display: none; }
+    .all-clear .ac-icon { font-size: 2.5rem; margin-bottom: 0.65rem; }
+    .all-clear h3 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--success); margin-bottom: 0.3rem; }
+    .all-clear p { font-size: 0.84rem; color: var(--muted); }
+
+    @keyframes fadeUp   { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bounce   { from { transform: translateY(0); opacity: 0.5; } to { transform: translateY(-8px); opacity: 1; } }
+
+    @media (max-width: 900px) { .summary-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 650px) { .sidebar { display: none; } .main { padding: 1.25rem; } }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="logo">SK <span>Linaw</span></div>
+  <div class="nav-section">Main</div>
+  <a class="nav-item" href="dashboard.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item" href="projects.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+    Projects
+  </a>
+  <div class="nav-section">Alerts</div>
+  <a class="nav-item active" href="concerns.html">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Concerns
+    <span class="badge" id="concernBadge">…</span>
+  </a>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="avatarEl">?</div>
+      <div>
+        <div class="user-name" id="nameEl">Loading…</div>
+        <div class="user-role" id="roleEl">Councilor</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <div class="page-title">
+      ⚠️ Highlighted Concerns
+    </div>
+    <div class="page-sub">Budget alerts and negative public feedback on your projects.</div>
+  </div>
+
+  
+  <div class="summary-row">
+    <div class="sum-chip alert">
+      <div class="sum-icon">💬</div>
+      <div class="sum-val alert" id="sumComments">—</div>
+      <div class="sum-lbl">Negative Feedback</div>
+    </div>
+    <div class="sum-chip warn">
+      <div class="sum-icon">💸</div>
+      <div class="sum-val warn" id="sumBudget">—</div>
+      <div class="sum-lbl">Budget Alerts</div>
+    </div>
+    <div class="sum-chip">
+      <div class="sum-icon">📋</div>
+      <div class="sum-val ok" id="sumTotal">—</div>
+      <div class="sum-lbl">Total Concerns</div>
+    </div>
+  </div>
+
+  
+  <div class="all-clear" id="allClear">
+    <div class="ac-icon">✅</div>
+    <h3>All Clear!</h3>
+    <p>No active concerns found. Keep up the good work!</p>
+  </div>
+
+  
+  <div id="budgetSection">
+    <div class="section-title">
+      <span class="dot dot-warn"></span>
+      Budget Concerns
+    </div>
+    <div id="budgetConcerns">
+      <div class="loader"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  
+  <div id="feedbackSection" style="margin-top:1.75rem">
+    <div class="section-title">
+      <span class="dot dot-alert"></span>
+      Negative Public Feedback
+    </div>
+    <div id="feedbackConcerns">
+      <div class="loader"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API      = 'http://localhost:8080/api';
+  const BARANGAY = 'Lahug'; // ← update to match your client's barangay
+
+  const session = {
+    name:     localStorage.getItem('sk_name')     || 'Councilor',
+    barangay: localStorage.getItem('sk_barangay') || BARANGAY,
+    role:     localStorage.getItem('sk_role')     || 'councilor'
+  };
+
+  document.getElementById('nameEl').textContent   = session.name;
+  document.getElementById('avatarEl').textContent = session.name.charAt(0).toUpperCase();
+  document.getElementById('roleEl').textContent   = session.role;
+
+  let budgetConcernCount   = 0;
+  let feedbackConcernCount = 0;
+
+  async function init() {
+    await Promise.all([loadBudgetConcerns(), loadFeedbackConcerns()]);
+    updateSummary();
+  }
+
+  
+  async function loadBudgetConcerns() {
+    const el = document.getElementById('budgetConcerns');
+    try {
+      const res  = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
+      const data = await res.json();
+      renderBudgetConcerns(data.committees || []);
+    } catch (e) {
+      
+      renderBudgetConcerns([
+        { committeeName:'Sports',      allocated: 120000, spent: 118000, remaining: 2000   },
+        { committeeName:'Education',   allocated: 150000, spent: 162000, remaining: -12000 },
+        { committeeName:'Environment', allocated: 80000,  spent: 45000,  remaining: 35000  },
+        { committeeName:'Health',      allocated: 100000, spent: 97000,  remaining: 3000   },
+      ]);
+    }
+  }
+
+  function renderBudgetConcerns(committees) {
+    const el = document.getElementById('budgetConcerns');
+
+    
+    
+    
+    const concerns = committees
+      .filter(c => c.spent > 0)
+      .map(c => {
+        const pct  = c.allocated > 0 ? (c.spent / c.allocated) * 100 : 0;
+        const over = c.spent > c.allocated;
+        const warn = !over && pct >= 85;
+        return { ...c, pct, over, warn };
+      })
+      .filter(c => c.over || c.warn)
+      .sort((a, b) => (b.over - a.over) || (b.pct - a.pct)); 
+
+    budgetConcernCount = concerns.length;
+
+    if (!concerns.length) {
+      el.innerHTML = `
+        <div class="empty-section">
+          <div class="empty-icon">✅</div>
+          No budget concerns found. All committees are within their limits.
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = concerns.map((c, i) => {
+      const pct      = Math.min(c.pct, 100).toFixed(0);
+      const fillClass = c.over ? 'over' : 'warn';
+      const severity  = c.over ? 'high' : 'medium';
+      const sevLabel  = c.over ? 'Exceeded' : 'Near Limit';
+      const remaining = c.allocated - c.spent;
+
+      return `
+        <div class="concern-card level-${severity}" style="animation-delay:${i*0.07}s">
+          <div class="cc-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="cc-icon budget">💸</div>
+            <div class="cc-title-block">
+              <div class="cc-title">${esc(c.committeeName)} Committee</div>
+              <div class="cc-sub">
+                ${c.over
+                  ? `Overspent by ₱${Math.abs(remaining).toLocaleString('en-PH')}`
+                  : `${pct}% of budget used — only ₱${remaining.toLocaleString('en-PH')} remaining`}
+              </div>
+            </div>
+            <div class="cc-right">
+              <span class="severity-pill sev-${severity}">${sevLabel}</span>
+              <svg class="chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="budget-detail-row">
+              <div class="bd-item">
+                <div class="bd-lbl">Allocated</div>
+                <div class="bd-val">₱${(c.allocated||0).toLocaleString('en-PH')}</div>
+              </div>
+              <div class="bd-item">
+                <div class="bd-lbl">Spent</div>
+                <div class="bd-val ${c.over ? 'over' : ''}">₱${(c.spent||0).toLocaleString('en-PH')}</div>
+              </div>
+              <div class="bd-item">
+                <div class="bd-lbl">Remaining</div>
+                <div class="bd-val ${remaining < 0 ? 'over' : 'ok'}">
+                  ${remaining < 0 ? '-' : ''}₱${Math.abs(remaining).toLocaleString('en-PH')}
+                </div>
+              </div>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill ${fillClass}" style="width:${Math.min(c.pct, 100)}%"></div>
+            </div>
+            <div class="progress-label">
+              <span>0%</span>
+              <span>${c.pct.toFixed(1)}% used</span>
+              <span>100%</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  
+  async function loadFeedbackConcerns() {
+    const el = document.getElementById('feedbackConcerns');
+    try {
+      
+      const cRes = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
+      const coms = await cRes.json();
+      let myProjects = [];
+
+      for (const c of coms) {
+        const pRes = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(c.name)}`);
+        const ps   = await pRes.json();
+        if (Array.isArray(ps)) {
+          ps.filter(p => p.councilorName === session.name && p.status === 'APPROVED')
+            .forEach(p => myProjects.push({ ...p, committeeName: c.name }));
+        }
+      }
+
+      
+      const concernedProjects = [];
+      for (const p of myProjects) {
+        const cRes2 = await fetch(`${API}/getProjectComments?projectId=${p.id}`);
+        const comments = await cRes2.json();
+        const negatives = Array.isArray(comments)
+          ? comments.filter(c => c.reaction === 'dislike')
+          : [];
+        if (negatives.length > 0) {
+          concernedProjects.push({ ...p, negativeComments: negatives });
+        }
+      }
+
+      
+      const fbRes  = await fetch(`${API}/getFeedback?barangay=${encodeURIComponent(session.barangay)}`);
+      const fbData = await fbRes.json();
+      const negativeFeedback = Array.isArray(fbData)
+        ? fbData.filter(f => f.reaction === 'dislike')
+        : [];
+
+      renderFeedbackConcerns(concernedProjects, negativeFeedback);
+
+    } catch (e) {
+      
+      renderFeedbackConcerns([
+        {
+          id: 1,
+          projectName: 'Basketball Court Renovation',
+          committeeName: 'Sports',
+          negativeComments: [
+            { authorName:'Anonymous', message:'The materials used look cheap and low quality.',        reaction:'dislike', createdAt:'2025-04-01T10:00:00' },
+            { authorName:'Anonymous', message:'Finished too late, the youth already lost interest.',   reaction:'dislike', createdAt:'2025-04-03T14:30:00' },
+          ]
+        }
+      ], [
+        { authorName:'Anonymous', message:'Budget transparency needs improvement, where are the receipts?', reaction:'dislike', createdAt:'2025-04-05T09:00:00' },
+      ]);
+    }
+  }
+
+  function renderFeedbackConcerns(projectsWithNeg, generalNeg) {
+    const el = document.getElementById('feedbackConcerns');
+    feedbackConcernCount = projectsWithNeg.length + (generalNeg.length > 0 ? 1 : 0);
+
+    if (!projectsWithNeg.length && !generalNeg.length) {
+      el.innerHTML = `
+        <div class="empty-section">
+          <div class="empty-icon">👍</div>
+          No negative feedback found on your projects. Great job!
+        </div>`;
+      return;
+    }
+
+    let html = '';
+
+    
+    if (generalNeg.length > 0) {
+      html += `
+        <div class="concern-card level-medium" style="animation-delay:0s">
+          <div class="cc-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="cc-icon comment">👎</div>
+            <div class="cc-title-block">
+              <div class="cc-title">General Barangay Feedback</div>
+              <div class="cc-sub">${generalNeg.length} negative comment${generalNeg.length !== 1 ? 's' : ''} from the public</div>
+            </div>
+            <div class="cc-right">
+              <span class="severity-pill sev-medium">Public</span>
+              <svg class="chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="cc-body">
+            <div class="comment-list">
+              ${generalNeg.map(c => `
+                <div class="comment-item">
+                  <div class="ci-top">
+                    <span class="ci-reaction">👎</span>
+                    <span class="ci-author">${esc(c.authorName)}</span>
+                    <span class="ci-time">${timeAgo(c.createdAt)}</span>
+                  </div>
+                  <div class="ci-text">${esc(c.message)}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    
+    html += projectsWithNeg.map((p, i) => `
+      <div class="concern-card level-high" style="animation-delay:${(i+1)*0.07}s">
+        <div class="cc-header" onclick="this.parentElement.classList.toggle('open')">
+          <div class="cc-icon comment">💬</div>
+          <div class="cc-title-block">
+            <div class="cc-title">${esc(p.projectName)}</div>
+            <div class="cc-sub">
+              📁 ${esc(p.committeeName)} ·
+              ${p.negativeComments.length} negative comment${p.negativeComments.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+          <div class="cc-right">
+            <span class="severity-pill sev-high">Needs Attention</span>
+            <svg class="chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="cc-body">
+          <div class="comment-list">
+            ${p.negativeComments.map(c => `
+              <div class="comment-item">
+                <div class="ci-top">
+                  <span class="ci-reaction">👎</span>
+                  <span class="ci-author">${esc(c.authorName)}</span>
+                  <span class="ci-time">${timeAgo(c.createdAt)}</span>
+                </div>
+                <div class="ci-text">${esc(c.message)}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`).join('');
+
+    el.innerHTML = html;
+  }
+
+  
+  function updateSummary() {
+    const total = budgetConcernCount + feedbackConcernCount;
+    document.getElementById('sumComments').textContent = feedbackConcernCount;
+    document.getElementById('sumBudget').textContent   = budgetConcernCount;
+    document.getElementById('sumTotal').textContent    = total;
+    document.getElementById('concernBadge').textContent = total > 0 ? total : '0';
+
+    if (total === 0) {
+      document.getElementById('allClear').style.display      = 'block';
+      document.getElementById('budgetSection').style.display  = 'none';
+      document.getElementById('feedbackSection').style.display = 'none';
+    }
+  }
+
+  
+  function timeAgo(dateStr) {
+    if (!dateStr) return '—';
+    try {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1)   return 'just now';
+      if (mins < 60)  return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24)   return `${hrs}h ago`;
+      const days = Math.floor(hrs / 24);
+      if (days < 7)   return `${days}d ago`;
+      return new Date(dateStr).toLocaleDateString('en-PH', { month:'short', day:'numeric' });
+    } catch { return '—'; }
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function logout() {
+    localStorage.removeItem('sk_name');
+    localStorage.removeItem('sk_barangay');
+    localStorage.removeItem('sk_role');
+    window.location.href = '../Log-in/login.html';
+  }
+
+  init();
+</script>
+</body>
+</html>
