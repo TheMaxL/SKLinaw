@@ -1,5 +1,5 @@
-const API = `${window.location.origin}/api`;
-const ADMIN_API = `${window.location.origin}/admin`;
+const API = '/api';
+const ADMIN_API = '/admin';
 
 // ── Toast ──────────────────────────────────
 const Toast = {
