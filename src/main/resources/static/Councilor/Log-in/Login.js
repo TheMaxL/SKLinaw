@@ -20,6 +20,9 @@ function storeUserSession(data) {
     localStorage.setItem('sk_privilege', data.privilege || '');
     localStorage.setItem('sk_user_id', data.id || '');
     localStorage.setItem('sk_user_type', data.userType || 'councilor');
+
+    console.log('After storage - barangay:', localStorage.getItem('sk_barangay'));
+    console.log('After storage - privilege:', localStorage.getItem('sk_privilege'));
     
     console.log('Session stored:', {
         name: localStorage.getItem('sk_name'),
