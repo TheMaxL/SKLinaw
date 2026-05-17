@@ -37,7 +37,9 @@ import jakarta.servlet.http.HttpSession;
     origins = {
         "http://localhost:3000",
         "http://localhost:5500",
-        "https://*.ngrok-free.dev"
+        "https://*.ngrok-free.dev",
+        "https://sklinaw.onrender.com",  
+        "https://*.onrender.com" 
     },
     allowCredentials = "true"
 )

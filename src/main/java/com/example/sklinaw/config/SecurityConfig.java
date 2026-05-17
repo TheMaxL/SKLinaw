@@ -128,7 +128,9 @@ public class SecurityConfig {
             "http://127.0.0.1:5500",
             "http://127.0.0.1:8080",
             "https://*.ngrok-free.dev",
-            "https://*.ngrok.io"
+            "https://*.ngrok.io",
+            "https://*.onrender.com",      
+            "https://sklinaw.onrender.com"
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
