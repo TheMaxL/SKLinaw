@@ -152,25 +152,48 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(DataSource dataSource) {
         JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
         
-        // Query for both Councilors and Developer tables (for authentication)
-        users.setUsersByUsernameQuery(
-            "SELECT username, password, enabled FROM (" +
-            "SELECT Name as username, Password as password, approved as enabled FROM Councilors " +
-            "UNION ALL " +
-            "SELECT Name as username, Password as password, approved as enabled FROM Developer" +
-            ") AS all_users WHERE username = ?"
-        );
+        // Check if running on Render (PostgreSQL) or local (SQLite)
+        String dbUrl = System.getenv("DB_URL");
         
-        // Query for authorities - returns ROLE_COUNCILOR for regular councilors
-        users.setAuthoritiesByUsernameQuery(
-            "SELECT username, authority FROM (" +
-            "SELECT Name as username, 'ROLE_' || privilege as authority FROM Councilors WHERE privilege IS NOT NULL AND privilege != '' " +
-            "UNION ALL " +
-            "SELECT Name as username, 'ROLE_COUNCILOR' as authority FROM Councilors WHERE (privilege IS NULL OR privilege = '') " +
-            "UNION ALL " +
-            "SELECT Name as username, 'ROLE_' || privilege as authority FROM Developer WHERE privilege IS NOT NULL AND privilege != ''" +
-            ") AS all_authorities WHERE username = ?"
-        );
+        if (dbUrl != null && !dbUrl.isEmpty()) {
+            // PostgreSQL syntax (no changes needed, same as SQLite for these queries)
+            users.setUsersByUsernameQuery(
+                "SELECT username, password, enabled FROM (" +
+                "SELECT Name as username, Password as password, approved as enabled FROM Councilors " +
+                "UNION ALL " +
+                "SELECT Name as username, Password as password, approved as enabled FROM Developer" +
+                ") AS all_users WHERE username = ?"
+            );
+            
+            users.setAuthoritiesByUsernameQuery(
+                "SELECT username, authority FROM (" +
+                "SELECT Name as username, 'ROLE_' || privilege as authority FROM Councilors WHERE privilege IS NOT NULL AND privilege != '' " +
+                "UNION ALL " +
+                "SELECT Name as username, 'ROLE_COUNCILOR' as authority FROM Councilors WHERE (privilege IS NULL OR privilege = '') " +
+                "UNION ALL " +
+                "SELECT Name as username, 'ROLE_' || privilege as authority FROM Developer WHERE privilege IS NOT NULL AND privilege != ''" +
+                ") AS all_authorities WHERE username = ?"
+            );
+        } else {
+            // SQLite syntax (same queries work)
+            users.setUsersByUsernameQuery(
+                "SELECT username, password, enabled FROM (" +
+                "SELECT Name as username, Password as password, approved as enabled FROM Councilors " +
+                "UNION ALL " +
+                "SELECT Name as username, Password as password, approved as enabled FROM Developer" +
+                ") AS all_users WHERE username = ?"
+            );
+            
+            users.setAuthoritiesByUsernameQuery(
+                "SELECT username, authority FROM (" +
+                "SELECT Name as username, 'ROLE_' || privilege as authority FROM Councilors WHERE privilege IS NOT NULL AND privilege != '' " +
+                "UNION ALL " +
+                "SELECT Name as username, 'ROLE_COUNCILOR' as authority FROM Councilors WHERE (privilege IS NULL OR privilege = '') " +
+                "UNION ALL " +
+                "SELECT Name as username, 'ROLE_' || privilege as authority FROM Developer WHERE privilege IS NOT NULL AND privilege != ''" +
+                ") AS all_authorities WHERE username = ?"
+            );
+        }
         
         users.setEnableGroups(false);
         return users;
@@ -178,12 +201,27 @@ public class SecurityConfig {
 
     @Bean
     public DataSource dataSource() {
+        // Check if running on Render (PostgreSQL) or local (SQLite)
+        String dbUrl = System.getenv("DB_URL");
+        
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.sqlite.JDBC");
-        dataSource.setUrl("jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db");
-        // SQLite doesn't use username/password
-        dataSource.setUsername("");
-        dataSource.setPassword("");
+        
+        if (dbUrl != null && !dbUrl.isEmpty()) {
+            // Running on Render - use PostgreSQL
+            System.out.println("Using PostgreSQL database for production");
+            dataSource.setDriverClassName("org.postgresql.Driver");
+            dataSource.setUrl(dbUrl);
+            dataSource.setUsername(System.getenv("DB_USER"));
+            dataSource.setPassword(System.getenv("DB_PASS"));
+        } else {
+            // Local development - use SQLite
+            System.out.println("Using SQLite database for local development");
+            dataSource.setDriverClassName("org.sqlite.JDBC");
+            dataSource.setUrl("jdbc:sqlite:sklinaw.db");
+            dataSource.setUsername("");
+            dataSource.setPassword("");
+        }
+        
         return dataSource;
     }
 
