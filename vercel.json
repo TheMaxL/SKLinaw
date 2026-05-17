@@ -7,6 +7,14 @@
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "https://sklinaw.onrender.com/api/$1"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "https://sklinaw.onrender.com/admin/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/src/main/resources/static/$1"
     }
