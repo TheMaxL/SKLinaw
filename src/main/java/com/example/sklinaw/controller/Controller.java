@@ -143,8 +143,8 @@ public class Controller {
                     session.setAttribute("privilege", privilege);
                     session.setAttribute("userType", userType);
                 } else {
-                    // Check Councilors table - uses 'rowid' as primary key
-                    String councilorSql = "SELECT rowid as id, Barangay, privilege FROM Councilors WHERE Name = ? AND approved = 1";
+                    // Check Councilors table - uses 'id' as primary key
+                    String councilorSql = "SELECT id, Barangay, privilege FROM Councilors WHERE Name = ? AND approved = 1";
                     PreparedStatement councilorStmt = conn.prepareStatement(councilorSql);
                     councilorStmt.setString(1, account.getName());
                     ResultSet councilorRs = councilorStmt.executeQuery();
@@ -302,7 +302,7 @@ public class Controller {
 
     @GetMapping("/councilors")
     public List<Account> getAllCouncilors() {
-        String sql = "SELECT rowid, Name, Barangay, approved, privilege FROM Councilors WHERE approved = 1";
+        String sql = "SELECT id, Name, Barangay, approved, privilege FROM Councilors WHERE approved = 1";
         
         try (Connection conn = DriverManager.getConnection(dbUrl);
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -312,7 +312,7 @@ public class Controller {
             
             while (rs.next()) {
                 Account account = new Account();
-                account.setId(rs.getInt("rowid"));
+                account.setId(rs.getInt("id"));
                 account.setName(rs.getString("Name"));
                 account.setBarangay(rs.getString("Barangay"));
                 account.setApproved(rs.getInt("approved"));

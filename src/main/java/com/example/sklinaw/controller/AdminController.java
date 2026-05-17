@@ -50,7 +50,7 @@ public class AdminController {
 
         try (Connection conn = dataSource.getConnection()) {
 
-            String sql = "SELECT rowid as id, Name, Barangay, Photo FROM PendingAccounts";
+            String sql = "SELECT id, Name, Barangay, Photo FROM PendingAccounts";
             PreparedStatement stmt = conn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
@@ -81,7 +81,7 @@ public class AdminController {
         try (Connection conn = dataSource.getConnection()) {
 
             // get pending account
-            String selectSql = "SELECT * FROM PendingAccounts WHERE rowid = ?";
+            String selectSql = "SELECT * FROM PendingAccounts WHERE id = ?";
             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
             selectStmt.setInt(1, id);
 
@@ -104,7 +104,7 @@ public class AdminController {
                 insertStmt.executeUpdate();
 
                 // delete from pending
-                String deleteSql = "DELETE FROM PendingAccounts WHERE rowid = ?";
+                String deleteSql = "DELETE FROM PendingAccounts WHERE id = ?";
                 PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
 
                 deleteStmt.setInt(1, id);
@@ -122,7 +122,7 @@ public class AdminController {
 
         try (Connection conn = dataSource.getConnection()) {
 
-            String sql = "DELETE FROM PendingAccounts WHERE rowid = ?";
+            String sql = "DELETE FROM PendingAccounts WHERE id = ?";
             PreparedStatement stmt = conn.prepareStatement(sql);
 
             stmt.setInt(1, id);
@@ -136,7 +136,7 @@ public class AdminController {
     //Get councilors from Barangay
     @GetMapping("/councilors")
     public List<Account> getCouncilors(@RequestParam(required = false) String barangay) {
-        String sql = "SELECT rowid, Name, Password, Barangay, approved, privilege FROM Councilors";
+        String sql = "SELECT id, Name, Password, Barangay, approved, privilege FROM Councilors";
         if (barangay != null && !barangay.isEmpty()) {
             sql += " WHERE Barangay = ?";
         }
@@ -153,7 +153,7 @@ public class AdminController {
             
             while (rs.next()) {
                 Account account = new Account();
-                account.setId(rs.getInt("rowid"));
+                account.setId(rs.getInt("id"));
                 account.setName(rs.getString("Name"));
                 account.setPassword(rs.getString("Password"));
                 account.setBarangay(rs.getString("Barangay"));
@@ -175,7 +175,7 @@ public class AdminController {
         if(privilege == null || privilege.isEmpty()) {
             privilege = null;
         }
-        String sql = "UPDATE Councilors SET privilege = ? WHERE rowid = ?";
+        String sql = "UPDATE Councilors SET privilege = ? WHERE id = ?";
         try (Connection conn = DriverManager.getConnection(dbUrl);
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, privilege);
