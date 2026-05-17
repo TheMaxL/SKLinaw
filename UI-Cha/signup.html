@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK Linaw – Sign Up</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="signup.css"/>
+</head>
+<body>
+
+<div class="card card-md">
+  <button class="back-link" onclick="location.href='index.html'">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to Home
+  </button>
+
+  <div class="logo" style="font-size:1.3rem;margin-bottom:0.35rem">SK <span>Linaw</span></div>
+  <div class="card-title">Create your account</div>
+  <div class="card-subtitle">Register as an SK council. Your account will be reviewed before activation.</div>
+
+  <!-- Step Indicator -->
+  <div class="steps" id="steps-bar">
+    <div class="step-item active" id="step-ind-1"><div class="step-num">1</div><div class="step-label">Details</div></div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-ind-2"><div class="step-num">2</div><div class="step-label">Credentials</div></div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-ind-3"><div class="step-num">3</div><div class="step-label">Proof</div></div>
+  </div>
+
+  <div class="alert" id="signup-alert"></div>
+
+  <div id="form-area">
+    <!-- Step 1: Personal Details -->
+    <div class="step-panel active" id="panel-1">
+      <div class="form-group">
+        <label>First Name</label>
+        <input class="form-input" type="text" id="reg-first-name" placeholder="e.g. Juan"/>
+      </div>
+      <div class="form-group">
+        <label>Last Name</label>
+        <input class="form-input" type="text" id="reg-last-name" placeholder="e.g. Dela Cruz"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn-step-next" onclick="Signup.next()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Password -->
+    <div class="step-panel" id="panel-2">
+      <div class="form-group">
+        <label>Password</label>
+        <input class="form-input" type="password" id="reg-password" placeholder="Create a strong password"/>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input class="form-input" type="password" id="reg-confirm" placeholder="Repeat your password"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn-step-back" onclick="Signup.back()">← Back</button>
+        <button class="btn-step-next" onclick="Signup.next()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Proof Upload -->
+    <div class="step-panel" id="panel-3">
+      <div class="form-group">
+        <label>Proof of SK Position</label>
+        <div class="upload-area" id="upload-area" onclick="document.getElementById('reg-proof').click()">
+          <input type="file" id="reg-proof" accept="image/*,.pdf" onchange="Signup.onFileSelect(this)"/>
+          <div class="upload-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p><strong>Click to upload</strong> or drag and drop</p>
+          <p>Photo or PDF of your SK appointment / election docs</p>
+          <div class="file-name" id="reg-file-name"></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-step-back" onclick="Signup.back()">← Back</button>
+        <button class="btn-step-next" id="submit-btn" onclick="Signup.submit()">Submit →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success screen -->
+  <div class="success-screen" id="signup-success">
+    <div class="success-circle">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2>Application Submitted!</h2>
+    <p>Your registration is <strong>pending review</strong>. You'll be notified once your account is approved by the admin.</p>
+    <button class="btn btn-outline btn-md" style="margin-top:1.5rem" onclick="location.href='login.html'">← Go to Log In</button>
+  </div>
+
+  <div class="footer-link" id="signup-footer">
+    Already have an account?
+    <button onclick="location.href='login.html'">Log in here</button>
+  </div>
+</div>
+
+<div class="toast" id="global-toast"></div>
+<script src="shared.js"></script>
+<script src="signup.js"></script>
+</body>
+</html>

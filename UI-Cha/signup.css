@@ -1,0 +1,56 @@
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(11,191,181,0.08) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* ── Step Indicator ── */
+.steps        { display: flex; align-items: center; margin-bottom: 2rem; }
+.step-item    { display: flex; align-items: center; gap: 0.5rem; flex: 1; }
+.step-num     { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.78rem; color: var(--muted); flex-shrink: 0; transition: all 0.3s; }
+.step-item.active .step-num { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+.step-item.done   .step-num { border-color: var(--teal); background: var(--teal); color: #fff; }
+.step-label              { font-size: 0.74rem; color: var(--muted); transition: color 0.3s; }
+.step-item.active .step-label { color: var(--text); }
+.step-line { flex: 1; height: 1px; background: var(--border); margin: 0 0.5rem; }
+
+/* ── Step panels ── */
+.step-panel        { display: none; }
+.step-panel.active { display: block; animation: fadeUp 0.28s ease; }
+
+.btn-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.btn-step-back { flex: 1; background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 10px; padding: 0.72rem; font-family: 'DM Sans', sans-serif; font-size: 0.92rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+.btn-step-back:hover { border-color: var(--teal); color: var(--teal); }
+.btn-step-next { flex: 2; background: var(--teal); color: #fff; border: none; border-radius: 10px; padding: 0.72rem; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: background 0.18s, transform 0.1s; }
+.btn-step-next:hover    { background: var(--teal-dark); }
+.btn-step-next:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Upload area ── */
+.upload-area { border: 1.5px dashed var(--border); border-radius: 12px; padding: 1.75rem 1rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; background: var(--surface2); }
+.upload-area:hover, .upload-area.dragover { border-color: var(--teal); background: rgba(11,191,181,0.04); }
+.upload-area input[type="file"] { display: none; }
+.upload-icon  { color: var(--teal); margin-bottom: 0.5rem; }
+.upload-area p { font-size: 0.82rem; color: var(--muted); }
+.upload-area strong { color: var(--teal); }
+.file-name    { margin-top: 0.6rem; font-size: 0.8rem; color: var(--teal); display: none; }
+
+/* ── Success screen ── */
+.success-screen      { display: none; text-align: center; padding: 1rem 0; animation: fadeUp 0.4s ease; }
+.success-screen.show { display: block; }
+.success-circle { width: 72px; height: 72px; border-radius: 50%; background: rgba(16,185,129,0.1); border: 2px solid var(--success); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; color: var(--success); }
+.success-screen h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; margin-bottom: 0.5rem; }
+.success-screen p  { color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
