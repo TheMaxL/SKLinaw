@@ -6,6 +6,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,13 +28,15 @@ import com.example.sklinaw.model.CommitteeMember;
     "https://pitcherlike-unformalistic-armandina.ngrok-free.dev"
 }, allowCredentials = "true")
 public class Committeecontroller {
+    @Autowired
+    private DataSource dataSource;
 
     @Value("${spring.datasource.url}")
     private String dbUrl;
 
     @PostMapping("/createCommittee")
     public String createCommittee(@RequestBody CommitteeMember committee) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             // Start transaction
             conn.setAutoCommit(false);
             
@@ -110,7 +115,7 @@ public class Committeecontroller {
 
     @PostMapping("/assignCommitteeHead")
     public String assignCommitteeHead(@RequestBody CommitteeMember committee) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             // Start transaction
             conn.setAutoCommit(false);
             
@@ -200,7 +205,7 @@ public class Committeecontroller {
 
     @PostMapping("/addCommitteeMember")
     public String addCommitteeMember(@RequestBody CommitteeMember member) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String committeeCheckSql = "SELECT * FROM Committees WHERE name = ? AND barangay = ?";
             PreparedStatement committeeCheckStmt = conn.prepareStatement(committeeCheckSql);
             committeeCheckStmt.setString(1, member.getCommitteeName());
@@ -248,7 +253,7 @@ public class Committeecontroller {
 
     @PostMapping("/removeCommitteeMember")
     public String removeCommitteeMember(@RequestBody CommitteeMember member) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String headCheckSql = "SELECT head_name FROM Committees WHERE name = ? AND barangay = ?";
             PreparedStatement headCheckStmt = conn.prepareStatement(headCheckSql);
             headCheckStmt.setString(1, member.getCommitteeName());
@@ -278,7 +283,7 @@ public class Committeecontroller {
 
     @GetMapping("/getCommitteeMembers")
     public String getCommitteeMembers(@RequestParam String barangay, @RequestParam String committeeName) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String headSql = "SELECT head_name FROM Committees WHERE name = ? AND barangay = ?";
             PreparedStatement headStmt = conn.prepareStatement(headSql);
             headStmt.setString(1, committeeName);
@@ -319,7 +324,7 @@ public class Committeecontroller {
 
     @GetMapping("/getCommittees")
     public String getCommittees(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT c.name, c.head_name, " +
                         "COALESCE((SELECT COUNT(*) FROM CommitteeMembers cm WHERE cm.committee_name = c.name AND cm.barangay = c.barangay), 0) as member_count " +
                         "FROM Committees c " +
@@ -348,7 +353,7 @@ public class Committeecontroller {
 
     @GetMapping("/getMyCommittees")
     public String getMyCommittees(@RequestParam String barangay, @RequestParam String councilor) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             
             String sql = "SELECT DISTINCT c.name as committee_name, c.head_name " +
                         "FROM Committees c " +
@@ -383,7 +388,7 @@ public class Committeecontroller {
         String committeeName = (String) request.get("committeeName");
         String barangay = (String) request.get("barangay");
         
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
             try {
                 String checkSql = "SELECT name FROM Committees WHERE name = ? AND barangay = ?";

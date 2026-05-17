@@ -6,6 +6,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,13 +29,15 @@ import com.example.sklinaw.model.project;
     "https://pitcherlike-unformalistic-armandina.ngrok-free.dev"
 }, allowCredentials = "true")
 public class Projectcontroller {
-
+    @Autowired
+    private DataSource dataSource;
+    
     @Value("${spring.datasource.url}")
     private String dbUrl;
 
     @PostMapping("/addProject")
     public String addProject(@RequestBody project project) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             String budgetSql = "SELECT allocated_amount FROM CommitteeBudget WHERE committee_name = ? AND barangay = ?";
             PreparedStatement budgetStmt = conn.prepareStatement(budgetSql);
@@ -97,7 +102,7 @@ public class Projectcontroller {
 
     @GetMapping("/getProjects")
     public String getProjects(@RequestParam String barangay, @RequestParam String committeeName) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             // ✅ Add rejection_reason to the SELECT query
             String sql = "SELECT id, project_name, purpose, councilor_name, total_cost, status, created_at, rejection_reason " +
                         "FROM Projects WHERE barangay = ? AND committee_name = ?";
@@ -130,7 +135,7 @@ public class Projectcontroller {
 
     @GetMapping("/getProjectsByCouncilor")
     public String getProjectsByCouncilor(@RequestParam String councilor, @RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT id, project_name, purpose, committee_name, total_cost, status, created_at, approved_at " +
                          "FROM Projects WHERE councilor_name = ? AND barangay = ? ORDER BY created_at DESC";
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -162,7 +167,7 @@ public class Projectcontroller {
 
     @GetMapping("/getPendingProjects")
     public String getPendingProjects(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             
             String sql = "SELECT p.id, p.project_name, p.purpose, p.committee_name, p.councilor_name, " +
                         "p.total_cost, p.status, p.created_at, p.rejection_reason, c.head_name as committee_head " +
@@ -201,7 +206,7 @@ public class Projectcontroller {
 
     @GetMapping("/getAllProjects")
     public String getAllProjects(@RequestParam String barangay, @RequestParam(required = false) String status) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT p.id, p.project_name, p.purpose, p.committee_name, p.councilor_name, " +
                         "p.total_cost, p.status, p.created_at, p.approved_at, " +
                         "c.head_name as committee_head " +
@@ -247,7 +252,7 @@ public class Projectcontroller {
 
     @GetMapping("/getPublicProjects")
     public String getPublicProjects(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT p.id, p.project_name, p.purpose, p.committee_name, p.councilor_name, " +
                         "p.total_cost, p.status, p.created_at, p.approved_at, p.approved_by, " +
                         "c.head_name as committee_head " +
@@ -286,7 +291,7 @@ public class Projectcontroller {
 
     @GetMapping("/getCommitteeProjects")
     public String getCommitteeProjects(@RequestParam String barangay, @RequestParam String committeeName) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT p.id, p.project_name, p.purpose, p.councilor_name, " +
                         "p.total_cost, p.status, p.created_at, p.approved_at, p.approved_by, p.rejection_reason " +
                         "FROM Projects p " +
@@ -323,7 +328,7 @@ public class Projectcontroller {
 
     @GetMapping("/getProjectById")
     public String getProjectById(@RequestParam int projectId) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             // ✅ Add rejection_reason to the SELECT query
             String sql = "SELECT id, project_name, purpose, committee_name, councilor_name, total_cost, status, created_at, barangay, rejection_reason " +
                         "FROM Projects WHERE id = ?";
@@ -358,7 +363,7 @@ public class Projectcontroller {
     public String updateProject(@RequestBody Map<String, Object> request) {
         System.out.println("=== UPDATE PROJECT ===");
         
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             
             // Extract values
             int projectId = (int) request.get("id");
@@ -406,7 +411,7 @@ public class Projectcontroller {
         String barangay = (String) request.get("barangay");
         String approvedBy = (String) request.get("approvedBy");
         
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             
             conn.setAutoCommit(false);
             
@@ -503,7 +508,7 @@ public class Projectcontroller {
         int projectId = (int) request.get("projectId");
         String barangay = (String) request.get("barangay");
         
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             
             // Check if project exists and is PENDING (only pending projects can be deleted)
             String checkSql = "SELECT status FROM Projects WHERE id = ? AND barangay = ?";
@@ -547,7 +552,7 @@ public class Projectcontroller {
         
         int projectId = (Integer) projectIdObj;
         
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String checkSql = "SELECT status FROM Projects WHERE id = ? AND barangay = ?";
             PreparedStatement checkStmt = conn.prepareStatement(checkSql);
             checkStmt.setInt(1, projectId);

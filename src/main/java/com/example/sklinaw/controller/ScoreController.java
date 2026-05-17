@@ -5,6 +5,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 @CrossOrigin
 public class ScoreController {
-
+    @Autowired
+    private DataSource dataSource;
+    
     @Value("${spring.datasource.url}")
     private String dbUrl;
     
@@ -29,7 +34,7 @@ public class ScoreController {
             return "INVALID_SCORE";
         }
 
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             
             String checkSql = "SELECT id FROM Projects WHERE id = ? AND barangay = ? AND status = 'APPROVED'";
@@ -59,7 +64,7 @@ public class ScoreController {
     
     @GetMapping("/getProjectScore")
     public String getProjectScore(@RequestParam int projectId) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             
             String avgSql =
@@ -104,7 +109,7 @@ public class ScoreController {
     
     @GetMapping("/getAllProjectScores")
     public String getAllProjectScores(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             String sql =
                 "SELECT project_id, AVG(score) as average, COUNT(*) as total " +

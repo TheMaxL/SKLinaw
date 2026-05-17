@@ -9,6 +9,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +32,8 @@ import com.example.sklinaw.model.Account;
 }, allowCredentials = "true")
 @RestController
 public class AdminController {
+    @Autowired
+    private DataSource dataSource;
 
     @Value("${spring.datasource.url}")
     private String dbUrl;
@@ -39,7 +44,7 @@ public class AdminController {
 
         List<Map<String, Object>> users = new ArrayList<>();
 
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             String sql = "SELECT rowid as id, Name, Barangay, Photo FROM PendingAccounts";
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -69,7 +74,7 @@ public class AdminController {
     @PostMapping("/users/{id}/approve")
     public void approveUser(@PathVariable int id) {
 
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             // get pending account
             String selectSql = "SELECT * FROM PendingAccounts WHERE rowid = ?";
@@ -111,7 +116,7 @@ public class AdminController {
     @PostMapping("/users/{id}/reject")
     public void rejectUser(@PathVariable int id) {
 
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             String sql = "DELETE FROM PendingAccounts WHERE rowid = ?";
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -188,7 +193,7 @@ public class AdminController {
     public Map<String, Object> performTurnover(@PathVariable String barangay) {
         Map<String, Object> response = new HashMap<>();
         
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
             
             try {
@@ -285,7 +290,7 @@ public class AdminController {
     public Map<String, Object> getTurnoverStatus(@PathVariable String barangay) {
         Map<String, Object> status = new HashMap<>();
         
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             
             // Check active councilors
             String councilorSql = "SELECT COUNT(*) as count FROM Councilors WHERE Barangay = ?";
@@ -327,7 +332,7 @@ public class AdminController {
     public List<String> getBarangaysWithData() {
         List<String> barangays = new ArrayList<>();
         
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT DISTINCT Barangay FROM Councilors UNION " +
                         "SELECT DISTINCT barangay FROM Committees UNION " +
                         "SELECT DISTINCT barangay FROM Projects";

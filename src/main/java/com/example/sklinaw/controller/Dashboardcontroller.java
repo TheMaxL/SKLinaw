@@ -5,6 +5,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,13 +22,15 @@ import org.springframework.web.bind.annotation.RestController;
     "https://pitcherlike-unformalistic-armandina.ngrok-free.dev"
 }, allowCredentials = "true")
 public class Dashboardcontroller {
+    @Autowired
+    private DataSource dataSource;
 
     @Value("${spring.datasource.url}")
     private String dbUrl;
 
     @GetMapping("/getDashboardStats")
     public String getDashboardStats(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT " +
                          "COUNT(*) as total_projects, " +
                          "SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending_projects, " +
@@ -62,7 +67,7 @@ public class Dashboardcontroller {
      */
     @GetMapping("/getAllProjectsWithCommittees")
     public String getAllProjectsWithCommittees(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT c.name as committee_name, c.head_name, " +
                          "COUNT(p.id) as total_projects, " +
                          "SUM(CASE WHEN p.status = 'PENDING' THEN 1 ELSE 0 END) as pending_count, " +

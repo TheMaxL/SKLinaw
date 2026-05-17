@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,6 +47,8 @@ import jakarta.servlet.http.HttpSession;
     allowCredentials = "true"
 )
 public class Controller {
+    @Autowired
+    private DataSource dataSource;
 
     @Value("${spring.datasource.url}")
     private String dbUrl;
@@ -59,7 +63,7 @@ public class Controller {
     // =========================
     @PostMapping("/addAccount")
     public String addAccount(@RequestBody Account account) {
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             String verifySql = "SELECT * FROM Verified WHERE Name = ? AND Barangay = ?";
             PreparedStatement verifyStmt = conn.prepareStatement(verifySql);
@@ -120,7 +124,7 @@ public class Controller {
             int userId = 0;
             String userType = "councilor";
             
-            try (Connection conn = DriverManager.getConnection(dbUrl)) {
+            try (Connection conn = dataSource.getConnection()) {
                 // First check Developer table (ADMIN users) - uses 'id' column
                 String devSql = "SELECT id, Name, privilege FROM Developer WHERE Name = ? AND approved = 1";
                 PreparedStatement devStmt = conn.prepareStatement(devSql);
@@ -212,7 +216,7 @@ public class Controller {
             @RequestParam("photo") MultipartFile photo
     ) {
 
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
 
             String hashedPassword = encoder.encode(password);
 
@@ -247,7 +251,7 @@ public class Controller {
     public Map<String, String> getUserInfo(@RequestBody Map<String, String> request) {
         Map<String, String> response = new HashMap<>();
 
-        try (Connection conn = DriverManager.getConnection(dbUrl)) {
+        try (Connection conn = dataSource.getConnection()) {
             String name = request.get("name");
             String barangay = request.get("barangay");
 
