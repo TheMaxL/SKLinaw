@@ -5,8 +5,8 @@
       "destination": "https://sklinaw.onrender.com/api/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/$1"
+      "source": "/admin/(.*)",
+      "destination": "https://sklinaw.onrender.com/admin/$1"
     }
   ]
 }

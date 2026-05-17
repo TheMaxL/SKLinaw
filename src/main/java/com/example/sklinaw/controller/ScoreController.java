@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,8 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin
 public class ScoreController {
 
-    private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db";
-
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
     
     @PostMapping("/submitScore")
     public String submitScore(@RequestBody ScoreRequest req) {
@@ -28,7 +29,7 @@ public class ScoreController {
             return "INVALID_SCORE";
         }
 
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
 
             
             String checkSql = "SELECT id FROM Projects WHERE id = ? AND barangay = ? AND status = 'APPROVED'";
@@ -58,7 +59,7 @@ public class ScoreController {
     
     @GetMapping("/getProjectScore")
     public String getProjectScore(@RequestParam int projectId) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
 
             
             String avgSql =
@@ -103,7 +104,7 @@ public class ScoreController {
     
     @GetMapping("/getAllProjectScores")
     public String getAllProjectScores(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
 
             String sql =
                 "SELECT project_id, AVG(score) as average, COUNT(*) as total " +

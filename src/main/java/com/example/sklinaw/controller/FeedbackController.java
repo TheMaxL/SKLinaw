@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 }, allowCredentials = "true")
 public class FeedbackController {
 
-    private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db";
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
 
     // Submit comment for a specific project (no rating - rating goes to ScoreController)
     @PostMapping("/submitProjectComment")
@@ -40,7 +42,7 @@ public class FeedbackController {
             return "MESSAGE_TOO_LONG";
         }
         
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             // Insert comment with rating
             String sql = "INSERT INTO Feedback (barangay, project_id, name, message, rating, created_at) " +
                         "VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
@@ -72,7 +74,7 @@ public class FeedbackController {
     public String getProjectComments(@RequestParam int projectId) {
         System.out.println("=== getProjectComments called for projectId: " + projectId);
         
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT id, name, message, created_at " +
                          "FROM Feedback WHERE project_id = ? ORDER BY created_at DESC LIMIT 50";
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -102,7 +104,7 @@ public class FeedbackController {
 
     @GetMapping("/public/getBarangays")
     public String getPublicBarangays() {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT DISTINCT Barangay as barangay FROM Councilors WHERE approved = 1";
             PreparedStatement stmt = conn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
@@ -124,7 +126,7 @@ public class FeedbackController {
 
     @GetMapping("/getProjectRating")
     public String getProjectRating(@RequestParam int projectId) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT AVG(rating) as average, COUNT(*) as total, " +
                         "SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as r1, " +
                         "SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as r2, " +
@@ -160,7 +162,7 @@ public class FeedbackController {
     }
 
     private void updateProjectRating(int projectId, String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             // Calculate averages from Feedback table
             String calcSql = "SELECT " +
                             "COUNT(*) as total_ratings, " +

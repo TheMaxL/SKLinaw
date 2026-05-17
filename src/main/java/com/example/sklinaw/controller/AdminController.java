@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +30,8 @@ import com.example.sklinaw.model.Account;
 @RestController
 public class AdminController {
 
-    private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db?busy_timeout=5000";
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
 
     // 🔹 Get pending accounts
     @GetMapping("/users")
@@ -37,7 +39,7 @@ public class AdminController {
 
         List<Map<String, Object>> users = new ArrayList<>();
 
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
 
             String sql = "SELECT rowid as id, Name, Barangay, Photo FROM PendingAccounts";
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -67,7 +69,7 @@ public class AdminController {
     @PostMapping("/users/{id}/approve")
     public void approveUser(@PathVariable int id) {
 
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
 
             // get pending account
             String selectSql = "SELECT * FROM PendingAccounts WHERE rowid = ?";
@@ -109,7 +111,7 @@ public class AdminController {
     @PostMapping("/users/{id}/reject")
     public void rejectUser(@PathVariable int id) {
 
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
 
             String sql = "DELETE FROM PendingAccounts WHERE rowid = ?";
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -130,7 +132,7 @@ public class AdminController {
             sql += " WHERE Barangay = ?";
         }
         
-        try (Connection conn = DriverManager.getConnection(URL);
+        try (Connection conn = DriverManager.getConnection(dbUrl);
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             if (barangay != null && !barangay.isEmpty()) {
@@ -165,7 +167,7 @@ public class AdminController {
             privilege = null;
         }
         String sql = "UPDATE Councilors SET privilege = ? WHERE rowid = ?";
-        try (Connection conn = DriverManager.getConnection(URL);
+        try (Connection conn = DriverManager.getConnection(dbUrl);
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, privilege);
                 pstmt.setInt(2, id);
@@ -186,7 +188,7 @@ public class AdminController {
     public Map<String, Object> performTurnover(@PathVariable String barangay) {
         Map<String, Object> response = new HashMap<>();
         
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             conn.setAutoCommit(false);
             
             try {
@@ -283,7 +285,7 @@ public class AdminController {
     public Map<String, Object> getTurnoverStatus(@PathVariable String barangay) {
         Map<String, Object> status = new HashMap<>();
         
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             
             // Check active councilors
             String councilorSql = "SELECT COUNT(*) as count FROM Councilors WHERE Barangay = ?";
@@ -325,7 +327,7 @@ public class AdminController {
     public List<String> getBarangaysWithData() {
         List<String> barangays = new ArrayList<>();
         
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT DISTINCT Barangay FROM Councilors UNION " +
                         "SELECT DISTINCT barangay FROM Committees UNION " +
                         "SELECT DISTINCT barangay FROM Projects";

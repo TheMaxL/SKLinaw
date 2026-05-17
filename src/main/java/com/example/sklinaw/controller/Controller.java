@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -45,7 +46,8 @@ import jakarta.servlet.http.HttpSession;
 )
 public class Controller {
 
-    private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db";
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
@@ -57,7 +59,7 @@ public class Controller {
     // =========================
     @PostMapping("/addAccount")
     public String addAccount(@RequestBody Account account) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
 
             String verifySql = "SELECT * FROM Verified WHERE Name = ? AND Barangay = ?";
             PreparedStatement verifyStmt = conn.prepareStatement(verifySql);
@@ -118,7 +120,7 @@ public class Controller {
             int userId = 0;
             String userType = "councilor";
             
-            try (Connection conn = DriverManager.getConnection(URL)) {
+            try (Connection conn = DriverManager.getConnection(dbUrl)) {
                 // First check Developer table (ADMIN users) - uses 'id' column
                 String devSql = "SELECT id, Name, privilege FROM Developer WHERE Name = ? AND approved = 1";
                 PreparedStatement devStmt = conn.prepareStatement(devSql);
@@ -210,7 +212,7 @@ public class Controller {
             @RequestParam("photo") MultipartFile photo
     ) {
 
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
 
             String hashedPassword = encoder.encode(password);
 
@@ -245,7 +247,7 @@ public class Controller {
     public Map<String, String> getUserInfo(@RequestBody Map<String, String> request) {
         Map<String, String> response = new HashMap<>();
 
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String name = request.get("name");
             String barangay = request.get("barangay");
 
@@ -297,7 +299,7 @@ public class Controller {
     public List<Account> getAllCouncilors() {
         String sql = "SELECT rowid, Name, Barangay, approved, privilege FROM Councilors WHERE approved = 1";
         
-        try (Connection conn = DriverManager.getConnection(URL);
+        try (Connection conn = DriverManager.getConnection(dbUrl);
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             ResultSet rs = pstmt.executeQuery();

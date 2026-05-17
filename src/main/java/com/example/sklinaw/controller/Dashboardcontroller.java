@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,15 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 }, allowCredentials = "true")
 public class Dashboardcontroller {
 
-    private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db";
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
 
-    /**
-     * Get dashboard statistics for chairman
-     * GET /api/getDashboardStats?barangay=Lahug
-     */
     @GetMapping("/getDashboardStats")
     public String getDashboardStats(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT " +
                          "COUNT(*) as total_projects, " +
                          "SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending_projects, " +
@@ -64,7 +62,7 @@ public class Dashboardcontroller {
      */
     @GetMapping("/getAllProjectsWithCommittees")
     public String getAllProjectsWithCommittees(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT c.name as committee_name, c.head_name, " +
                          "COUNT(p.id) as total_projects, " +
                          "SUM(CASE WHEN p.status = 'PENDING' THEN 1 ELSE 0 END) as pending_count, " +

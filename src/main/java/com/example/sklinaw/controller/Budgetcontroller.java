@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,11 +25,12 @@ import com.example.sklinaw.model.Budget;
 }, allowCredentials = "true")
 public class Budgetcontroller {
 
-    private static final String URL = "jdbc:sqlite:C:/Users/91460/.SKLinaw/SKLinaw/SKLinaw.db?busy_timeout=5000";
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
 
     @PostMapping("/setBudget")
     public String setBudget(@RequestBody Budget budget) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             double totalAllocated = 0;
             for (double amount : budget.getAllocations().values()) {
                 totalAllocated += amount;
@@ -83,7 +85,7 @@ public class Budgetcontroller {
 
     @GetMapping("/getBudget")
     public String getBudget(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             // Get total budget
             String budgetSql = "SELECT total_budget FROM Budget WHERE barangay = ?";
             PreparedStatement budgetStmt = conn.prepareStatement(budgetSql);
@@ -137,7 +139,7 @@ public class Budgetcontroller {
 
     @GetMapping("/getOverallBudgetSummary")
     public String getOverallBudgetSummary(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String budgetSql = "SELECT COALESCE(SUM(allocated_amount), 0) as total_allocated FROM CommitteeBudget WHERE barangay = ?";
             PreparedStatement budgetStmt = conn.prepareStatement(budgetSql);
             budgetStmt.setString(1, barangay);
@@ -168,7 +170,7 @@ public class Budgetcontroller {
 
     @GetMapping("/getCommitteeBudgetUtilization")
     public String getCommitteeBudgetUtilization(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT cb.committee_name, cb.allocated_amount, " +
                          "COALESCE(SUM(p.total_cost), 0) AS spent " +
                          "FROM CommitteeBudget cb " +
@@ -204,7 +206,7 @@ public class Budgetcontroller {
 
     @GetMapping("/getCommitteeBudgetSummary")
     public String getCommitteeBudgetSummary(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT cb.committee_name, cb.allocated_amount, " +
                          "COALESCE(SUM(CASE WHEN p.status = 'APPROVED' THEN p.total_cost ELSE 0 END), 0) as spent " +
                          "FROM CommitteeBudget cb " +
@@ -238,7 +240,7 @@ public class Budgetcontroller {
 
     @GetMapping("/getRecentExpenditures")
     public String getRecentExpenditures(@RequestParam String barangay, @RequestParam(defaultValue = "5") int limit) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             String sql = "SELECT p.id, p.project_name, p.committee_name, p.total_cost, p.approved_at " +
                          "FROM Projects p " +
                          "WHERE p.barangay = ? AND p.status = 'APPROVED' " +
@@ -269,7 +271,7 @@ public class Budgetcontroller {
 
     @GetMapping("/getExpenses")
     public String getExpenses(@RequestParam String barangay) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             // Query your existing Expenses table
             String sql = "SELECT e.id, e.description, e.amount, e.date, " +
                         "p.committee_name, p.councilor_name, 'PROJECT' as type " +
@@ -311,7 +313,7 @@ public class Budgetcontroller {
 
     @GetMapping("/getBudgetByCommittee")
     public String getBudgetByCommittee(@RequestParam String barangay, @RequestParam String committeeName) {
-        try (Connection conn = DriverManager.getConnection(URL)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl)) {
             // Get total budget for barangay
             String budgetSql = "SELECT total_budget FROM Budget WHERE barangay = ?";
             PreparedStatement budgetStmt = conn.prepareStatement(budgetSql);
