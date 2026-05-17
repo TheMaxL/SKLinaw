@@ -20,9 +20,6 @@ function storeUserSession(data) {
     localStorage.setItem('sk_privilege', data.privilege || '');
     localStorage.setItem('sk_user_id', data.id || '');
     localStorage.setItem('sk_user_type', data.userType || 'councilor');
-
-    console.log('After storage - barangay:', localStorage.getItem('sk_barangay'));
-    console.log('After storage - privilege:', localStorage.getItem('sk_privilege'));
     
     console.log('Session stored:', {
         name: localStorage.getItem('sk_name'),
@@ -65,13 +62,13 @@ function handleDevModeFallback(name) {
         localStorage.setItem('sk_barangay', 'Admin');
         localStorage.setItem('sk_privilege', 'ADMIN');
         localStorage.setItem('sk_user_type', 'developer');
-        window.location.href = '/Admin/Approval/admin.html';
+        window.location.href = '/Admin/Approval/admin';
     } else if (name) {
         localStorage.setItem('sk_name', name);
         localStorage.setItem('sk_barangay', 'Lahug');
         localStorage.setItem('sk_privilege', '');
         localStorage.setItem('sk_user_type', 'councilor');
-        window.location.href = '/Councilor/Dashboard/dashboard.html';
+        window.location.href = '/Councilor/Dashboard/dashboard';
     } else {
         setAlert('login-alert', '⚠️ Could not connect to server. Please try again.');
     }
