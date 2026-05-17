@@ -62,13 +62,13 @@ function handleDevModeFallback(name) {
         localStorage.setItem('sk_barangay', 'Admin');
         localStorage.setItem('sk_privilege', 'ADMIN');
         localStorage.setItem('sk_user_type', 'developer');
-        window.location.href = '/Admin/Approval/admin.html';
+        window.location.href = '/Admin/Approval/admin';
     } else if (name) {
         localStorage.setItem('sk_name', name);
         localStorage.setItem('sk_barangay', 'Lahug');
         localStorage.setItem('sk_privilege', '');
         localStorage.setItem('sk_user_type', 'councilor');
-        window.location.href = '/Councilor/Dashboard/dashboard.html';
+        window.location.href = '/Councilor/Dashboard/dashboard';
     } else {
         setAlert('login-alert', '⚠️ Could not connect to server. Please try again.');
     }
