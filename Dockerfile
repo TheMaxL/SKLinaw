@@ -27,4 +27,4 @@ COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8085
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=render", "app.jar"]

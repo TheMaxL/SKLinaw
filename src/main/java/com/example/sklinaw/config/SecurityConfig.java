@@ -29,13 +29,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Disable CSRF for API
             .csrf(csrf -> csrf.disable())
-            
-            // Configure CORS with proper settings
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            
-            // Configure authorization rules
             .authorizeHttpRequests(auth -> auth
                 // ========== PUBLIC HTML PAGES ==========
                 .requestMatchers("/Councilor/Home/**").permitAll()
