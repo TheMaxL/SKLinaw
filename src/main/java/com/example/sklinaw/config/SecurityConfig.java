@@ -125,7 +125,9 @@ public class SecurityConfig {
             "https://*.ngrok-free.dev",
             "https://*.ngrok.io",
             "https://*.onrender.com",      
-            "https://sklinaw.onrender.com"
+            "https://sklinaw.onrender.com",
+            "https://sklinaw.vercel.app",   
+            "https://*.vercel.app"  
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

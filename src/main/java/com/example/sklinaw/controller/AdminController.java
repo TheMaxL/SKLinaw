@@ -28,7 +28,11 @@ import com.example.sklinaw.model.Account;
 @RequestMapping("/admin")
 @CrossOrigin(origins = {
     "http://localhost:8085",
-    "https://pitcherlike-unformalistic-armandina.ngrok-free.dev"
+    "http://localhost:3000",
+    "https://sklinaw.vercel.app",
+    "https://*.vercel.app",
+    "https://sklinaw.onrender.com",
+    "https://*.onrender.com"
 }, allowCredentials = "true")
 @RestController
 public class AdminController {

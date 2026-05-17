@@ -38,11 +38,12 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/api")
 @CrossOrigin(
     origins = {
+        "http://localhost:8085",
         "http://localhost:3000",
-        "http://localhost:5500",
-        "https://*.ngrok-free.dev",
-        "https://sklinaw.onrender.com",  
-        "https://*.onrender.com" 
+        "https://sklinaw.vercel.app",
+        "https://*.vercel.app",
+        "https://sklinaw.onrender.com",
+        "https://*.onrender.com"
     },
     allowCredentials = "true"
 )

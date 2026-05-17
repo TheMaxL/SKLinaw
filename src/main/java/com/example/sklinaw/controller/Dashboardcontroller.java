@@ -19,7 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 @CrossOrigin(origins = {
     "http://localhost:8085",
-    "https://pitcherlike-unformalistic-armandina.ngrok-free.dev"
+    "http://localhost:3000",
+    "https://sklinaw.vercel.app",
+    "https://*.vercel.app",
+    "https://sklinaw.onrender.com",
+    "https://*.onrender.com"
 }, allowCredentials = "true")
 public class Dashboardcontroller {
     @Autowired
