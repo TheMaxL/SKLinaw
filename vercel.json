@@ -1,8 +1,14 @@
 {
+  "builds": [
+    {
+      "src": "src/main/resources/static/**",
+      "use": "@vercel/static"
+    }
+  ],
   "routes": [
     {
       "src": "/",
-      "dest": "/index.html"
+      "dest": "/src/main/resources/static/index.html"
     },
     {
       "src": "/api/(.*)",
@@ -13,12 +19,16 @@
       "dest": "https://sklinaw.onrender.com/admin/$1"
     },
     {
-      "src": "/(.*)-detail",
-      "dest": "/$1-detail.html"
+      "src": "/(.*)\\.(css|js|png|jpg|svg|ico)$",
+      "dest": "/src/main/resources/static/$1.$2"
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1.html"
+      "src": "/(.*)-detail$",
+      "dest": "/src/main/resources/static/$1-detail.html"
+    },
+    {
+      "src": "/(.*)$",
+      "dest": "/src/main/resources/static/$1.html"
     }
   ]
 }
