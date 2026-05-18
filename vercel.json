@@ -1,7 +1,7 @@
 {
   "builds": [
     {
-      "src": "src/main/resources/static/**",
+      "src": "static/**",
       "use": "@vercel/static"
     }
   ],
@@ -16,11 +16,11 @@
     },
     {
       "src": "/(.*)-detail",
-      "dest": "/src/main/resources/static/$1-detail.html"
+      "dest": "/static/$1-detail.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/src/main/resources/static/$1.html"
+      "dest": "/static/$1.html"
     }
   ]
 }
