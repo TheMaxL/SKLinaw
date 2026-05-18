@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -325,6 +326,15 @@ public class Controller {
             e.printStackTrace();
             return new ArrayList<>();
         }
+    }
+
+    @GetMapping("/check-session")
+    public ResponseEntity<?> checkSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).body(Map.of("authenticated", false));
+        }
+        return ResponseEntity.ok(Map.of("authenticated", true));
     }
 
     private String getRoleDisplay(String privilege) {

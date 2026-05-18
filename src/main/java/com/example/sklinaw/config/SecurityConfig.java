@@ -99,9 +99,12 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             
-            // Session management
+            // ✅ Session management (correct placement)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .invalidSessionUrl("/api/login?expired=true")
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false)
             )
             
             // Disable HTTP Basic (use session-based auth)

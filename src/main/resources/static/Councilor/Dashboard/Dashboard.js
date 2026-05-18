@@ -1,15 +1,11 @@
-// Get user role from localStorage
 const userPrivilege = localStorage.getItem('sk_privilege') || '';
 const userBarangay = localStorage.getItem('sk_barangay') || '';
 
-// Show appropriate view based on role
 function showRoleView() {
-  // Hide all views first
   document.getElementById('councilorView').style.display = 'none';
   document.getElementById('treasurerView').style.display = 'none';
   document.getElementById('chairmanView').style.display = 'none';
   
-  // Update role label
   const roleLabel = document.getElementById('dash-greet-sub');
   
   if (userPrivilege === 'TREASURER') {
@@ -67,13 +63,11 @@ async function loadBudgetPanel() {
         });
         const text = await response.text();
         
-        // Check if response is ERROR or empty
         if (text === 'ERROR' || !text) {
             document.getElementById('budget-panel').innerHTML = '<div class="empty-state">No budget data available.</div>';
             return;
         }
         
-        // Parse JSON safely
         let data;
         try {
             data = JSON.parse(text);
@@ -198,16 +192,16 @@ async function loadRecentExpenditures() {
     
     const container = document.getElementById('recentExpensesBody');
     if (expenditures.length === 0) {
-      container.innerHTML = '<tr><td colspan="4" class="empty-state">No recent expenditures.</td></tr>';
+      container.innerHTML = '<tr><td colspan="4" class="empty-state">No recent expenditures. </div>';
       return;
     }
     
     container.innerHTML = expenditures.map(e => `
       <tr>
-        <td>${escapeHtml(e.projectName)}</td>
-        <td>${escapeHtml(e.committeeName)}</td>
-        <td class="exp-amount">₱${(e.totalCost || 0).toLocaleString()}</td>
-        <td>${formatDate(e.approvedAt)}</td>
+        <td>${escapeHtml(e.projectName)}</div>
+        <td>${escapeHtml(e.committeeName)}</div>
+        <td class="exp-amount">₱${(e.totalCost || 0).toLocaleString()}</div>
+        <td>${formatDate(e.approvedAt)}</div>
       </tr>
     `).join('');
   } catch (error) {
@@ -228,7 +222,7 @@ async function loadCommitteesList() {
       credentials: 'include'
     });
     const committees = await response.json();
-    window.allCommittees = committees;  // Store globally
+    window.allCommittees = committees;
     console.log('Committees loaded:', committees);
   } catch (error) {
     console.error('Error loading committees:', error);
@@ -258,7 +252,7 @@ async function loadChairmanStats() {
 }
 
 async function loadCommitteesTable() {
-  const tbody = document.getElementById('committeesTableBody');  // ← Changed from 'projectTableBody'
+  const tbody = document.getElementById('committeesTableBody');
   if (!tbody) {
     console.error('committeesTableBody not found!');
     return;
@@ -295,7 +289,6 @@ async function loadCommitteesTable() {
 }
 
 async function deleteCommittee(committeeName) {
-  // Confirmation dialog
   const confirmMessage = `⚠️ PERMANENT ACTION ⚠️\n\n` +
     `You are about to delete the committee "${committeeName}".\n\n` +
     `This will also delete:\n` +
@@ -330,11 +323,9 @@ async function deleteCommittee(committeeName) {
     
     if (result === 'SUCCESS') {
       Toast.show(`Committee "${committeeName}" has been deleted successfully.`);
-      // Refresh all data
-      await loadAllCommittees();
-      await loadMyCommittees();
+      await loadCommitteesList();
       await loadCommitteesTable();
-      await loadBudget();
+      await loadChairmanStats();
     } else if (result === 'COMMITTEE_NOT_FOUND') {
       Toast.show('Committee not found', true);
     } else if (result === 'NOT_AUTHORIZED') {
@@ -348,7 +339,6 @@ async function deleteCommittee(committeeName) {
   }
 }
 
-// Helper functions
 function formatDate(str) {
   if (!str) return '—';
   try {
@@ -363,30 +353,37 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Initialize dashboard
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const hasAccess = await protectPage('councilor');
+  if (!hasAccess) return;
+  
+  // Additional check: if no user is logged in, redirect
   if (!localStorage.getItem('sk_name')) {
-    window.location.href = '../Log-in/login.html';
+    window.location.href = '/Councilor/Log-in/login';
     return;
   }
   
-  // Update user info in sidebar
-  document.getElementById('nameEl').textContent = localStorage.getItem('sk_name');
-  document.getElementById('roleEl').textContent = userPrivilege || 'Councilor';
-  document.getElementById('avatarEl').textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
+  const nameEl = document.getElementById('nameEl');
+  const roleEl = document.getElementById('roleEl');
+  const avatarEl = document.getElementById('avatarEl');
   
-  // Update greeting
+  if (nameEl) nameEl.textContent = localStorage.getItem('sk_name');
+  if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
+  if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
+  
   const greetingName = localStorage.getItem('sk_name');
-  if (greetingName) {
-    document.getElementById('dash-greet-name').textContent = greetingName.split(' ')[0];
+  const greetNameEl = document.getElementById('dash-greet-name');
+  if (greetNameEl && greetingName) {
+    greetNameEl.textContent = greetingName.split(' ')[0];
   }
   
-  // Update date
   const today = new Date();
-  document.getElementById('dash-today').textContent = today.toLocaleDateString('en-PH', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
+  const dateEl = document.getElementById('dash-today');
+  if (dateEl) {
+    dateEl.textContent = today.toLocaleDateString('en-PH', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
   
-  // Show role-specific view
   showRoleView();
 });
