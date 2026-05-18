@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 🔹 NAVBAR BUTTONS
   document.getElementById('nav-signup')?.addEventListener('click', () => {
-    location.href = '../Sign-in/signup';
+    location.href = '../Sign-in';
   });
 
   document.getElementById('nav-login')?.addEventListener('click', () => {

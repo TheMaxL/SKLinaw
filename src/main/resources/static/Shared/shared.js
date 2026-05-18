@@ -394,7 +394,7 @@ async function logout() {
     
     // Redirect to home page
     setTimeout(() => {
-      window.location.href = '/Councilor/Home/home.html';
+      window.location.href = '/Councilor/Home/home';
     }, 500);
   } catch (error) {
     console.error('Logout error:', error);

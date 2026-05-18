@@ -3,7 +3,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const committeeName = urlParams.get('name');
 
 if (!committeeName) {
-  window.location.href = 'Committee.html';
+  window.location.href = 'Committee';
 }
 
 const session = {
@@ -44,7 +44,7 @@ async function loadCommitteeData() {
     
     if (!committeeData) {
       Toast.show('Committee not found', true);
-      setTimeout(() => window.location.href = 'Committee.html', 2000);
+      setTimeout(() => window.location.href = 'Committee', 2000);
       return;
     }
     

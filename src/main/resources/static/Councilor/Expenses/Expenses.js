@@ -224,7 +224,7 @@ function logout() {
   localStorage.removeItem('sk_name');
   localStorage.removeItem('sk_barangay');
   localStorage.removeItem('sk_privilege');
-  window.location.href = '../Log-in/login.html';
+  window.location.href = '../Log-in/login';
 }
 
 function esc(s) {

@@ -658,7 +658,7 @@ function init() {
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', () => {
         localStorage.clear();
-        window.location.href = '../Log-in/login';
+        window.location.href = '../Log-in/login.html';
     });
     
     // Turnover button
