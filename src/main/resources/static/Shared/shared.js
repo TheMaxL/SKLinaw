@@ -276,12 +276,8 @@ async function protectPage(requiredView) {
 function getDefaultRedirect() {
   if (Session.isAdmin()) {
     return '/Councilor/Admin/admin.html';
-  } else if (Session.isChairman()) {
-    return '/Councilor/Projects/Projects.html';
-  } else if (Session.isTreasurer()) {
-    return '/Councilor/Budget/Budget.html';
   } else {
-    return '/Councilor/Dashboard/dashboard.html';
+    return '/Councilor/Dashboard/Dashboard';
   }
 }
 
