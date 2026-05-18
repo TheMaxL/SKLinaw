@@ -31,13 +31,13 @@ function storeUserSession(data) {
 function getRedirectUrl(privilege, userType) {
     // Admin/Developer redirect
     if (privilege === 'ADMIN' || userType === 'developer') {
-        return '/Admin/Approval/admin.html';
+        return '/Admin/Approval/admins';
     }
     
     // Role-based redirect
     switch (privilege) {
         default:
-            return '/Councilor/Dashboard/Dashboard.html';
+            return '/Councilor/Dashboard/Dashboard';
     }
 }
 
