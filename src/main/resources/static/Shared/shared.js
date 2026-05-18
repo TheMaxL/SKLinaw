@@ -83,7 +83,7 @@ async function authFetch(url, options = {}) {
     
     // If unauthorized, redirect to login
     if (response.status === 401) {
-      const publicPages = ['public.html', 'index.html', 'login.html', 'signup.html'];
+      const publicPages = ['public.html', 'index.html', 'Login', 'signup.html'];
       const currentPage = window.location.pathname.split('/').pop();
       
       if (!publicPages.includes(currentPage) && !Session.name) {
@@ -200,7 +200,7 @@ function isPublicPage() {
     'public.html', 
     'index.html', 
     'feedback.html', 
-    'login.html', 
+    'Login', 
     'signup.html',
     'home.html'
   ];
