@@ -363,30 +363,33 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Initialize dashboard
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const hasAccess = await protectPage('councilor');
+  if (!hasAccess) return;
+
   if (!localStorage.getItem('sk_name')) {
-    window.location.href = '../Log-in/login.html';
+    window.location.href = '/Councilor/Log-in/login';
     return;
   }
+  const nameEl = document.getElementById('nameEl');
+  const roleEl = document.getElementById('roleEl');
+  const avatarEl = document.getElementById('avatarEl');
   
-  // Update user info in sidebar
-  document.getElementById('nameEl').textContent = localStorage.getItem('sk_name');
-  document.getElementById('roleEl').textContent = userPrivilege || 'Councilor';
-  document.getElementById('avatarEl').textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
-  
-  // Update greeting
+  if (nameEl) nameEl.textContent = localStorage.getItem('sk_name');
+  if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
+  if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
   const greetingName = localStorage.getItem('sk_name');
-  if (greetingName) {
-    document.getElementById('dash-greet-name').textContent = greetingName.split(' ')[0];
+  const greetNameEl = document.getElementById('dash-greet-name');
+  if (greetNameEl && greetingName) {
+    greetNameEl.textContent = greetingName.split(' ')[0];
+  }
+  const today = new Date();
+  const dateEl = document.getElementById('dash-today');
+  if (dateEl) {
+    dateEl.textContent = today.toLocaleDateString('en-PH', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
   }
   
-  // Update date
-  const today = new Date();
-  document.getElementById('dash-today').textContent = today.toLocaleDateString('en-PH', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
-  
-  // Show role-specific view
   showRoleView();
 });
