@@ -1,4 +1,6 @@
-// ── SESSION (from shared.js) ──
+const userPrivilege = localStorage.getItem('sk_privilege') || '';
+const userBarangay = localStorage.getItem('sk_barangay') || '';
+
 const session = {
   name: Session.name || 'Councilor',
   barangay: Session.barangay || 'Lahug'

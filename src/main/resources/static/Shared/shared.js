@@ -90,7 +90,7 @@ async function authFetch(url, options = {}) {
         Toast.show('Session expired. Please login again.', true);
         Session.clear();
         setTimeout(() => {
-          window.location.href = '/Councilor/Log-in/login.html';
+          window.location.href = '/Councilor/Log-in/Login';
         }, 1500);
       }
       throw new Error('Unauthorized');
@@ -244,7 +244,7 @@ async function protectPage(requiredView) {
   if (!Session.name) {
     Toast.show('Please login to access this page', true);
     setTimeout(() => {
-      window.location.href = '/Councilor/Log-in/login.html';
+      window.location.href = '/Councilor/Log-in/Login';
     }, 1500);
     return false;
   }
@@ -255,7 +255,7 @@ async function protectPage(requiredView) {
     Toast.show('Session expired. Please login again.', true);
     Session.clear();
     setTimeout(() => {
-      window.location.href = '/Councilor/Log-in/login.html';
+      window.location.href = '/Councilor/Log-in/Login';
     }, 1500);
     return false;
   }
