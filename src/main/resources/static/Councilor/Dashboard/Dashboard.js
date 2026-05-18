@@ -364,11 +364,14 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const hasAccess = await protectPage('councilor');
-  if (!hasAccess) return;
-
   if (!localStorage.getItem('sk_name')) {
-    window.location.href = '/Councilor/Log-in/Login';
+    window.location.href = '/Councilor/Log-in/login';
+    return;
+  }
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    Session.clear();
+    window.location.href = '/Councilor/Log-in/login';
     return;
   }
   const nameEl = document.getElementById('nameEl');
