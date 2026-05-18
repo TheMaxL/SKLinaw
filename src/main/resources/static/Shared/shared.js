@@ -83,14 +83,14 @@ async function authFetch(url, options = {}) {
     
     // If unauthorized, redirect to login
     if (response.status === 401) {
-      const publicPages = ['public.html', 'index.html', 'login.html', 'signup.html'];
+      const publicPages = ['public.html', 'index.html', 'Login', 'signup.html'];
       const currentPage = window.location.pathname.split('/').pop();
       
       if (!publicPages.includes(currentPage) && !Session.name) {
         Toast.show('Session expired. Please login again.', true);
         Session.clear();
         setTimeout(() => {
-          window.location.href = '/Councilor/Log-in/login.html';
+          window.location.href = '/Councilor/Log-in/Login';
         }, 1500);
       }
       throw new Error('Unauthorized');
@@ -200,7 +200,7 @@ function isPublicPage() {
     'public.html', 
     'index.html', 
     'feedback.html', 
-    'login.html', 
+    'Login', 
     'signup.html',
     'home.html'
   ];
@@ -244,7 +244,7 @@ async function protectPage(requiredView) {
   if (!Session.name) {
     Toast.show('Please login to access this page', true);
     setTimeout(() => {
-      window.location.href = '/Councilor/Log-in/login.html';
+      window.location.href = '/Councilor/Log-in/Login';
     }, 1500);
     return false;
   }
@@ -255,7 +255,7 @@ async function protectPage(requiredView) {
     Toast.show('Session expired. Please login again.', true);
     Session.clear();
     setTimeout(() => {
-      window.location.href = '/Councilor/Log-in/login.html';
+      window.location.href = '/Councilor/Log-in/Login';
     }, 1500);
     return false;
   }
@@ -276,12 +276,8 @@ async function protectPage(requiredView) {
 function getDefaultRedirect() {
   if (Session.isAdmin()) {
     return '/Councilor/Admin/admin.html';
-  } else if (Session.isChairman()) {
-    return '/Councilor/Projects/Projects.html';
-  } else if (Session.isTreasurer()) {
-    return '/Councilor/Budget/Budget.html';
   } else {
-    return '/Councilor/Dashboard/dashboard.html';
+    return '/Councilor/Dashboard/Dashboard';
   }
 }
 
@@ -380,27 +376,26 @@ function setupRoleBasedNavigation() {
 // ── Logout Function ────────────────────────────────
 async function logout() {
   try {
-    // Call logout endpoint to invalidate server session
-    const response = await fetch(`${API}/logout`, {
+    // Call logout endpoint
+    await fetch(`${API}/logout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
-    });
-    
-    if (response.ok) {
-      console.log('Server session invalidated');
-    }
+    }).catch(err => console.warn('Logout notification failed:', err));
     
     // Clear local session
     Session.clear();
     
-    // Clear any cached pages from browser history
-    window.location.replace('/Councilor/Home/home');
+    Toast.show('Logged out successfully');
     
+    // Redirect to home page
+    setTimeout(() => {
+      window.location.href = '/Councilor/Home/home';
+    }, 500);
   } catch (error) {
     console.error('Logout error:', error);
     Session.clear();
-    window.location.replace('/Councilor/Home/home');
+    window.location.href = '/Councilor/Home/home.html';
   }
 }
 
@@ -418,12 +413,14 @@ document.addEventListener('DOMContentLoaded', () => {
   buttons.forEach(btn => {
     const target = btn.dataset.page;
 
+    // Set active state
     if (target === currentPage) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
     }
 
+    // Prevent form submission behavior
     btn.setAttribute('type', 'button');
 
     // Attach safe click handler
@@ -435,17 +432,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
-setInterval(async () => {
-  const isAuthenticated = await checkAuth();
-  if (!isAuthenticated && !isPublicPage()) {
-    Toast.show('Your session has expired. Please login again.', true);
-    Session.clear();
-    setTimeout(() => {
-      window.location.href = '/Councilor/Log-in/login';
-    }, 2000);
-  }
-}, 300000);
 
 // Export functions for use in other files
 window.authFetch = authFetch;

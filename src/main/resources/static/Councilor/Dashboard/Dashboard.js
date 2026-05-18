@@ -1,11 +1,15 @@
+// Get user role from localStorage
 const userPrivilege = localStorage.getItem('sk_privilege') || '';
 const userBarangay = localStorage.getItem('sk_barangay') || '';
 
+// Show appropriate view based on role
 function showRoleView() {
+  // Hide all views first
   document.getElementById('councilorView').style.display = 'none';
   document.getElementById('treasurerView').style.display = 'none';
   document.getElementById('chairmanView').style.display = 'none';
   
+  // Update role label
   const roleLabel = document.getElementById('dash-greet-sub');
   
   if (userPrivilege === 'TREASURER') {
@@ -63,11 +67,13 @@ async function loadBudgetPanel() {
         });
         const text = await response.text();
         
+        // Check if response is ERROR or empty
         if (text === 'ERROR' || !text) {
             document.getElementById('budget-panel').innerHTML = '<div class="empty-state">No budget data available.</div>';
             return;
         }
         
+        // Parse JSON safely
         let data;
         try {
             data = JSON.parse(text);
@@ -192,16 +198,16 @@ async function loadRecentExpenditures() {
     
     const container = document.getElementById('recentExpensesBody');
     if (expenditures.length === 0) {
-      container.innerHTML = '<tr><td colspan="4" class="empty-state">No recent expenditures. </div>';
+      container.innerHTML = '<tr><td colspan="4" class="empty-state">No recent expenditures.</td></tr>';
       return;
     }
     
     container.innerHTML = expenditures.map(e => `
       <tr>
-        <td>${escapeHtml(e.projectName)}</div>
-        <td>${escapeHtml(e.committeeName)}</div>
-        <td class="exp-amount">₱${(e.totalCost || 0).toLocaleString()}</div>
-        <td>${formatDate(e.approvedAt)}</div>
+        <td>${escapeHtml(e.projectName)}</td>
+        <td>${escapeHtml(e.committeeName)}</td>
+        <td class="exp-amount">₱${(e.totalCost || 0).toLocaleString()}</td>
+        <td>${formatDate(e.approvedAt)}</td>
       </tr>
     `).join('');
   } catch (error) {
@@ -222,7 +228,7 @@ async function loadCommitteesList() {
       credentials: 'include'
     });
     const committees = await response.json();
-    window.allCommittees = committees;
+    window.allCommittees = committees;  // Store globally
     console.log('Committees loaded:', committees);
   } catch (error) {
     console.error('Error loading committees:', error);
@@ -252,7 +258,7 @@ async function loadChairmanStats() {
 }
 
 async function loadCommitteesTable() {
-  const tbody = document.getElementById('committeesTableBody');
+  const tbody = document.getElementById('committeesTableBody');  // ← Changed from 'projectTableBody'
   if (!tbody) {
     console.error('committeesTableBody not found!');
     return;
@@ -289,6 +295,7 @@ async function loadCommitteesTable() {
 }
 
 async function deleteCommittee(committeeName) {
+  // Confirmation dialog
   const confirmMessage = `⚠️ PERMANENT ACTION ⚠️\n\n` +
     `You are about to delete the committee "${committeeName}".\n\n` +
     `This will also delete:\n` +
@@ -323,9 +330,11 @@ async function deleteCommittee(committeeName) {
     
     if (result === 'SUCCESS') {
       Toast.show(`Committee "${committeeName}" has been deleted successfully.`);
-      await loadCommitteesList();
+      // Refresh all data
+      await loadAllCommittees();
+      await loadMyCommittees();
       await loadCommitteesTable();
-      await loadChairmanStats();
+      await loadBudget();
     } else if (result === 'COMMITTEE_NOT_FOUND') {
       Toast.show('Committee not found', true);
     } else if (result === 'NOT_AUTHORIZED') {
@@ -339,6 +348,7 @@ async function deleteCommittee(committeeName) {
   }
 }
 
+// Helper functions
 function formatDate(str) {
   if (!str) return '—';
   try {
@@ -354,15 +364,16 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const hasAccess = await protectPage('councilor');
-  if (!hasAccess) return;
-  
-  // Additional check: if no user is logged in, redirect
   if (!localStorage.getItem('sk_name')) {
-    window.location.href = '/Councilor/Log-in/login';
+    window.location.href = '/Councilor/Log-in/Login';
     return;
   }
-  
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    Session.clear();
+    window.location.href = '/Councilor/Log-in/Login';
+    return;
+  }
   const nameEl = document.getElementById('nameEl');
   const roleEl = document.getElementById('roleEl');
   const avatarEl = document.getElementById('avatarEl');
@@ -370,13 +381,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (nameEl) nameEl.textContent = localStorage.getItem('sk_name');
   if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
   if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
-  
   const greetingName = localStorage.getItem('sk_name');
   const greetNameEl = document.getElementById('dash-greet-name');
   if (greetNameEl && greetingName) {
     greetNameEl.textContent = greetingName.split(' ')[0];
   }
-  
   const today = new Date();
   const dateEl = document.getElementById('dash-today');
   if (dateEl) {

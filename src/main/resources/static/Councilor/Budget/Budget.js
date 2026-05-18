@@ -1,3 +1,6 @@
+const userPrivilege = localStorage.getItem('sk_privilege') || '';
+const userBarangay = localStorage.getItem('sk_barangay') || '';
+
 const COLORS = [
   '#0BBFB5','#F59E0B','#6366F1','#10B981',
   '#EC4899','#3B82F6','#F97316','#8B5CF6',
@@ -361,14 +364,16 @@ function esc(s) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const hasAccess = await protectPage('councilor');
-  if (!hasAccess) return;
-  
   if (!localStorage.getItem('sk_name')) {
-    window.location.href = '/Councilor/Log-in/login';
+    window.location.href = '/Councilor/Log-in/Login';
     return;
   }
-  
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    Session.clear();
+    window.location.href = '/Councilor/Log-in/Login';
+    return;
+  }
   const nameEl = document.getElementById('nameEl');
   const roleEl = document.getElementById('roleEl');
   const avatarEl = document.getElementById('avatarEl');
@@ -376,13 +381,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (nameEl) nameEl.textContent = localStorage.getItem('sk_name');
   if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
   if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
-  
   const greetingName = localStorage.getItem('sk_name');
   const greetNameEl = document.getElementById('dash-greet-name');
   if (greetNameEl && greetingName) {
     greetNameEl.textContent = greetingName.split(' ')[0];
   }
-  
   const today = new Date();
   const dateEl = document.getElementById('dash-today');
   if (dateEl) {

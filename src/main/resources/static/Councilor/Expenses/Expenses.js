@@ -1,3 +1,6 @@
+const userPrivilege = localStorage.getItem('sk_privilege') || '';
+const userBarangay = localStorage.getItem('sk_barangay') || '';
+
 const PAGE_SIZE = 10;
 
 const session = {
@@ -246,15 +249,16 @@ function fmtDate(s) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const hasAccess = await protectPage('councilor');
-  if (!hasAccess) return;
-  
-  // Additional check: if no user is logged in, redirect
   if (!localStorage.getItem('sk_name')) {
-    window.location.href = '/Councilor/Log-in/login';
+    window.location.href = '/Councilor/Log-in/Login';
     return;
   }
-  
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    Session.clear();
+    window.location.href = '/Councilor/Log-in/Login';
+    return;
+  }
   const nameEl = document.getElementById('nameEl');
   const roleEl = document.getElementById('roleEl');
   const avatarEl = document.getElementById('avatarEl');
@@ -262,13 +266,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (nameEl) nameEl.textContent = localStorage.getItem('sk_name');
   if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
   if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
-  
   const greetingName = localStorage.getItem('sk_name');
   const greetNameEl = document.getElementById('dash-greet-name');
   if (greetNameEl && greetingName) {
     greetNameEl.textContent = greetingName.split(' ')[0];
   }
-  
   const today = new Date();
   const dateEl = document.getElementById('dash-today');
   if (dateEl) {
