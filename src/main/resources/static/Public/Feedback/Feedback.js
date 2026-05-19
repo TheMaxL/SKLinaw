@@ -1,5 +1,6 @@
-const API = 'http://localhost:8085/api';
-const ADMIN_API = 'http://localhost:8085/admin';
+const API = '/api';
+const ADMIN_API = '/admin';
+
 let currentBarangay = '';
 let currentProjectId = null;
 let currentProjectName = '';
