@@ -23,14 +23,6 @@
       "dest": "/src/main/resources/static/Admin/Approval/admin.html"
     },
     {
-      "src": "/Admin/(.*)",
-      "dest": "/src/main/resources/static/Admin/$1.html"
-    },
-    {
-      "src": "/Councilor/(.*)",
-      "dest": "/src/main/resources/static/Councilor/$1.html"
-    },
-    {
       "src": "/(.*)\\.(css|js|png|jpg|svg|ico)$",
       "dest": "/src/main/resources/static/$1.$2"
     },
@@ -39,8 +31,8 @@
       "dest": "/src/main/resources/static/$1-detail.html"
     },
     {
-      "src": "/admin/api/(.*)",
-      "dest": "https://sklinaw.onrender.com/admin/api/$1"
+      "src": "/Councilor/(.*)",
+      "dest": "/src/main/resources/static/Councilor/$1.html"
     },
     {
       "src": "/api/(.*)",
