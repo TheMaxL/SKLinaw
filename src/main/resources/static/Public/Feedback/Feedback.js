@@ -1,5 +1,6 @@
-const API = 'http://localhost:8085/api';
-const ADMIN_API = 'http://localhost:8085/admin';
+const API = '/api';
+const ADMIN_API = '/admin';
+
 let currentBarangay = '';
 let currentProjectId = null;
 let currentProjectName = '';
@@ -505,19 +506,16 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('loadBtn found:', !!loadBtn);
   
   if (barangaySelect) {
-    // Remove any existing listeners to avoid duplicates
-    const newSelect = barangaySelect.cloneNode(true);
-    barangaySelect.parentNode.replaceChild(newSelect, barangaySelect);
+    const oldListener = barangaySelect.onchange;
+    barangaySelect.onchange = null;
     
-    // Add fresh event listener
-    newSelect.addEventListener('change', (e) => {
+    barangaySelect.addEventListener('change', (e) => {
       const selectedBarangay = e.target.value;
       console.log('=== BARANGAY CHANGED ===');
       console.log('Selected barangay:', selectedBarangay);
       if (selectedBarangay) {
         loadCommittees(selectedBarangay);
       } else {
-        // Reset committee dropdown if "All barangays" is selected
         const committeeSelect = document.getElementById('committeeSelect');
         if (committeeSelect) {
           committeeSelect.innerHTML = '<option value="">All committees</option>';
@@ -525,15 +523,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     
-    // If a barangay is already selected, load committees
-    if (newSelect.value) {
-      console.log('Initial barangay value:', newSelect.value);
-      loadCommittees(newSelect.value);
+    if (barangaySelect.value) {
+      console.log('Initial barangay value:', barangaySelect.value);
+      loadCommittees(barangaySelect.value);
     }
   }
   
   if (loadBtn) {
-    loadBtn.addEventListener('click', loadProjects);
+    const newLoadBtn = loadBtn.cloneNode(true);
+    loadBtn.parentNode.replaceChild(newLoadBtn, loadBtn);
+    
+    newLoadBtn.addEventListener('click', loadProjects);
   }
   
   if (searchInput) {
@@ -548,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   initRatingStars();
-  loadBarangays();
+  loadBarangays(); 
 });
 
 window.openFeedbackModal = openFeedbackModal;
