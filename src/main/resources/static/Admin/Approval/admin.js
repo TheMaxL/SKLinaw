@@ -89,7 +89,7 @@ function viewPhoto(userId, userName) {
     }
     
     document.getElementById('photoModalTitle').textContent = `Verification ID: ${userName}`;
-    document.getElementById('photoModalImage').src = `${ADMIN_API}/pendingUsers/photo/${userId}?t=${Date.now()}`;
+    document.getElementById('photoModalImage').src = `${ADMIN_API}/pending-photo/${userId}?t=${Date.now()}`;
     modal.style.display = 'flex';
 }
 
