@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 
 import com.example.sklinaw.model.Account;
@@ -57,7 +56,7 @@ public class AdminController {
 
         try (Connection conn = dataSource.getConnection()) {
 
-            String sql = "SELECT id, Name, Barangay, Photo FROM PendingAccounts";
+            String sql = "SELECT id, name, barangay, photo, photo_data, photo_content_type FROM PendingAccounts";
             PreparedStatement stmt = conn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
@@ -66,9 +65,9 @@ public class AdminController {
                 Map<String, Object> user = new HashMap<>();
 
                 user.put("id", rs.getInt("id"));
-                user.put("name", rs.getString("Name"));
-                user.put("barangay", rs.getString("Barangay"));
-                user.put("photo", rs.getString("Photo"));
+                user.put("name", rs.getString("name"));
+                user.put("barangay", rs.getString("barangay"));
+                user.put("photo", rs.getString("photo"));
                 user.put("approved", 0); // always pending
 
                 users.add(user);
@@ -96,12 +95,12 @@ public class AdminController {
 
             if (rs.next()) {
 
-                String name = rs.getString("Name");
-                String password = rs.getString("Password");
-                String barangay = rs.getString("Barangay");
+                String name = rs.getString("name");
+                String password = rs.getString("password");
+                String barangay = rs.getString("barangay");
 
                 // insert into councilors
-                String insertSql = "INSERT INTO Councilors (Name,Password,Barangay,approved) VALUES (?,?,?,1)";
+                String insertSql = "INSERT INTO Councilors (name, password, barangay, approved) VALUES (?, ?, ?, 1)";
                 PreparedStatement insertStmt = conn.prepareStatement(insertSql);
 
                 insertStmt.setString(1, name);
@@ -170,28 +169,28 @@ public class AdminController {
     public String fixDeveloperPasswords() {
         try (Connection conn = dataSource.getConnection()) {
             // Get all developers
-            String selectSql = "SELECT id, Name, Password FROM Developer";
+            String selectSql = "SELECT id, name, password FROM Developer";
             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
             ResultSet rs = selectStmt.executeQuery();
             
             int updated = 0;
             while (rs.next()) {
                 int id = rs.getInt("id");
-                String currentPassword = rs.getString("Password");
+                String currentPassword = rs.getString("password");
                 
                 // Check if it's already BCrypt
                 if (!currentPassword.startsWith("$2a$") && !currentPassword.startsWith("$2b$")) {
                     // This is plain text - hash it
                     String hashedPassword = passwordEncoder.encode(currentPassword);
                     
-                    String updateSql = "UPDATE Developer SET Password = ? WHERE id = ?";
+                    String updateSql = "UPDATE Developer SET password = ? WHERE id = ?";
                     PreparedStatement updateStmt = conn.prepareStatement(updateSql);
                     updateStmt.setString(1, hashedPassword);
                     updateStmt.setInt(2, id);
                     updateStmt.executeUpdate();
                     updated++;
                     
-                    System.out.println("Updated password for: " + rs.getString("Name"));
+                    System.out.println("Updated password for: " + rs.getString("name"));
                 }
             }
             
@@ -203,12 +202,12 @@ public class AdminController {
         }
     }
 
-    //Get councilors from Barangay
+    // Get councilors from Barangay
     @GetMapping("/councilors")
     public List<Account> getCouncilors(@RequestParam(required = false) String barangay) {
-        String sql = "SELECT id, Name, Password, Barangay, approved, privilege FROM Councilors";
+        String sql = "SELECT id, name, password, barangay, approved, privilege FROM Councilors";
         if (barangay != null && !barangay.isEmpty()) {
-            sql += " WHERE Barangay = ?";
+            sql += " WHERE barangay = ?";
         }
         
         try (Connection conn = DriverManager.getConnection(dbUrl);
@@ -224,9 +223,9 @@ public class AdminController {
             while (rs.next()) {
                 Account account = new Account();
                 account.setId(rs.getInt("id"));
-                account.setName(rs.getString("Name"));
-                account.setPassword(rs.getString("Password"));
-                account.setBarangay(rs.getString("Barangay"));
+                account.setName(rs.getString("name"));
+                account.setPassword(rs.getString("password"));
+                account.setBarangay(rs.getString("barangay"));
                 account.setApproved(rs.getInt("approved"));
                 account.setPrivilege(rs.getString("privilege"));
                 accounts.add(account);
@@ -281,7 +280,7 @@ public class AdminController {
                 
                 // 1. Archive councilors before clearing (optional - for audit trail)
                 String archiveSql = "INSERT INTO ArchivedCouncilors (name, barangay, privilege, cleared_at) " +
-                                "SELECT Name, Barangay, privilege, CURRENT_TIMESTAMP FROM Councilors WHERE Barangay = ?";
+                                "SELECT name, barangay, privilege, CURRENT_TIMESTAMP FROM Councilors WHERE barangay = ?";
                 PreparedStatement archiveStmt = conn.prepareStatement(archiveSql);
                 archiveStmt.setString(1, barangay);
                 councilorsArchived = archiveStmt.executeUpdate();
@@ -317,7 +316,7 @@ public class AdminController {
                 committeesCleared = clearCommitteesStmt.executeUpdate();
                 
                 // 7. Clear or archive councilors (remove from active councilors)
-                String clearCouncilorsSql = "DELETE FROM Councilors WHERE Barangay = ?";
+                String clearCouncilorsSql = "DELETE FROM Councilors WHERE barangay = ?";
                 PreparedStatement clearCouncilorsStmt = conn.prepareStatement(clearCouncilorsSql);
                 clearCouncilorsStmt.setString(1, barangay);
                 int councilorsCleared = clearCouncilorsStmt.executeUpdate();
@@ -367,7 +366,7 @@ public class AdminController {
         try (Connection conn = dataSource.getConnection()) {
             
             // Check active councilors
-            String councilorSql = "SELECT COUNT(*) as count FROM Councilors WHERE Barangay = ?";
+            String councilorSql = "SELECT COUNT(*) as count FROM Councilors WHERE barangay = ?";
             PreparedStatement councilorStmt = conn.prepareStatement(councilorSql);
             councilorStmt.setString(1, barangay);
             ResultSet councilorRs = councilorStmt.executeQuery();
@@ -407,14 +406,14 @@ public class AdminController {
         List<String> barangays = new ArrayList<>();
         
         try (Connection conn = dataSource.getConnection()) {
-            String sql = "SELECT DISTINCT Barangay FROM Councilors UNION " +
+            String sql = "SELECT DISTINCT barangay FROM Councilors UNION " +
                         "SELECT DISTINCT barangay FROM Committees UNION " +
                         "SELECT DISTINCT barangay FROM Projects";
             PreparedStatement stmt = conn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
             
             while (rs.next()) {
-                barangays.add(rs.getString("Barangay"));
+                barangays.add(rs.getString("barangay"));
             }
             
         } catch (Exception e) {
