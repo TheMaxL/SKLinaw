@@ -1,6 +1,5 @@
 package com.example.sklinaw.controller;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -217,35 +216,39 @@ public class Controller {
             @RequestParam("barangay") String barangay,
             @RequestParam("photo") MultipartFile photo
     ) {
-
         try (Connection conn = dataSource.getConnection()) {
-
+            
+            // Check if already exists
+            String checkSql = "SELECT * FROM Councilors WHERE Name = ? AND Barangay = ?";
+            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setString(1, name);
+            checkStmt.setString(2, barangay);
+            ResultSet rs = checkStmt.executeQuery();
+            
+            if (rs.next()) {
+                return "ALREADY_EXISTS";
+            }
+            
             String hashedPassword = encoder.encode(password);
-
-            String fileName = System.currentTimeMillis() + "_" + photo.getOriginalFilename();
-            String uploadDir = "C:/Users/91460/.SKLinaw/uploads/";
-
-            File dir = new File(uploadDir);
-            if (!dir.exists()) dir.mkdirs();
-
-            File file = new File(dir, fileName);
-            photo.transferTo(file);
-
-            String sql = "INSERT INTO PendingAccounts (Name, Password, Barangay, Photo) VALUES (?, ?, ?, ?)";
+            
+            // Insert with photo data as byte array
+            String sql = "INSERT INTO PendingAccounts (Name, Password, Barangay, Photo, photo_data, photo_content_type, photo_filename) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement stmt = conn.prepareStatement(sql);
-
             stmt.setString(1, name);
             stmt.setString(2, hashedPassword);
             stmt.setString(3, barangay);
-            stmt.setString(4, fileName);
-
+            stmt.setString(4, photo.getOriginalFilename()); 
+            stmt.setBytes(5, photo.getBytes()); 
+            stmt.setString(6, photo.getContentType()); 
+            stmt.setString(7, photo.getOriginalFilename());
+            
             stmt.executeUpdate();
-
             return "SUCCESS";
-
+            
         } catch (Exception e) {
             e.printStackTrace();
-            return "ERROR";
+            return "ERROR: " + e.getMessage();
         }
     }
 
