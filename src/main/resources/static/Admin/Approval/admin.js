@@ -734,7 +734,7 @@ window.assignPrivilege = assignPrivilege;
 window.switchView = switchView;
 window.switchMainSection = switchMainSection;
 window.viewPhoto = viewPhoto;
-window.closePhotoModal = closePhotoModal;
+window.closePhotoModal = closePhotoModal;   
 
 // Start the app
 init();

@@ -134,10 +134,11 @@ const Session = {
   get userId() {
     return localStorage.getItem('sk_user_id') || '';
   },
-  
-  // Role check helpers
+  get userType() {
+    return localStorage.getItem('sk_userType') || '';
+  },
   isAdmin() {
-    return this.privilege === 'ADMIN';
+    return this.privilege === 'ADMIN' || this.userType === 'developer';
   },
   isChairman() {
     return this.privilege === 'CHAIRMAN';
@@ -149,34 +150,29 @@ const Session = {
     return !this.privilege || this.privilege === '';
   },
   isDeveloper() {
-    return this.privilege === 'DEVELOPER';
+    return this.userType === 'developer' || this.privilege === 'DEVELOPER';
   },
-  
-  // Check if user has access to a specific view
   canAccess(view) {
     switch(view) {
       case 'admin':
         return this.isAdmin() || this.isDeveloper();
       case 'chairman':
-        return this.isChairman() || this.isAdmin() || this.isDeveloper();
+        return this.isChairman() || this.isAdmin();
       case 'treasurer':
-        return this.isTreasurer() || this.isAdmin() || this.isDeveloper();
+        return this.isTreasurer() || this.isAdmin();
       case 'councilor':
-        return this.isCouncilor() || this.isAdmin() || this.isDeveloper();
+        return true; // All logged-in users are councilors
       default:
         return false;
     }
   },
-  
-  // Get display role title
   getRoleTitle() {
+    if (this.isDeveloper()) return 'Developer';
     if (this.isAdmin()) return 'Administrator';
     if (this.isChairman()) return 'Chairman';
     if (this.isTreasurer()) return 'Treasurer';
-    if (this.isDeveloper()) return 'Developer';
     return 'Councilor';
   },
-  
   set(name, barangay, privilege = '', userId = null) {
     localStorage.setItem('sk_name', name);
     localStorage.setItem('sk_barangay', barangay);
@@ -185,12 +181,15 @@ const Session = {
       localStorage.setItem('sk_user_id', userId);
     }
   },
-  
+  setUserType(userType) {
+    localStorage.setItem('sk_userType', userType);
+  },
   clear() {
     localStorage.removeItem('sk_name');
     localStorage.removeItem('sk_barangay');
     localStorage.removeItem('sk_privilege');
     localStorage.removeItem('sk_user_id');
+    localStorage.removeItem('sk_userType');
   }
 };
 
