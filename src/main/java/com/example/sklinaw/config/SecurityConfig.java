@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -236,20 +236,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        // Alternative approach without DaoAuthenticationProvider
-        org.springframework.security.authentication.AuthenticationManager authManager = 
-            authentication -> {
-                try {
-                    return new UsernamePasswordAuthenticationToken(
-                        userDetailsService.loadUserByUsername(authentication.getName()),
-                        null,
-                        userDetailsService.loadUserByUsername(authentication.getName()).getAuthorities()
-                    );
-                } catch (Exception e) {
-                    throw new org.springframework.security.authentication.BadCredentialsException("Invalid credentials");
-                }
-            };
-        return authManager;
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }
