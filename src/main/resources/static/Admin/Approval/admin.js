@@ -1,11 +1,34 @@
 let currentView = 'pending'; // 'pending', 'approved', or 'all'
 let currentMainView = 'user-mgmt'; // 'user-mgmt' or 'turnover'
 
+// Helper function for admin API calls
+async function adminFetch(url, options = {}) {
+    const defaultOptions = {
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+    
+    const mergedOptions = { ...defaultOptions, ...options };
+    const response = await fetch(`${ADMIN_API}${url}`, mergedOptions);
+    
+    if (response.status === 401 || response.status === 403) {
+        Toast.show('Session expired. Please login again.', true);
+        setTimeout(() => {
+            window.location.href = '/Councilor/Log-in/Login.html';
+        }, 1500);
+        throw new Error('Unauthorized');
+    }
+    
+    return response;
+}
+
 // ==================== USER MANAGEMENT FUNCTIONS ====================
 
 async function loadPendingUsers() {
     try {
-        const res = await fetch(`${ADMIN_API}/users`);
+        const res = await adminFetch('/users');
         let users = await res.json();
         console.log('Pending users count:', users.length);
 
@@ -100,7 +123,7 @@ function closePhotoModal() {
 
 async function loadApprovedUsers() {
     try {
-        const response = await fetch(`${ADMIN_API}/councilors`);
+        const response = await adminFetch('/councilors');
         let councilors = await response.json();
         
         // Filter only approved councilors
@@ -126,17 +149,17 @@ async function loadApprovedUsers() {
         councilors.forEach(c => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-              <td>${c.id}</td>
-              <td>${escapeHtml(c.name)}</td>
-              <td>${escapeHtml(c.barangay)}</td>
-              <td>
-                <select class="privilege-select" data-id="${c.id}">
-                    <option value="" ${!c.privilege ? 'selected' : ''}>Regular Councilor</option>
-                    <option value="CHAIRMAN" ${c.privilege === 'CHAIRMAN' ? 'selected' : ''}>👑 Chairman</option>
-                    <option value="TREASURER" ${c.privilege === 'TREASURER' ? 'selected' : ''}>💰 Treasurer</option>
-                    <option value="ADMIN" ${c.privilege === 'ADMIN' ? 'selected' : ''}>⚙️ Admin</option>
-                </select>
-                <button class="btn-assign" onclick="assignPrivilege(${c.id}, '${escapeHtml(c.name)}')">Assign</button>
+                <td>${c.id}</td>
+                <td>${escapeHtml(c.name)}</td>
+                <td>${escapeHtml(c.barangay)}</td>
+                <td>
+                    <select class="privilege-select" data-id="${c.id}">
+                        <option value="" ${!c.privilege ? 'selected' : ''}>Regular Councilor</option>
+                        <option value="CHAIRMAN" ${c.privilege === 'CHAIRMAN' ? 'selected' : ''}>👑 Chairman</option>
+                        <option value="TREASURER" ${c.privilege === 'TREASURER' ? 'selected' : ''}>💰 Treasurer</option>
+                        <option value="ADMIN" ${c.privilege === 'ADMIN' ? 'selected' : ''}>⚙️ Admin</option>
+                    </select>
+                    <button class="btn-assign" onclick="assignPrivilege(${c.id}, '${escapeHtml(c.name)}')">Assign</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -154,11 +177,11 @@ async function loadApprovedUsers() {
 async function loadAllUsers() {
     try {
         // Get pending users
-        const pendingRes = await fetch(`${ADMIN_API}/users`);
+        const pendingRes = await adminFetch('/users');
         const pendingUsers = await pendingRes.json();
         
         // Get approved users
-        const approvedRes = await fetch(`${ADMIN_API}/councilors`);
+        const approvedRes = await adminFetch('/councilors');
         let approvedUsers = await approvedRes.json();
         approvedUsers = approvedUsers.filter(c => c.approved === 1);
         
@@ -189,26 +212,26 @@ async function loadAllUsers() {
         filteredUsers.forEach(u => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-              <td>${u.id}</td>
-              <td>${escapeHtml(u.name)}</td>
-              <td>${escapeHtml(u.barangay)}</td>
-              <td><span class="status-badge status-${u.status.toLowerCase()}">${u.status}</span></td>
-              <td>
-                ${u.status === 'Approved' ? `
-                    <select class="privilege-select" data-id="${u.id}">
-                        <option value="">Regular Councilor</option>
-                        <option value="CHAIRMAN">👑 Chairman</option>
-                        <option value="TREASURER">💰 Treasurer</option>
-                        <option value="ADMIN">⚙️ Admin</option>
-                    </select>
-                    <button class="btn-assign" onclick="assignPrivilege(${u.id}, '${escapeHtml(u.name)}')">Assign</button>
-                ` : '—'}
+                <td>${u.id}</td>
+                <td>${escapeHtml(u.name)}</td>
+                <td>${escapeHtml(u.barangay)}</td>
+                <td><span class="status-badge status-${u.status.toLowerCase()}">${u.status}</span></td>
+                <td>
+                    ${u.status === 'Approved' ? `
+                        <select class="privilege-select" data-id="${u.id}">
+                            <option value="">Regular Councilor</option>
+                            <option value="CHAIRMAN">👑 Chairman</option>
+                            <option value="TREASURER">💰 Treasurer</option>
+                            <option value="ADMIN">⚙️ Admin</option>
+                        </select>
+                        <button class="btn-assign" onclick="assignPrivilege(${u.id}, '${escapeHtml(u.name)}')">Assign</button>
+                    ` : '—'}
                 </td>
-              <td>
-                ${u.status === 'Pending' ? `
-                    <button class="btn-approve" onclick="approveUser(${u.id}, '${escapeHtml(u.name)}')">✔ Approve</button>
-                    <button class="btn-reject" onclick="rejectUser(${u.id}, '${escapeHtml(u.name)}')">✘ Reject</button>
-                ` : '—'}
+                <td>
+                    ${u.status === 'Pending' ? `
+                        <button class="btn-approve" onclick="approveUser(${u.id}, '${escapeHtml(u.name)}')">✔ Approve</button>
+                        <button class="btn-reject" onclick="rejectUser(${u.id}, '${escapeHtml(u.name)}')">✘ Reject</button>
+                    ` : '—'}
                 </td>
             `;
             tbody.appendChild(tr);
@@ -223,7 +246,7 @@ async function loadAllUsers() {
 // Load barangays from Councilors table for filter
 async function loadBarangayFilter() {
     try {
-        const response = await fetch(`${ADMIN_API}/councilors`);
+        const response = await adminFetch('/councilors');
         const councilors = await response.json();
         
         // Get unique barangays from approved councilors
@@ -249,7 +272,7 @@ async function loadBarangayFilter() {
 // Load barangays for turnover dropdown
 async function loadTurnoverBarangays() {
     try {
-        const response = await fetch(`${ADMIN_API}/councilors`);
+        const response = await adminFetch('/councilors');
         const councilors = await response.json();
         
         // Get unique barangays with data
@@ -296,7 +319,7 @@ async function onBarangaySelected() {
     }
     
     try {
-        const response = await fetch(`${ADMIN_API}/turnover/status/${encodeURIComponent(barangay)}`);
+        const response = await adminFetch(`/turnover/status/${encodeURIComponent(barangay)}`);
         const status = await response.json();
         
         document.getElementById('statusCouncilors').textContent = status.activeCouncilors || 0;
@@ -348,7 +371,7 @@ async function performTurnover() {
     turnoverBtn.textContent = '⏳ Processing turnover...';
     
     try {
-        const response = await fetch(`${ADMIN_API}/turnover/${encodeURIComponent(barangay)}`, {
+        const response = await adminFetch(`/turnover/${encodeURIComponent(barangay)}`, {
             method: 'POST'
         });
         
@@ -481,10 +504,10 @@ function switchView(view) {
 
 async function loadStats() {
     try {
-        const pendingRes = await fetch(`${ADMIN_API}/users`);
+        const pendingRes = await adminFetch('/users');
         const pendingUsers = await pendingRes.json();
         
-        const councilorsRes = await fetch(`${ADMIN_API}/councilors`);
+        const councilorsRes = await adminFetch('/councilors');
         const councilors = await councilorsRes.json();
         
         const pendingCount = document.getElementById('admin-stat-pending');
@@ -508,7 +531,7 @@ async function approveUser(id, name) {
     console.log('Current view BEFORE approval:', currentView);
     
     try {
-        const response = await fetch(`${ADMIN_API}/users/${id}/approve`, { method: 'POST' });
+        const response = await adminFetch(`/users/${id}/approve`, { method: 'POST' });
         if (response.ok) {
             Toast.show(`${name} has been approved`);
             
@@ -535,7 +558,7 @@ async function approveUser(id, name) {
 
 async function rejectUser(id, name) {
     try {
-        const response = await fetch(`${ADMIN_API}/users/${id}/reject`, { method: 'POST' });
+        const response = await adminFetch(`/users/${id}/reject`, { method: 'POST' });
         if (response.ok) {
             Toast.show(`${name} has been rejected.`);
             loadPendingUsers();
@@ -565,10 +588,9 @@ async function assignPrivilege(councilorId, councilorName) {
     if (!confirm(message)) return;
     
     try {
-        const response = await fetch(`${ADMIN_API}/councilors/${councilorId}/privilege`, {
+        const response = await adminFetch(`/councilors/${councilorId}/privilege`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json'},
-            body: JSON.stringify({ privilege: privilege})
+            body: JSON.stringify({ privilege: privilege })
         });
 
         const result = await response.text();
@@ -694,8 +716,8 @@ function init() {
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', () => {
         localStorage.clear();
-        window.location.href = '../Log-in/Login';
-    });
+        window.location.href = '../../Log-in/Login';
+    }); 
     
     // Turnover button
     const turnoverBtn = document.getElementById('turnoverBtn');
