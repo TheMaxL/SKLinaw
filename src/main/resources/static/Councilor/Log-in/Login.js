@@ -31,7 +31,7 @@ function storeUserSession(data) {
 function getRedirectUrl(privilege, userType) {
     // Admin/Developer redirect
     if (privilege === 'ADMIN' || userType === 'developer') {
-        return '/Admin/Approval/admins';
+        return '/Admin/Approval/admin';
     }
     
     // Role-based redirect
@@ -133,6 +133,25 @@ async function submitLogin() {
             btn.disabled = false;
             btn.innerHTML = 'Log In';
         }
+    }
+}
+
+async function testLogin() {
+    const response = await fetch(`${API}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            name: loginForm.nameInput?.value.trim(),
+            password: loginForm.passwordInput?.value 
+        })
+    });
+    const text = await response.text();
+    console.log('Raw response:', text);
+    try {
+        const json = JSON.parse(text);
+        console.log('Parsed JSON:', json);
+    } catch(e) {
+        console.log('Not JSON:', text);
     }
 }
 

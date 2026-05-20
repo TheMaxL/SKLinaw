@@ -9,7 +9,6 @@ async function loadPendingUsers() {
         let users = await res.json();
         console.log('Pending users count:', users.length);
 
-
         // Apply status filter if needed
         const filterEl = document.getElementById('filter');
         const filter = filterEl ? filterEl.value : 'All';
@@ -25,7 +24,7 @@ async function loadPendingUsers() {
         if (!tbody) return;
 
         if (users.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No pending accounts found</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No pending accounts found</td></tr>`;
             return;
         }
 
@@ -33,22 +32,25 @@ async function loadPendingUsers() {
         users.forEach(u => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-              <td>${u.id}</td>
-              <td>${escapeHtml(u.name)}</td>
-              <td>${escapeHtml(u.barangay)}</td>
-              <td><span class="status-badge status-pending">Pending</span></td>
-              <td>
-                <select class="privilege-select" data-id="${u.id}">
-                    <option value="">Regular Councilor</option>
-                    <option value="CHAIRMAN">👑 Chairman</option>
-                    <option value="TREASURER">💰 Treasurer</option>
-                    <option value="ADMIN">⚙️ Admin</option>
-                </select>
-                <button class="btn-assign" onclick="assignPrivilege(${u.id}, '${escapeHtml(u.name)}')">Assign</button>
+                <td>${u.id}</td>
+                <td>${escapeHtml(u.name)}</td>
+                <td>${escapeHtml(u.barangay)}</td>
+                <td><span class="status-badge status-pending">Pending</span></td>
+                <td>
+                    <button class="btn-view-photo" onclick="viewPhoto(${u.id}, '${escapeHtml(u.name)}')">📷 View ID</button>
                 </td>
-              <td>
-                <button class="btn-approve" onclick="approveUser(${u.id}, '${escapeHtml(u.name)}')">✔ Approve</button>
-                <button class="btn-reject" onclick="rejectUser(${u.id}, '${escapeHtml(u.name)}')">✘ Reject</button>
+                <td>
+                    <select class="privilege-select" data-id="${u.id}">
+                        <option value="">Regular Councilor</option>
+                        <option value="CHAIRMAN">👑 Chairman</option>
+                        <option value="TREASURER">💰 Treasurer</option>
+                        <option value="ADMIN">⚙️ Admin</option>
+                    </select>
+                    <button class="btn-assign" onclick="assignPrivilege(${u.id}, '${escapeHtml(u.name)}')">Assign</button>
+                </td>
+                <td>
+                    <button class="btn-approve" onclick="approveUser(${u.id}, '${escapeHtml(u.name)}')">✔ Approve</button>
+                    <button class="btn-reject" onclick="rejectUser(${u.id}, '${escapeHtml(u.name)}')">✘ Reject</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -61,6 +63,39 @@ async function loadPendingUsers() {
         console.error('Error loading pending users:', err);
         Toast.show('Could not load pending users', true);
     }
+}
+
+// Function to view photo in modal
+function viewPhoto(userId, userName) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('photoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'photoModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <span class="modal-close" onclick="closePhotoModal()">&times;</span>
+                <h3 id="photoModalTitle">Verification Photo</h3>
+                <img id="photoModalImage" src="" alt="Verification photo" style="max-width: 100%; max-height: 70vh;">
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closePhotoModal();
+        });
+    }
+    
+    document.getElementById('photoModalTitle').textContent = `Verification ID: ${userName}`;
+    document.getElementById('photoModalImage').src = `${ADMIN_API}/pendingUsers/photo/${userId}?t=${Date.now()}`;
+    modal.style.display = 'flex';
+}
+
+function closePhotoModal() {
+    const modal = document.getElementById('photoModal');
+    if (modal) modal.style.display = 'none';
 }
 
 async function loadApprovedUsers() {
@@ -382,6 +417,7 @@ function updateTableHeaders(view) {
                 <th>Name</th>
                 <th>Barangay</th>
                 <th>Status</th>
+                <th>Verification</th>
                 <th>Privileges</th>
                 <th>Actions</th>
             </tr>
@@ -697,6 +733,8 @@ window.rejectUser = rejectUser;
 window.assignPrivilege = assignPrivilege;
 window.switchView = switchView;
 window.switchMainSection = switchMainSection;
+window.viewPhoto = viewPhoto;
+window.closePhotoModal = closePhotoModal;   
 
 // Start the app
 init();
