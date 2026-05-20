@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 
 import com.example.sklinaw.model.Account;
 
@@ -134,6 +137,32 @@ public class AdminController {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @GetMapping("/pending-photo/{id}")
+    public ResponseEntity<byte[]> getPendingPhoto(@PathVariable int id) {
+        try (Connection conn = dataSource.getConnection()) {
+            String sql = "SELECT photo_data, photo_content_type FROM PendingAccounts WHERE id = ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                byte[] photoData = rs.getBytes("photo_data");
+                String contentType = rs.getString("photo_content_type");
+                
+                if (photoData != null && photoData.length > 0) {
+                    return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType != null ? contentType : "image/png"))
+                        .body(photoData);
+                }
+            }
+            return ResponseEntity.notFound().build();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
         }
     }
 
