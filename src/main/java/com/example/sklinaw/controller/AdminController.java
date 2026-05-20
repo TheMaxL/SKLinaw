@@ -137,7 +137,7 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/fix-developer-passwords")
+    @GetMapping("/fix-developer-passwords")
     public String fixDeveloperPasswords() {
         try (Connection conn = dataSource.getConnection()) {
             // Get all developers

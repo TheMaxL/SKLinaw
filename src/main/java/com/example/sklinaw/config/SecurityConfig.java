@@ -72,6 +72,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/submitScore").permitAll()
                 .requestMatchers("/api/getProjectScore").permitAll()
                 .requestMatchers("/api/getAllProjectScores").permitAll()
+                .requestMatchers("/admin/fix-developer-passwords").permitAll()
                 
                 // ========== OPTIONS REQUESTS (CORS Preflight) ==========
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
