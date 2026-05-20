@@ -205,12 +205,12 @@ public class AdminController {
     // Get councilors from Barangay
     @GetMapping("/councilors")
     public List<Account> getCouncilors(@RequestParam(required = false) String barangay) {
-        String sql = "SELECT id, name, password, barangay, approved, privilege FROM Councilors";
+        String sql = "SELECT id, name, password, barangay, approved, privilege FROM councilors";
         if (barangay != null && !barangay.isEmpty()) {
             sql += " WHERE barangay = ?";
         }
         
-        try (Connection conn = DriverManager.getConnection(dbUrl);
+        try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             if (barangay != null && !barangay.isEmpty()) {
