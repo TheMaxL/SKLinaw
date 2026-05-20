@@ -302,16 +302,229 @@
     color: #000;
 }
 
-.btn-view-photo {
-    background-color: #4a90e2;
+/* ==================== TABLE STYLES ==================== */
+
+/* Table container */
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+/* Main table */
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+/* Table header */
+.users-table thead tr {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.users-table th {
+    text-align: left;
+    padding: 1rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+}
+
+/* Table body rows */
+.users-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s ease;
+}
+
+.users-table tbody tr:hover {
+    background: rgba(11, 191, 181, 0.04);
+}
+
+.users-table td {
+    padding: 1rem 0.75rem;
+    color: var(--text);
+    vertical-align: middle;
+}
+
+/* Table cell text formatting */
+.users-table td:first-child,
+.users-table th:first-child {
+    padding-left: 1.25rem;
+}
+
+.users-table td:last-child,
+.users-table th:last-child {
+    padding-right: 1.25rem;
+}
+
+/* Name column - slightly bolder */
+.users-table td:nth-child(2) {
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* Barangay column */
+.users-table td:nth-child(3) {
+    color: var(--text-secondary, #94a3b8);
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.status-approved {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.status-pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+/* Privilege select dropdown */
+.privilege-select {
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.privilege-select:hover {
+    border-color: var(--teal);
+}
+
+.privilege-select:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 2px rgba(11, 191, 181, 0.2);
+}
+
+/* Assign button */
+.btn-assign {
+    padding: 0.35rem 0.75rem;
+    background: var(--teal);
     color: white;
     border: none;
-    padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-left: 0.5rem;
+}
+
+.btn-assign:hover {
+    background: #0a9f96;
+    transform: translateY(-1px);
+}
+
+/* Action buttons (Approve/Reject) */
+.btn-approve {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-right: 0.5rem;
+}
+
+.btn-approve:hover {
+    background: #10b981;
+    color: white;
+}
+
+.btn-reject {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-reject:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.empty-state svg {
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* View photo button */
+.btn-view-photo {
+    background: rgba(74, 144, 226, 0.15);
+    color: #4a90e2;
+    border: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .btn-view-photo:hover {
-    background-color: #357abd;
+    background: #4a90e2;
+    color: white;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .users-table {
+        font-size: 0.75rem;
+    }
+    
+    .users-table th,
+    .users-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .btn-assign,
+    .btn-approve,
+    .btn-reject,
+    .btn-view-photo {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.65rem;
+    }
+    
+    .privilege-select {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.4rem;
+    }
 }
