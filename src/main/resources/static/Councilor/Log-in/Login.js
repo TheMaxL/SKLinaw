@@ -31,7 +31,7 @@ function storeUserSession(data) {
 function getRedirectUrl(privilege, userType) {
     // Admin/Developer redirect
     if (privilege === 'ADMIN' || userType === 'developer') {
-        return '/Admin/Approval/admins';
+        return '/Admin/Approval/admin';
     }
     
     // Role-based redirect
