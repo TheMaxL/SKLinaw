@@ -274,7 +274,7 @@ async function protectPage(requiredView) {
 // ── Get Default Redirect Based on Role ────────────────────────────────
 function getDefaultRedirect() {
   if (Session.isAdmin() || Session.isDeveloper()) {
-    return '/Councilor/Admin/admin.html';
+    return '/Councilor/Admin/admin';
   } else {
     return '/Councilor/Dashboard/Dashboard';
   }
