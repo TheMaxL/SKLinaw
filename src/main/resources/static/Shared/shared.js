@@ -135,7 +135,7 @@ const Session = {
     return localStorage.getItem('sk_user_id') || '';
   },
   get userType() {
-    return localStorage.getItem('sk_userType') || '';
+    return localStorage.getItem('sk_user_type') || '';
   },
   isAdmin() {
     return this.privilege === 'ADMIN' || this.userType === 'developer';
@@ -182,14 +182,14 @@ const Session = {
     }
   },
   setUserType(userType) {
-    localStorage.setItem('sk_userType', userType);
+    localStorage.setItem('sk_user_type', userType);
   },
   clear() {
     localStorage.removeItem('sk_name');
     localStorage.removeItem('sk_barangay');
     localStorage.removeItem('sk_privilege');
     localStorage.removeItem('sk_user_id');
-    localStorage.removeItem('sk_userType');
+    localStorage.removeItem('sk_user_type');
   }
 };
 
