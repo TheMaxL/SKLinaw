@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,6 +39,9 @@ import com.example.sklinaw.model.Account;
 public class AdminController {
     @Autowired
     private DataSource dataSource;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Value("${spring.datasource.url}")
     private String dbUrl;
@@ -130,6 +134,43 @@ public class AdminController {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @PostMapping("/fix-developer-passwords")
+    public String fixDeveloperPasswords() {
+        try (Connection conn = dataSource.getConnection()) {
+            // Get all developers
+            String selectSql = "SELECT id, Name, Password FROM Developer";
+            PreparedStatement selectStmt = conn.prepareStatement(selectSql);
+            ResultSet rs = selectStmt.executeQuery();
+            
+            int updated = 0;
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String currentPassword = rs.getString("Password");
+                
+                // Check if it's already BCrypt
+                if (!currentPassword.startsWith("$2a$") && !currentPassword.startsWith("$2b$")) {
+                    // This is plain text - hash it
+                    String hashedPassword = passwordEncoder.encode(currentPassword);
+                    
+                    String updateSql = "UPDATE Developer SET Password = ? WHERE id = ?";
+                    PreparedStatement updateStmt = conn.prepareStatement(updateSql);
+                    updateStmt.setString(1, hashedPassword);
+                    updateStmt.setInt(2, id);
+                    updateStmt.executeUpdate();
+                    updated++;
+                    
+                    System.out.println("Updated password for: " + rs.getString("Name"));
+                }
+            }
+            
+            return "✅ Updated " + updated + " developer passwords to BCrypt";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error: " + e.getMessage();
         }
     }
 
