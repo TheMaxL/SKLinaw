@@ -161,7 +161,7 @@ const Session = {
       case 'treasurer':
         return this.isTreasurer() || this.isAdmin();
       case 'councilor':
-        return true; 
+        return true; // All logged-in users are councilors
       default:
         return false;
     }
