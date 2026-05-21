@@ -57,6 +57,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/submitCredentials").permitAll()
                 .requestMatchers("/api/login").permitAll()
                 .requestMatchers("/api/logout").permitAll()
+                .requestMatchers("/api/check-auth").permitAll()
                 .requestMatchers("/api/auth/session").permitAll()
                 .requestMatchers("/api/getPublicProjects").permitAll()
                 .requestMatchers("/api/getFeedback").permitAll()
@@ -98,14 +99,6 @@ public class SecurityConfig {
                 
                 // All other requests require authentication
                 .anyRequest().authenticated()
-            )
-            
-            // ✅ Session management (correct placement)
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .invalidSessionUrl("/api/login?expired=true")
-                .maximumSessions(1)
-                .maxSessionsPreventsLogin(false)
             )
             
             // Disable HTTP Basic (use session-based auth)
