@@ -22,7 +22,7 @@ function showRoleView() {
     
     // Load the appropriate dashboard data
     if (isTreasurer || isAdminOrDeveloper) {
-        loadTreasurerDashboard();  // This will now call loadTreasurerBudget()
+        loadTreasurerDashboard();
     } else if (isChairman) {
         loadChairmanDashboard();
     } else {
@@ -41,9 +41,7 @@ async function loadCouncilorDashboard() {
 
 async function loadRecentProjects() {
   try {
-    const response = await fetch(`/api/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`/api/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`);
     const projects = await response.json();
     const recent = projects.slice(0, 5);
     
@@ -67,18 +65,14 @@ async function loadRecentProjects() {
 
 async function loadBudgetPanel() {
     try {
-        const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
-            credentials: 'include'
-        });
+        const response = await authFetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
         const text = await response.text();
         
-        // Check if response is ERROR or empty
         if (text === 'ERROR' || !text) {
             document.getElementById('budget-panel').innerHTML = '<div class="empty-state">No budget data available.</div>';
             return;
         }
         
-        // Parse JSON safely
         let data;
         try {
             data = JSON.parse(text);
@@ -115,9 +109,7 @@ async function loadBudgetPanel() {
 
 async function loadQuickStats() {
   try {
-    const response = await fetch(`/api/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`/api/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`);
     const projects = await response.json();
     
     const total = projects.length;
@@ -142,9 +134,7 @@ async function loadTreasurerDashboard() {
 
 async function loadExpenditureBar() {
   try {
-    const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
     const data = await response.json();
     
     const totalBudget = data.totalBudget || 0;
@@ -152,10 +142,14 @@ async function loadExpenditureBar() {
     const totalSpent = committees.reduce((sum, c) => sum + (c.spent || 0), 0);
     const percentage = totalBudget > 0 ? (totalSpent / totalBudget * 100) : 0;
     
-    document.getElementById('expenditureBar').style.width = `${Math.min(percentage, 100)}%`;
-    document.getElementById('totalSpent').textContent = `₱${totalSpent.toLocaleString()}`;
-    document.getElementById('totalRemaining').textContent = `₱${(totalBudget - totalSpent).toLocaleString()}`;
-    document.getElementById('expenditurePercent').textContent = `${percentage.toFixed(1)}%`;
+    const barEl = document.getElementById('expenditureBar');
+    if (barEl) barEl.style.width = `${Math.min(percentage, 100)}%`;
+    const spentEl = document.getElementById('totalSpent');
+    if (spentEl) spentEl.textContent = `₱${totalSpent.toLocaleString()}`;
+    const remainingEl = document.getElementById('totalRemaining');
+    if (remainingEl) remainingEl.textContent = `₱${(totalBudget - totalSpent).toLocaleString()}`;
+    const percentEl = document.getElementById('expenditurePercent');
+    if (percentEl) percentEl.textContent = `${percentage.toFixed(1)}%`;
   } catch (error) {
     console.error('Error loading expenditure bar:', error);
   }
@@ -166,11 +160,7 @@ async function loadTreasurerBudget() {
         const barangay = Session.barangay;
         if (!barangay) return;
         
-        const response = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(barangay)}`, {
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        
+        const response = await authFetch(`${API}/getBudget?barangay=${encodeURIComponent(barangay)}`);
         const data = await response.json();
         console.log('Budget data for Treasurer:', data);
         
@@ -194,7 +184,6 @@ async function loadTreasurerBudget() {
             return;
         }
         
-        // Calculate percentage spent
         const percentageSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
         
         budgetCard.innerHTML = `
@@ -276,20 +265,19 @@ function showBudgetForTreasurer() {
     }
 }
 
-// Open budget modal (you'll need to implement this or link to Budget page)
 function openBudgetModal() {
     window.location.href = '/Councilor/Budget/Budget';
 }
 
 async function loadCommitteeCharts() {
   try {
-    const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
     const data = await response.json();
     const committees = data.committees || [];
     
     const container = document.getElementById('committeeCharts');
+    if (!container) return;
+    
     if (committees.length === 0) {
       container.innerHTML = '<div class="empty-state">No committee budget data available.</div>';
       return;
@@ -317,12 +305,12 @@ async function loadCommitteeCharts() {
 
 async function loadRecentExpenditures() {
   try {
-    const response = await fetch(`/api/getRecentExpenditures?barangay=${encodeURIComponent(userBarangay)}&limit=5`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`/api/getRecentExpenditures?barangay=${encodeURIComponent(userBarangay)}&limit=5`);
     const expenditures = await response.json();
     
     const container = document.getElementById('recentExpensesBody');
+    if (!container) return;
+    
     if (expenditures.length === 0) {
       container.innerHTML = '<tr><td colspan="4" class="empty-state">No recent expenditures.</td></tr>';
       return;
@@ -350,11 +338,9 @@ async function loadChairmanDashboard() {
 
 async function loadCommitteesList() {
   try {
-    const response = await fetch(`/api/getCommittees?barangay=${encodeURIComponent(userBarangay)}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`/api/getCommittees?barangay=${encodeURIComponent(userBarangay)}`);
     const committees = await response.json();
-    window.allCommittees = committees;  // Store globally
+    window.allCommittees = committees;
     console.log('Committees loaded:', committees);
   } catch (error) {
     console.error('Error loading committees:', error);
@@ -364,9 +350,7 @@ async function loadCommitteesList() {
 
 async function loadChairmanStats() {
   try {
-    const response = await fetch(`/api/getAllProjects?barangay=${encodeURIComponent(userBarangay)}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`/api/getAllProjects?barangay=${encodeURIComponent(userBarangay)}`);
     const projects = await response.json();
     
     const total = projects.length;
@@ -374,10 +358,15 @@ async function loadChairmanStats() {
     const approved = projects.filter(p => p.status === 'APPROVED').length;
     const rejected = projects.filter(p => p.status === 'REJECTED').length;
     
-    document.getElementById('chairman-total-projects').textContent = total;
-    document.getElementById('chairman-pending-projects').textContent = pending;
-    document.getElementById('chairman-approved-projects').textContent = approved;
-    document.getElementById('chairman-rejected-projects').textContent = rejected;
+    const totalEl = document.getElementById('chairman-total-projects');
+    const pendingEl = document.getElementById('chairman-pending-projects');
+    const approvedEl = document.getElementById('chairman-approved-projects');
+    const rejectedEl = document.getElementById('chairman-rejected-projects');
+    
+    if (totalEl) totalEl.textContent = total;
+    if (pendingEl) pendingEl.textContent = pending;
+    if (approvedEl) approvedEl.textContent = approved;
+    if (rejectedEl) rejectedEl.textContent = rejected;
   } catch (error) {
     console.error('Error loading chairman stats:', error);
   }
@@ -385,166 +374,67 @@ async function loadChairmanStats() {
 
 async function loadCommitteesTable() {
   const tbody = document.getElementById('committeesTableBody');
-  if (!tbody) {
-    console.error('committeesTableBody not found!');
-    return;
-  }
+  if (!tbody) return;
 
   const committees = window.allCommittees || [];
-  console.log('Committees for table:', committees);
 
   if (!Array.isArray(committees) || committees.length === 0) {
-    tbody.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="7">No committees found.</td>
-      </tr>
-    `;
+    tbody.innerHTML = '<tr><td colspan="7">No committees found.</td></tr>';
     return;
   }
 
-  // Show loading state
-  tbody.innerHTML = '<tr><td colspan="7"><div class="loader"><span></span><span></span><span></span></div></tr>';
+  tbody.innerHTML = '<tr><td colspan="7"><div class="loader"></div></td></tr>';
 
   try {
-    // Fetch budget data for all committees at once
-    const budgetResponse = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
-      credentials: 'include'
-    });
+    const budgetResponse = await authFetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
     const budgetData = await budgetResponse.json();
     const committeesBudget = budgetData.committees || [];
-    console.log('Budget data loaded:', committeesBudget.length);
 
-    // Process each committee - fetch projects individually using getCommitteeProjects
     const committeesWithData = await Promise.all(committees.map(async (committee) => {
       try {
-        // Fetch projects for this committee using the correct endpoint
-        const projectsResponse = await fetch(`/api/getCommitteeProjects?barangay=${encodeURIComponent(userBarangay)}&committeeName=${encodeURIComponent(committee.committeeName)}`, {
-          credentials: 'include'
-        });
-        
+        const projectsResponse = await authFetch(`/api/getCommitteeProjects?barangay=${encodeURIComponent(userBarangay)}&committeeName=${encodeURIComponent(committee.committeeName)}`);
         const projectsText = await projectsResponse.text();
         
-        // Parse the response (it could be a JSON array or "ERROR" string)
         let projects = [];
         if (projectsText !== 'ERROR' && projectsText) {
           try {
             projects = JSON.parse(projectsText);
           } catch (parseError) {
-            console.error(`Failed to parse projects for ${committee.committeeName}:`, projectsText);
             projects = [];
           }
         }
         
-        // Calculate project stats
         const pendingProjects = projects.filter(p => p.status === 'PENDING').length;
         const approvedProjects = projects.filter(p => p.status === 'APPROVED').length;
         
-        // Find budget for this committee
         const committeeBudget = committeesBudget.find(b => b.committeeName === committee.committeeName);
         const totalBudget = committeeBudget?.allocated || 0;
         const spent = committeeBudget?.spent || 0;
         const remaining = committeeBudget?.remaining || (totalBudget - spent);
         
-        return {
-          ...committee,
-          pendingProjects,
-          approvedProjects,
-          totalBudget,
-          spent,
-          remaining
-        };
+        return { ...committee, pendingProjects, approvedProjects, totalBudget, spent, remaining };
       } catch (error) {
-        console.error(`Error loading data for committee ${committee.committeeName}:`, error);
-        return {
-          ...committee,
-          pendingProjects: 0,
-          approvedProjects: 0,
-          totalBudget: 0,
-          spent: 0,
-          remaining: 0
-        };
+        return { ...committee, pendingProjects: 0, approvedProjects: 0, totalBudget: 0, spent: 0, remaining: 0 };
       }
     }));
     
-    // Render the table
-    tbody.innerHTML = committeesWithData.map((c, i) => `
-      <tr style="animation-delay:${i * 0.05}s">
-        <td class="project-name-cell">${escapeHtml(c.committeeName)}</td>
+    tbody.innerHTML = committeesWithData.map(c => `
+      <tr>
+        <td>${escapeHtml(c.committeeName)}</td>
         <td>${c.headName ? escapeHtml(c.headName) : '<span style="color:var(--muted)">Not assigned</span>'}</td>
-        <td class="pending-count">${c.pendingProjects}</td>
-        <td class="approved-count">${c.approvedProjects}</td>
+        <td>${c.pendingProjects}</td>
+        <td>${c.approvedProjects}</td>
         <td>₱${(c.totalBudget || 0).toLocaleString()}</td>
         <td>₱${(c.spent || 0).toLocaleString()}</td>
         <td>₱${(c.remaining || 0).toLocaleString()}</td>
       </tr>
     `).join('');
-    
-    console.log('Table rendered with', committeesWithData.length, 'committees and their data');
   } catch (error) {
     console.error('Error loading committees table:', error);
-    tbody.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="7">Error loading committee data. Please refresh the page.</td>
-      </tr>
-    `;
+    tbody.innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
   }
 }
 
-async function deleteCommittee(committeeName) {
-  // Confirmation dialog
-  const confirmMessage = `⚠️ PERMANENT ACTION ⚠️\n\n` +
-    `You are about to delete the committee "${committeeName}".\n\n` +
-    `This will also delete:\n` +
-    `• All committee members\n` +
-    `• All projects (both PENDING and APPROVED)\n` +
-    `• Committee budget allocations\n\n` +
-    `This action CANNOT be undone!\n\n` +
-    `Type "${committeeName}" to confirm:`;
-  
-  const confirmation = prompt(confirmMessage);
-  
-  if (confirmation !== committeeName) {
-    Toast.show('Committee deletion cancelled - confirmation did not match', true);
-    return;
-  }
-  
-  const finalConfirm = confirm(`Are you ABSOLUTELY sure? This will permanently delete all data for committee "${committeeName}".`);
-  if (!finalConfirm) return;
-  
-  try {
-    const response = await fetch(`${API}/deleteCommittee`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        committeeName: committeeName,
-        barangay: session.barangay
-      })
-    });
-    
-    const result = await response.text();
-    
-    if (result === 'SUCCESS') {
-      Toast.show(`Committee "${committeeName}" has been deleted successfully.`);
-      // Refresh all data
-      await loadAllCommittees();
-      await loadMyCommittees();
-      await loadCommitteesTable();
-      await loadBudget();
-    } else if (result === 'COMMITTEE_NOT_FOUND') {
-      Toast.show('Committee not found', true);
-    } else if (result === 'NOT_AUTHORIZED') {
-      Toast.show('You are not authorized to delete committees', true);
-    } else {
-      Toast.show('Error deleting committee: ' + result, true);
-    }
-  } catch (error) {
-    console.error('Error deleting committee:', error);
-    Toast.show('Could not delete committee', true);
-  }
-}
-
-// Helper functions
 function formatDate(str) {
   if (!str) return '—';
   try {
@@ -559,22 +449,32 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// DOMContentLoaded - Token-based auth check
 document.addEventListener('DOMContentLoaded', async () => {
-  // Direct auth check using your working endpoint
+  // Check if we have a token
+  const token = localStorage.getItem('auth_token');
+  
+  if (!token || !localStorage.getItem('sk_name')) {
+    window.location.href = '/Councilor/Log-in/Login';
+    return;
+  }
+  
   try {
     const response = await fetch('https://sklinaw.onrender.com/api/check-auth', {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
     const data = await response.json();
     
-    if (!data.authenticated || !localStorage.getItem('sk_name')) {
+    if (!data.authenticated) {
       Session.clear();
       window.location.href = '/Councilor/Log-in/Login';
       return;
     }
     
-    // User is authenticated, continue with page initialization
+    // Update UI
     const nameEl = document.getElementById('nameEl');
     const roleEl = document.getElementById('roleEl');
     const avatarEl = document.getElementById('avatarEl');
