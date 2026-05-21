@@ -116,7 +116,9 @@ async function submitLogin() {
             
             // Get redirect URL and navigate
             const redirectUrl = getRedirectUrl(data.privilege, data.userType);
+            console.log('Redirecting to:', redirectUrl);
             window.location.href = redirectUrl;
+            
             
         } else if (data.status === 'INVALID') {
             showError('Invalid name or password. Please try again.');
