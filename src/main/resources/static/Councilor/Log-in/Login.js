@@ -21,10 +21,19 @@ function storeUserSession(data) {
     localStorage.setItem('sk_user_id', data.id || '');
     localStorage.setItem('sk_user_type', data.userType || 'councilor');
     
+    // Store token if present
+    if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+        console.log('Token stored:', data.token.substring(0, 20) + '...');
+    } else {
+        console.error('No token received in login response!');
+    }
+    
     console.log('Session stored:', {
         name: localStorage.getItem('sk_name'),
         privilege: localStorage.getItem('sk_privilege'),
-        userType: localStorage.getItem('sk_user_type')
+        userType: localStorage.getItem('sk_user_type'),
+        hasToken: !!localStorage.getItem('auth_token')
     });
 }
 
@@ -35,10 +44,16 @@ function getRedirectUrl(privilege, userType) {
     }
     
     // Role-based redirect
-    switch (privilege) {
-        default:
-            return '/Councilor/Dashboard/Dashboard';
+    if (privilege === 'CHAIRMAN') {
+        return '/Councilor/Dashboard/Dashboard';
     }
+    
+    if (privilege === 'TREASURER') {
+        return '/Councilor/Treasurer/treasurer';
+    }
+    
+    // Default for regular councilors
+    return '/Councilor/Home/home';
 }
 
 function clearFormAndFocus() {
@@ -74,7 +89,7 @@ function handleDevModeFallback(name) {
     }
 }
 
-// ==================== Main Login Function ====================
+// ==================== Main Login Function (Token-based) ====================
 async function submitLogin() {
     const name = loginForm.nameInput?.value.trim();
     const password = loginForm.passwordInput?.value;
@@ -96,14 +111,12 @@ async function submitLogin() {
     }
 
     try {
-        // REMOVE the ngrok-skip-browser-warning header
+        // Token-based login - no credentials: 'include' needed
         const response = await fetch(`${API}/login`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json'
-                // REMOVED: 'ngrok-skip-browser-warning': 'true'
             },
-            credentials: 'include',
             body: JSON.stringify({ name, password })
         });
         
@@ -111,14 +124,21 @@ async function submitLogin() {
         console.log('Login response:', data);
         
         if (data.status === 'SUCCESS') {
-            // Store user session
+            console.log('Login response FULL:', data);
+            console.log('Token received:', data.token);
+            // Store user session (includes token)
             storeUserSession(data);
+            const storedToken = localStorage.getItem('auth_token');
+            console.log('Token stored successfully?', !!storedToken);
+            
+            if (!storedToken) {
+                console.error('CRITICAL: Token was not stored!');
+            }
             
             // Get redirect URL and navigate
             const redirectUrl = getRedirectUrl(data.privilege, data.userType);
             console.log('Redirecting to:', redirectUrl);
             window.location.href = redirectUrl;
-            
             
         } else if (data.status === 'INVALID') {
             showError('Invalid name or password. Please try again.');

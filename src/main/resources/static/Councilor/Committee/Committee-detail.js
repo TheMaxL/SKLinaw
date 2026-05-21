@@ -33,7 +33,7 @@ async function init() {
 
 async function loadCommitteeData() {
   try {
-    const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
+    const res = await authFetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
     const text = await res.text();
     
     if (text === 'ERROR') {
@@ -64,7 +64,7 @@ async function loadCommitteeData() {
 
 async function loadMembers() {
   try {
-    const res = await fetch(`${API}/getCommitteeMembers?committeeName=${encodeURIComponent(committeeName)}&barangay=${encodeURIComponent(session.barangay)}`);
+    const res = await authFetch(`${API}/getCommitteeMembers?committeeName=${encodeURIComponent(committeeName)}&barangay=${encodeURIComponent(session.barangay)}`);
     const text = await res.text();
     
     console.log('Members response:', text);
@@ -116,9 +116,7 @@ async function loadMembers() {
 
 async function loadProjects() {
   try {
-    const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`, {
-      credentials: 'include'
-    });
+    const res = await authFetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`);
     const text = await res.text();
     
     if (text === 'ERROR') {
@@ -184,7 +182,7 @@ async function loadProjects() {
 
 async function loadBudget() {
   try {
-    const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
+    const res = await authFetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
     const text = await res.text();
     
     if (text === 'ERROR') {
@@ -212,17 +210,14 @@ async function loadBudget() {
   }
 }
 
-// ==================== DELETE PROJECT ====================
 async function deleteProject(projectId, projectName) {
   if (!confirm(`Are you sure you want to delete project "${projectName}"? This action cannot be undone.`)) {
     return;
   }
   
   try {
-    const response = await fetch(`${API}/deleteProject`, {
+    const response = await authFetch(`${API}/deleteProject`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ 
         projectId: projectId,
         barangay: session.barangay
@@ -256,9 +251,8 @@ async function addMember() {
   }
   
   try {
-    const res = await fetch(`${API}/addCommitteeMember`, {
+    const res = await authFetch(`${API}/addCommitteeMember`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         committeeName: committeeName,
         barangay: session.barangay,
@@ -301,15 +295,13 @@ async function submitProject() {
   }
   
   try {
-    const res = await fetch(`${API}/addProject`, {
+    const res = await authFetch(`${API}/addProject`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(projectData)
     });
     
     const text = await res.text();
-    console.log('Add project response:', text);  // Debug log
+    console.log('Add project response:', text);
     
     if (text === 'SUCCESS') {
       Toast.show('Project submitted for approval!');
@@ -317,7 +309,6 @@ async function submitProject() {
       await loadProjects();
       await loadBudget();
       
-      // Reset form
       const projectNameInput = document.getElementById('projectName');
       const projectPurposeInput = document.getElementById('projectPurpose');
       const projectCostInput = document.getElementById('projectCost');
@@ -327,7 +318,6 @@ async function submitProject() {
       if (projectCostInput) projectCostInput.value = '';
       
     } else if (text.includes('INSUFFICIENT_BUDGET')) {
-      // Use includes() instead of startsWith() to be safe
       Toast.show(text, true);
     } else if (text === 'NO_BUDGET_ALLOCATED') {
       Toast.show('No budget has been allocated for this committee yet.', true);
@@ -372,10 +362,7 @@ async function viewProject(projectId) {
   console.log('Viewing project ID:', projectId);
   
   try {
-    // Fetch project details directly from API
-    const response = await fetch(`${API}/getProjectById?projectId=${projectId}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`${API}/getProjectById?projectId=${projectId}`);
     const project = await response.json();
     
     console.log('Project data:', project);
@@ -385,12 +372,10 @@ async function viewProject(projectId) {
       return;
     }
     
-    // Create modal to show project details
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.style.display = 'flex';
     
-    // Show rejection reason if project is rejected
     let rejectionReasonHtml = '';
     if (project.status === 'REJECTED' && project.rejectionReason) {
       rejectionReasonHtml = `
@@ -402,7 +387,6 @@ async function viewProject(projectId) {
       `;
     }
     
-    // For rejected projects, don't show community feedback section
     let feedbackSectionHtml = '';
     if (project.status !== 'REJECTED') {
       feedbackSectionHtml = `
@@ -434,7 +418,6 @@ async function viewProject(projectId) {
     `;
     document.body.appendChild(modal);
     
-    // Only load feedback for non-rejected projects
     if (project.status !== 'REJECTED') {
       loadProjectFeedback(project.id).then(feedback => {
         const container = document.getElementById(`modal-feedback-${project.id}`);
@@ -485,42 +468,10 @@ function closeEditModal() {
   if (modal) modal.style.display = 'none';
 }
 
-function renderTable(projects) {
-  const tbody = document.getElementById('projectTableBody');
-  if (!tbody) return;
-  
-  if (projects.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found. </td></tr>`;
-    return;
-  }
-  
-  tbody.innerHTML = projects.map((p, i) => `
-    <tr style="animation-delay:${i * 0.04}s" data-project-id="${p.id}">
-      <td class="project-name-cell">${escHtml(p.projectName)}</td>
-      <td class="project-purpose-cell">
-        ${escHtml(p.purpose || '—')}
-        ${p.status === 'REJECTED' && p.rejectionReason ? `
-          <div class="rejection-reason">
-            <strong>Rejection reason:</strong> ${escHtml(p.rejectionReason)}
-          </div>
-        ` : ''}
-      </td>
-      <td class="cost-cell">₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
-      <td><span class="status-pill status-${p.status}">${p.status}</span></td>
-      <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
-      <td>
-        <button class="action-btn view-btn" onclick="viewProject(${p.id})">👁️ View</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
 async function editProject(projectId) {
   console.log('Editing project ID:', projectId);
   try {
-    const response = await fetch(`${API}/getProjectById?projectId=${projectId}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`${API}/getProjectById?projectId=${projectId}`);
     const project = await response.json();
     console.log('Project data:', project);
     openEditModal(project);
@@ -547,7 +498,6 @@ async function updateProject() {
     return;
   }
   
-  // ✅ Make sure barangay is included
   const barangay = localStorage.getItem('sk_barangay') || 'Lahug';
   console.log('Barangay being sent:', barangay);
   
@@ -556,16 +506,14 @@ async function updateProject() {
     projectName: projectName,
     purpose: purpose,
     totalCost: totalCost,
-    barangay: barangay  // ← Add this line
+    barangay: barangay
   };
   
   console.log('Request body:', requestBody);
   
   try {
-    const response = await fetch(`${API}/updateProject`, {
+    const response = await authFetch(`${API}/updateProject`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(requestBody)
     });
     
@@ -590,9 +538,8 @@ async function removeMember(memberName) {
   if (!confirm(`Remove "${memberName}" from the committee?`)) return;
   
   try {
-    const res = await fetch(`${API}/removeCommitteeMember`, {
+    const res = await authFetch(`${API}/removeCommitteeMember`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         committeeName: committeeName,
         barangay: session.barangay,
@@ -618,9 +565,7 @@ async function removeMember(memberName) {
 
 async function loadProjectFeedback(projectId) {
   try {
-    const response = await fetch(`${API}/getProjectComments?projectId=${projectId}`, {
-      credentials: 'include'
-    });
+    const response = await authFetch(`${API}/getProjectComments?projectId=${projectId}`);
     if (!response.ok) throw new Error('Failed to fetch feedback');
     
     const feedback = await response.json();
@@ -654,22 +599,30 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// DOMContentLoaded (Token-based)
 document.addEventListener('DOMContentLoaded', async () => {
-  // Direct auth check using your working endpoint
+  const token = localStorage.getItem('auth_token');
+  
+  if (!token || !localStorage.getItem('sk_name')) {
+    window.location.href = '/Councilor/Log-in/Login';
+    return;
+  }
+  
   try {
     const response = await fetch('https://sklinaw.onrender.com/api/check-auth', {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
     const data = await response.json();
     
-    if (!data.authenticated || !localStorage.getItem('sk_name')) {
+    if (!data.authenticated) {
       Session.clear();
       window.location.href = '/Councilor/Log-in/Login';
       return;
     }
     
-    // User is authenticated, continue with page initialization
     const nameEl = document.getElementById('nameEl');
     const roleEl = document.getElementById('roleEl');
     const avatarEl = document.getElementById('avatarEl');
@@ -692,8 +645,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
     
-    showBudgetForTreasurer();
-    showRoleView();
+    init();
     
   } catch (error) {
     console.error('Auth check error:', error);
@@ -711,7 +663,7 @@ window.closeProjectModal = closeProjectModal;
 window.submitProject = submitProject;
 window.viewProject = viewProject;
 window.removeMember = removeMember;
-window.deleteProject = deleteProject;  
-
-// Start initialization
-init();
+window.deleteProject = deleteProject;
+window.editProject = editProject;
+window.updateProject = updateProject;
+window.closeEditModal = closeEditModal;

@@ -1,6 +1,17 @@
 const API = 'https://sklinaw.onrender.com/api';
 const ADMIN_API = '/admin';
 
+// Token management
+// let authToken = localStorage.getItem('auth_token');
+
+function setAuthToken(token) {
+    if (token) {
+        localStorage.setItem('auth_token', token);
+    } else {
+        localStorage.removeItem('auth_token');
+    }
+}
+
 // ── Toast ──────────────────────────────────
 const Toast = {
   el: document.getElementById('global-toast'),
@@ -66,40 +77,57 @@ function flashError(id) {
   setTimeout(() => (el.style.borderColor = ''), 2000);
 }
 
-// ── Authenticated Fetch Wrapper ────────────────────────────────
+// ── Authenticated Fetch Wrapper (Token-based) ────────────────────────────────
 async function authFetch(url, options = {}) {
-  const defaultOptions = {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers
-    }
-  };
-  
-  const mergedOptions = { ...defaultOptions, ...options };
-  
-  try {
-    const response = await fetch(url, mergedOptions);
+    const fullUrl = url.startsWith('http') ? url : `${API}${url}`;
     
-    if (response.status === 401 || response.status === 403) {
-      const publicPages = ['public.html', 'index.html', 'Login', 'signup.html', 'home.html'];
-      const currentPage = window.location.pathname.split('/').pop();
-      
-      if (!publicPages.includes(currentPage) && !Session.name) {
-        Toast.show('Session expired. Please login again.', true);
-        Session.clear();
-        setTimeout(() => {
-          window.location.href = '/Councilor/Log-in/Login';
-        }, 1500);
-      }
-      throw new Error('Unauthorized');
+    // Get token directly from localStorage - THIS IS THE KEY FIX
+    const token = localStorage.getItem('auth_token');
+    
+    console.log('authFetch - URL:', fullUrl);
+    console.log('authFetch - Token exists:', !!token);
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    } else {
+        console.error('No token found in localStorage!');
     }
     
-    return response;
-  } catch (error) {
-    console.error('Auth fetch error:', error);
-    throw error;
-  }
+    const mergedOptions = {
+        ...options,
+        credentials: 'omit',
+        headers: headers
+    };
+    
+    try {
+        const response = await fetch(fullUrl, mergedOptions);
+        
+        if (response.status === 401 || response.status === 403) {
+            console.warn('Auth failed for URL:', url, 'Status:', response.status);
+            const publicPages = ['public.html', 'index.html', 'Login', 'signup.html', 'home.html'];
+            const currentPage = window.location.pathname.split('/').pop();
+            
+            if (!publicPages.includes(currentPage) && !Session.name) {
+                Toast.show('Session expired. Please login again.', true);
+                Session.clear();
+                localStorage.removeItem('auth_token');
+                setTimeout(() => {
+                    window.location.href = '/Councilor/Log-in/Login';
+                }, 1500);
+            }
+            throw new Error('Unauthorized');
+        }
+        
+        return response;
+    } catch (error) {
+        console.error('Auth fetch error:', error);
+        throw error;
+    }
 }
 
 async function ngrokFetch(url, options = {}) {
@@ -119,7 +147,7 @@ async function ngrokFetch(url, options = {}) {
     return fetch(url, mergedOptions);
 }
 
-// ── Session with Role Management ────────────────────────────────
+// ── Session with Role Management (Token-based) ────────────────────────────────
 const Session = {
   get name() {
     return localStorage.getItem('sk_name') || '';
@@ -135,6 +163,9 @@ const Session = {
   },
   get userType() {
     return localStorage.getItem('sk_user_type') || '';
+  },
+  get token() {
+    return localStorage.getItem('auth_token') || '';
   },
   getPrivilege() {
     return this.privilege;
@@ -184,13 +215,12 @@ const Session = {
     if (this.isTreasurer()) return 'Treasurer';
     return 'Councilor';
   },
-  set(name, barangay, privilege = '', userId = null) {
+  set(name, barangay, privilege = '', userId = null, token = null) {
     localStorage.setItem('sk_name', name);
     localStorage.setItem('sk_barangay', barangay);
     localStorage.setItem('sk_privilege', privilege || '');
-    if (userId) {
-      localStorage.setItem('sk_user_id', userId);
-    }
+    if (userId) localStorage.setItem('sk_user_id', userId);
+    if (token) setAuthToken(token);
   },
   setUserType(userType) {
     localStorage.setItem('sk_user_type', userType);
@@ -201,6 +231,7 @@ const Session = {
     localStorage.removeItem('sk_privilege');
     localStorage.removeItem('sk_user_id');
     localStorage.removeItem('sk_user_type');
+    setAuthToken(null);
   }
 };
 
@@ -218,18 +249,25 @@ function isPublicPage() {
   return publicPages.includes(currentPage);
 }
 
-// ── Authentication Check (FIXED) ────────────────────────────────
+// ── Authentication Check (Token-based) ────────────────────────────────
 async function checkAuth() {
   // Skip auth check for public pages
   if (isPublicPage()) {
     return true;
   }
   
+  const token = authToken || Session.token;
+  if (!token) {
+    return false;
+  }
+  
   try {
-    // FIXED: Use /check-auth endpoint instead of /auth/session
     const response = await fetch(`${API}/check-auth`, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
     
     if (response.status === 401 || response.status === 403) {
@@ -380,14 +418,20 @@ function setupRoleBasedNavigation() {
   });
 }
 
-// ── Logout Function ────────────────────────────────
+// ── Logout Function (Token-based) ────────────────────────────────
 async function logout() {
+  const token = authToken || Session.token;
+  
   try {
-    await fetch(`${API}/logout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
-    }).catch(err => console.warn('Logout notification failed:', err));
+    if (token) {
+      await fetch(`${API}/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }).catch(err => console.warn('Logout notification failed:', err));
+    }
     
     Session.clear();
     Toast.show('Logged out successfully');
@@ -439,3 +483,4 @@ window.Toast = Toast;
 window.logout = logout;
 window.protectPage = protectPage;
 window.checkAuth = checkAuth;
+window.setAuthToken = setAuthToken; 

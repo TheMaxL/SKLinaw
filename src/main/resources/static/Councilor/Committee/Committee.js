@@ -17,8 +17,8 @@ if (dashBarangay) dashBarangay.textContent = session.barangay;
 if (dashAvatar)   dashAvatar.textContent   = session.name.charAt(0).toUpperCase();
 
 // ── STATE ──
-let allCommittees = [];      // All committees in barangay (for table display)
-let myCommittees = [];       // Committees user is a member of (for dropdown)
+let allCommittees = [];
+let myCommittees = [];
 
 // ── HELPER FUNCTIONS ──
 function esc(str) {
@@ -32,7 +32,6 @@ function esc(str) {
 
 // ── ROLE-BASED UI ──
 function showRoleView() {
-    // Use localStorage directly since Session methods might not be available
     const privilege = localStorage.getItem('sk_privilege') || '';
     const userType = localStorage.getItem('sk_user_type') || '';
     
@@ -42,25 +41,21 @@ function showRoleView() {
     const isChairman = privilege === 'CHAIRMAN';
     const isTreasurer = privilege === 'TREASURER';
     
-    // Hide/show create committee button (only Chairman or Admin can create)
     const createBtn = document.getElementById('createCommitteeBtn');
     if (createBtn) {
         createBtn.style.display = (isChairman || isAdminOrDeveloper) ? 'flex' : 'none';
     }
     
-    // Hide/show budget section (only Treasurer or Admin)
     const budgetSection = document.querySelector('.budget-section');
     if (budgetSection) {
         budgetSection.style.display = (isTreasurer || isAdminOrDeveloper) ? 'block' : 'none';
     }
     
-    // Hide/show add member buttons
     const addMemberBtns = document.querySelectorAll('.add-member-btn');
     addMemberBtns.forEach(btn => {
         btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
     });
     
-    // Hide/show edit/delete committee buttons
     const editBtns = document.querySelectorAll('.edit-committee-btn');
     editBtns.forEach(btn => {
         btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
@@ -72,11 +67,11 @@ function showRoleView() {
 // ── INIT ──
 async function init() {
   try {
-    await loadAllCommittees();      // Load all committees for the table
-    await loadMyCommittees();       // Load user's committees for dropdown
-    await loadCommitteesTable();    // Display the table
-    await loadTotalBudget();        // Load total budget for the barangay
-    showRoleView();                 // Apply role-based UI
+    await loadAllCommittees();
+    await loadMyCommittees();
+    await loadCommitteesTable();
+    await loadTotalBudget();
+    showRoleView();
   } catch (error) {
     console.error('Init error:', error);
     Toast.show('Error loading initial data', true);
@@ -85,9 +80,7 @@ async function init() {
 
 async function loadAllCommittees() {
   try {
-    const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`, {
-      credentials: 'include'
-    });
+    const res = await authFetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
     const data = await res.json();
     allCommittees = data;
     console.log('All committees loaded:', allCommittees);
@@ -97,17 +90,13 @@ async function loadAllCommittees() {
   }
 }
 
-// ── LOAD MY COMMITTEES (for dropdown - only committees user is member of) ──
 async function loadMyCommittees() {
   try {
-    const res = await fetch(`${API}/getMyCommittees?barangay=${encodeURIComponent(session.barangay)}&councilor=${encodeURIComponent(session.name)}`, {
-      credentials: 'include'
-    });
+    const res = await authFetch(`${API}/getMyCommittees?barangay=${encodeURIComponent(session.barangay)}&councilor=${encodeURIComponent(session.name)}`);
     const data = await res.json();
     myCommittees = data;
     console.log('My committees loaded:', myCommittees);
     
-    // Populate committee select dropdown (for navigation)
     const committeeSelect = document.getElementById('committeeSelect');
     if (committeeSelect) {
       committeeSelect.innerHTML = '<option value="">-- Select Committee --</option>';
@@ -116,7 +105,6 @@ async function loadMyCommittees() {
       });
     }
     
-    // Populate filter dropdown
     const filter = document.getElementById('committeeFilter');
     if (filter) {
       filter.innerHTML = '<option value="">All committees</option>';
@@ -125,7 +113,6 @@ async function loadMyCommittees() {
       });
     }
     
-    // Populate form committee dropdown
     const formSel = document.getElementById('formCommittee');
     if (formSel) {
       formSel.innerHTML = '';
@@ -148,8 +135,8 @@ async function loadCommitteesTable() {
       <tr class="empty-row">
         <td colspan="4">
           No committees found. Click "+ Add Committee" to create one!
-        </tr>
-      </table>`;
+        </td>
+      </tr>`;
     return;
   }
 
@@ -179,7 +166,6 @@ async function loadCommitteesTable() {
   `).join('');
 }
 
-// ── NAVIGATION TO COMMITTEE DETAIL ──
 function goToCommitteeDetail(committeeName) {
     console.log('Navigating to committee detail:', committeeName);
     if (committeeName) {
@@ -187,7 +173,6 @@ function goToCommitteeDetail(committeeName) {
     }
 }
 
-// ── COMMITTEE CHANGE HANDLER (for dropdown) ──
 function onCommitteeChange() {
     const select = document.getElementById('committeeSelect');
     if (!select) {
@@ -206,9 +191,7 @@ async function loadCommitteeBudget(committeeName) {
     const url = `${API}/getBudgetByCommittee?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`;
     console.log('Fetching budget from:', url);
     
-    const res = await fetch(url, {
-      credentials: 'include'
-    });
+    const res = await authFetch(url);
     const data = await res.json();
     console.log('Committee budget data:', data);
     
@@ -241,14 +224,11 @@ async function loadCommitteeBudget(committeeName) {
   }
 }
 
-// ── LOAD TOTAL BUDGET ──
 async function loadTotalBudget() {
   try {
     console.log('loadTotalBudget called');
     
-    const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`, {
-      credentials: 'include'
-    });
+    const res = await authFetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
     const data = await res.json();
     
     console.log('Budget data received:', data);
@@ -320,7 +300,6 @@ function applyFilters() {
   loadCommitteesTable();
 }
 
-// ── MODAL ──
 function openModal() {
   document.getElementById('modalOverlay')?.classList.add('open');
 }
@@ -329,7 +308,6 @@ function closeModal() {
   document.getElementById('modalOverlay')?.classList.remove('open');
 }
 
-// ── SUBMIT COMMITTEE ──
 async function submitCommittee() {
   const nameInput = document.getElementById('formProjectName');
   const headInput = document.getElementById('formPurpose');
@@ -346,9 +324,8 @@ async function submitCommittee() {
   }
 
   try {
-    const res = await fetch(`${API}/createCommittee`, {
+    const res = await authFetch(`${API}/createCommittee`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
 
@@ -378,15 +355,13 @@ async function submitCommittee() {
   }
 }
 
-// ── ASSIGN HEAD ──
 async function assignHead(committeeName) {
   const headName = prompt(`Enter councilor name for "${committeeName}":`);
   if (!headName) return;
 
   try {
-    const res = await fetch(`${API}/assignCommitteeHead`, {
+    const res = await authFetch(`${API}/assignCommitteeHead`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         committeeName: committeeName,
         barangay: session.barangay,
@@ -437,10 +412,8 @@ async function deleteCommittee(committeeName) {
   if (!finalConfirm) return;
   
   try {
-    const response = await fetch(`${API}/deleteCommittee`, {
+    const response = await authFetch(`${API}/deleteCommittee`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({
         committeeName: committeeName,
         barangay: session.barangay
@@ -472,23 +445,30 @@ document.getElementById('modalOverlay')?.addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
 
-// ── DOM CONTENT LOADED ──
+// ── DOM CONTENT LOADED (Token-based) ──
 document.addEventListener('DOMContentLoaded', async () => {
-  // Direct auth check using your working endpoint
+  const token = localStorage.getItem('auth_token');
+  
+  if (!token || !localStorage.getItem('sk_name')) {
+    window.location.href = '/Councilor/Log-in/Login';
+    return;
+  }
+  
   try {
     const response = await fetch('https://sklinaw.onrender.com/api/check-auth', {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
     const data = await response.json();
     
-    if (!data.authenticated || !localStorage.getItem('sk_name')) {
+    if (!data.authenticated) {
       Session.clear();
       window.location.href = '/Councilor/Log-in/Login';
       return;
     }
     
-    // User is authenticated, continue with page initialization
     const nameEl = document.getElementById('nameEl');
     const roleEl = document.getElementById('roleEl');
     const avatarEl = document.getElementById('avatarEl');
@@ -511,8 +491,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
     
-    showBudgetForTreasurer();
-    showRoleView();
+    // Start initialization
+    init();
     
   } catch (error) {
     console.error('Auth check error:', error);
