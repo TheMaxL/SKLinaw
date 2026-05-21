@@ -96,11 +96,12 @@ async function submitLogin() {
     }
 
     try {
+        // REMOVE the ngrok-skip-browser-warning header
         const response = await fetch(`${API}/login`, {
             method: 'POST',
             headers: { 
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
+                'Content-Type': 'application/json'
+                // REMOVED: 'ngrok-skip-browser-warning': 'true'
             },
             credentials: 'include',
             body: JSON.stringify({ name, password })
@@ -115,7 +116,9 @@ async function submitLogin() {
             
             // Get redirect URL and navigate
             const redirectUrl = getRedirectUrl(data.privilege, data.userType);
+            console.log('Redirecting to:', redirectUrl);
             window.location.href = redirectUrl;
+            
             
         } else if (data.status === 'INVALID') {
             showError('Invalid name or password. Please try again.');
