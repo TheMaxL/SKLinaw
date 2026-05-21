@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import jakarta.servlet.http.Cookie;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -103,8 +102,8 @@ public class AuthController {
                 }
             }
             
-            // ✅ CRITICAL: Create session and set cookie
-            HttpSession session = request.getSession(true); // true = create if doesn't exist
+            // Create session - Spring Boot will automatically set the cookie based on application.properties
+            HttpSession session = request.getSession(true);
             session.setAttribute("userId", userId);
             session.setAttribute("name", name);
             session.setAttribute("barangay", barangay);
@@ -112,23 +111,16 @@ public class AuthController {
             session.setAttribute("userType", userType);
             session.setMaxInactiveInterval(30 * 60); // 30 minutes
             
-            // ✅ CRITICAL: Set session cookie in response
-            Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
-            sessionCookie.setPath("/");
-            sessionCookie.setHttpOnly(true);
-            sessionCookie.setSecure(true);  // Required for HTTPS
-            sessionCookie.setAttribute("SameSite", "None");  // Required for cross-domain
-            response.addCookie(sessionCookie);
-            
-            // Also set the header explicitly
-            response.setHeader("Set-Cookie", 
-                "JSESSIONID=" + session.getId() + 
-                "; Path=/; HttpOnly; Secure; SameSite=None");
+            // Force authentication in Spring Security context
+            UsernamePasswordAuthenticationToken authToken = 
+                new UsernamePasswordAuthenticationToken(name, password);
+            Authentication authentication = authenticationManager.authenticate(authToken);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             
             System.out.println("Session created with ID: " + session.getId());
             System.out.println("Login successful for: " + name);
             
-            // Return user data
+            // Return user data (Spring Boot will automatically add Set-Cookie header)
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("status", "SUCCESS");
             responseData.put("name", name);
@@ -146,42 +138,47 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
+        
+        // Clear the cookie by setting it to expire
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("JSESSIONID", null);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+        
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
     @GetMapping("/check-auth")
-    public ResponseEntity<?> checkAuth(Authentication authentication, HttpServletRequest request) {
+    public ResponseEntity<?> checkAuth(HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
         
         HttpSession session = request.getSession(false);
         response.put("hasSession", session != null);
         
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (session == null) {
+            response.put("authenticated", false);
+            return ResponseEntity.ok(response);
+        }
+        
+        String name = (String) session.getAttribute("name");
+        if (name == null) {
             response.put("authenticated", false);
             return ResponseEntity.ok(response);
         }
         
         response.put("authenticated", true);
-        response.put("name", authentication.getName());
-        response.put("authorities", authentication.getAuthorities().stream()
-            .map(a -> a.getAuthority())
-            .toList());
-        
-        if (session != null) {
-            response.put("sessionId", session.getId());
-            // Also return stored session attributes if needed
-            if (session.getAttribute("userType") != null) {
-                response.put("userType", session.getAttribute("userType"));
-                response.put("barangay", session.getAttribute("barangay"));
-                response.put("privilege", session.getAttribute("privilege"));
-            }
-        }
+        response.put("name", name);
+        response.put("userId", session.getAttribute("userId"));
+        response.put("barangay", session.getAttribute("barangay"));
+        response.put("privilege", session.getAttribute("privilege"));
+        response.put("userType", session.getAttribute("userType"));
         
         return ResponseEntity.ok(response);
     }
