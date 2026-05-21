@@ -129,9 +129,100 @@ async function loadQuickStats() {
 
 // ==================== TREASURER VIEW ====================
 async function loadTreasurerDashboard() {
-  await loadExpenditureBar();
-  await loadCommitteeCharts();
+  await loadBudgetOverview();  // New main budget card
+  await loadExpenditureBar();  // Keep for additional stats
+  await loadCommitteeCharts(); // Keep but maybe reposition
   await loadRecentExpenditures();
+}
+
+// New function - Same budget card as Committees page
+async function loadBudgetOverview() {
+  try {
+    const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const data = await response.json();
+    
+    const budgetCard = document.getElementById('budgetOverviewCard');
+    if (!budgetCard) return;
+    
+    const totalBudget = data.totalBudget || 0;
+    const committees = data.committees || [];
+    const totalSpent = committees.reduce((sum, c) => sum + (c.spent || 0), 0);
+    const remaining = totalBudget - totalSpent;
+    const percentageSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+    
+    if (totalBudget === 0 && committees.length === 0) {
+      budgetCard.innerHTML = `
+        <div style="color:var(--muted);font-size:0.85rem; text-align: center; padding: 1rem;">
+          No budget has been set yet. Click "Set Budget" to get started.
+        </div>
+        <div style="text-align: center; margin-top: 1rem;">
+          <button class="btn btn-primary" onclick="window.location.href='/Councilor/Budget/Budget.html'">Set Budget</button>
+        </div>
+      `;
+      return;
+    }
+    
+    budgetCard.innerHTML = `
+      <div class="budget-top">
+        <div>
+          <div class="budget-total-label">Total SK Budget</div>
+          <div class="budget-total-value">
+            ₱${totalBudget.toLocaleString('en-PH')}
+          </div>
+        </div>
+        <div class="budget-meta">
+          Spent: ₱${totalSpent.toLocaleString('en-PH')}<br>
+          Remaining: ₱${remaining.toLocaleString('en-PH')}
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width: ${Math.min(percentageSpent, 100)}%"></div>
+      </div>
+      <div class="budget-percentage">${percentageSpent.toFixed(1)}% utilized</div>
+      
+      <div class="committee-rows" style="margin-top: 1.5rem;">
+        <div class="section-subheading" style="margin-bottom: 0.75rem;">Committee Allocations</div>
+        ${committees.length === 0 ? 
+          '<div style="color:var(--muted);font-size:0.82rem">No committee allocations yet.</div>' : 
+          committees.map(c => {
+            const pct = c.allocated > 0 ? Math.min((c.spent / c.allocated) * 100, 100) : 0;
+            const over = c.spent > c.allocated;
+            return `
+              <div class="committee-row">
+                <div class="committee-row-header">
+                  <span class="committee-row-name">${escapeHtml(c.committeeName)}</span>
+                  <span class="committee-row-amounts">
+                    ₱${(c.spent || 0).toLocaleString('en-PH')} /
+                    ₱${(c.allocated || 0).toLocaleString('en-PH')}
+                  </span>
+                </div>
+                <div class="progress-track small">
+                  <div class="progress-fill ${over ? 'over' : ''}" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('')
+        }
+      </div>
+      
+      <div style="margin-top: 1.5rem; text-align: right;">
+        <button class="btn btn-outline" onclick="window.location.href='/Councilor/Budget/Budget.html'">Manage Budget →</button>
+      </div>
+    `;
+    
+  } catch (error) {
+    console.error('Error loading budget overview:', error);
+    const budgetCard = document.getElementById('budgetOverviewCard');
+    if (budgetCard) {
+      budgetCard.innerHTML = `
+        <div style="color:var(--muted);font-size:0.85rem; text-align: center; padding: 1rem;">
+          Could not load budget data. Please try again.
+        </div>
+      `;
+    }
+  }
 }
 
 async function loadExpenditureBar() {
@@ -146,10 +237,16 @@ async function loadExpenditureBar() {
     const totalSpent = committees.reduce((sum, c) => sum + (c.spent || 0), 0);
     const percentage = totalBudget > 0 ? (totalSpent / totalBudget * 100) : 0;
     
-    document.getElementById('expenditureBar').style.width = `${Math.min(percentage, 100)}%`;
-    document.getElementById('totalSpent').textContent = `₱${totalSpent.toLocaleString()}`;
-    document.getElementById('totalRemaining').textContent = `₱${(totalBudget - totalSpent).toLocaleString()}`;
-    document.getElementById('expenditurePercent').textContent = `${percentage.toFixed(1)}%`;
+    const barElement = document.getElementById('expenditureBar');
+    if (barElement) {
+      barElement.style.width = `${Math.min(percentage, 100)}%`;
+    }
+    const totalSpentEl = document.getElementById('totalSpent');
+    if (totalSpentEl) totalSpentEl.textContent = `₱${totalSpent.toLocaleString()}`;
+    const totalRemainingEl = document.getElementById('totalRemaining');
+    if (totalRemainingEl) totalRemainingEl.textContent = `₱${(totalBudget - totalSpent).toLocaleString()}`;
+    const percentEl = document.getElementById('expenditurePercent');
+    if (percentEl) percentEl.textContent = `${percentage.toFixed(1)}%`;
   } catch (error) {
     console.error('Error loading expenditure bar:', error);
   }
@@ -164,6 +261,8 @@ async function loadCommitteeCharts() {
     const committees = data.committees || [];
     
     const container = document.getElementById('committeeCharts');
+    if (!container) return;
+    
     if (committees.length === 0) {
       container.innerHTML = '<div class="empty-state">No committee budget data available.</div>';
       return;
@@ -175,7 +274,7 @@ async function loadCommitteeCharts() {
         <div class="chart-card">
           <div class="chart-title">${escapeHtml(c.committeeName)}</div>
           <div class="chart-bar-container">
-            <div class="chart-bar" style="width: ${percentage}%; background: linear-gradient(90deg, #0BBFB5, #10B981);"></div>
+            <div class="chart-bar" style="width: ${Math.min(percentage, 100)}%; background: linear-gradient(90deg, #0BBFB5, #10B981);"></div>
           </div>
           <div class="chart-numbers">
             <span>₱${(c.spent || 0).toLocaleString()} / ₱${(c.allocated || 0).toLocaleString()}</span>
