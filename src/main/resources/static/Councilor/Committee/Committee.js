@@ -1,4 +1,3 @@
-// ── SESSION HELPERS ──
 const userPrivilege = localStorage.getItem('sk_privilege') || '';
 const userBarangay = localStorage.getItem('sk_barangay') || '';
 
@@ -20,55 +19,6 @@ if (dashAvatar)   dashAvatar.textContent   = session.name.charAt(0).toUpperCase(
 let allCommittees = [];      // All committees in barangay (for table display)
 let myCommittees = [];       // Committees user is a member of (for dropdown)
 
-// ── HELPER FUNCTIONS ──
-function esc(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-// ── ROLE-BASED UI ──
-function showRoleView() {
-    // Use localStorage directly since Session methods might not be available
-    const privilege = localStorage.getItem('sk_privilege') || '';
-    const userType = localStorage.getItem('sk_user_type') || '';
-    
-    console.log('showRoleView called - Privilege:', privilege, 'UserType:', userType);
-    
-    const isAdminOrDeveloper = privilege === 'ADMIN' || userType === 'developer';
-    const isChairman = privilege === 'CHAIRMAN';
-    const isTreasurer = privilege === 'TREASURER';
-    
-    // Hide/show create committee button (only Chairman or Admin can create)
-    const createBtn = document.getElementById('createCommitteeBtn');
-    if (createBtn) {
-        createBtn.style.display = (isChairman || isAdminOrDeveloper) ? 'flex' : 'none';
-    }
-    
-    // Hide/show budget section (only Treasurer or Admin)
-    const budgetSection = document.querySelector('.budget-section');
-    if (budgetSection) {
-        budgetSection.style.display = (isTreasurer || isAdminOrDeveloper) ? 'block' : 'none';
-    }
-    
-    // Hide/show add member buttons
-    const addMemberBtns = document.querySelectorAll('.add-member-btn');
-    addMemberBtns.forEach(btn => {
-        btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
-    });
-    
-    // Hide/show edit/delete committee buttons
-    const editBtns = document.querySelectorAll('.edit-committee-btn');
-    editBtns.forEach(btn => {
-        btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
-    });
-    
-    console.log('Role view updated:', { isAdminOrDeveloper, isChairman, isTreasurer });
-}
-
 // ── INIT ──
 async function init() {
   try {
@@ -76,7 +26,6 @@ async function init() {
     await loadMyCommittees();       // Load user's committees for dropdown
     await loadCommitteesTable();    // Display the table
     await loadTotalBudget();        // Load total budget for the barangay
-    showRoleView();                 // Apply role-based UI
   } catch (error) {
     console.error('Init error:', error);
     Toast.show('Error loading initial data', true);
@@ -107,17 +56,10 @@ async function loadMyCommittees() {
     myCommittees = data;
     console.log('My committees loaded:', myCommittees);
     
-    // Populate committee select dropdown (for navigation)
-    const committeeSelect = document.getElementById('committeeSelect');
-    if (committeeSelect) {
-      committeeSelect.innerHTML = '<option value="">-- Select Committee --</option>';
-      myCommittees.forEach(c => {
-        committeeSelect.innerHTML += `<option value="${esc(c.committeeName)}">${esc(c.committeeName)}</option>`;
-      });
-    }
-    
-    // Populate filter dropdown
+    // Populate dropdowns with user's committees only
     const filter = document.getElementById('committeeFilter');
+    const formSel = document.getElementById('formCommittee');
+    
     if (filter) {
       filter.innerHTML = '<option value="">All committees</option>';
       myCommittees.forEach(c => {
@@ -125,8 +67,6 @@ async function loadMyCommittees() {
       });
     }
     
-    // Populate form committee dropdown
-    const formSel = document.getElementById('formCommittee');
     if (formSel) {
       formSel.innerHTML = '';
       myCommittees.forEach(c => {
@@ -148,17 +88,16 @@ async function loadCommitteesTable() {
       <tr class="empty-row">
         <td colspan="4">
           No committees found. Click "+ Add Committee" to create one!
-        </tr>
-      </table>`;
+        </td>
+      </tr>`;
     return;
   }
 
-  const privilege = localStorage.getItem('sk_privilege') || '';
-  const isChairman = privilege === 'CHAIRMAN';
-  const isAdmin = privilege === 'ADMIN';
+  const userPrivilege = localStorage.getItem('sk_privilege') || '';
+  const isChairman = userPrivilege === 'CHAIRMAN';
 
   tbody.innerHTML = allCommittees.map((c, i) => `
-    <tr style="animation-delay:${i * 0.05}s" onclick="goToCommitteeDetail('${esc(c.committeeName)}')" style="cursor: pointer;">
+    <tr style="animation-delay:${i * 0.05}s">
       <td class="project-name-cell">${esc(c.committeeName)}</td>
       <td style="color:var(--muted);text-align:center">${c.memberCount !== undefined ? c.memberCount : '0'}</td>
       <td>
@@ -167,38 +106,18 @@ async function loadCommitteesTable() {
           : '<span style="color:var(--muted)">No head assigned</span>'}
       </td>
       <td>
-        ${(isChairman || isAdmin) ? 
+        ${isChairman ? 
           `<button class="action-btn delete-committee-btn" 
-            onclick="event.stopPropagation(); deleteCommittee('${esc(c.committeeName)}')">
-            🗑️ Delete
+            onclick="deleteCommittee('${esc(c.committeeName)}')">
+            🗑️ Delete Committee
           </button>` :
-          ''
+          `<button class="action-btn disabled-btn" disabled>
+            No actions available
+          </button>`
         }
       </td>
     </tr>
   `).join('');
-}
-
-// ── NAVIGATION TO COMMITTEE DETAIL ──
-function goToCommitteeDetail(committeeName) {
-    console.log('Navigating to committee detail:', committeeName);
-    if (committeeName) {
-        window.location.href = `/Councilor/Committee/committee-detail.html?name=${encodeURIComponent(committeeName)}`;
-    }
-}
-
-// ── COMMITTEE CHANGE HANDLER (for dropdown) ──
-function onCommitteeChange() {
-    const select = document.getElementById('committeeSelect');
-    if (!select) {
-        console.error('committeeSelect element not found');
-        return;
-    }
-    const committeeName = select.value;
-    console.log('Selected committee from dropdown:', committeeName);
-    if (committeeName) {
-        window.location.href = `/Councilor/Committee/committee-detail.html?name=${encodeURIComponent(committeeName)}`;
-    }
 }
 
 async function loadCommitteeBudget(committeeName) {
@@ -212,6 +131,7 @@ async function loadCommitteeBudget(committeeName) {
     const data = await res.json();
     console.log('Committee budget data:', data);
     
+    // Update the budget card with committee-specific budget
     const budgetCard = document.getElementById('budgetCard');
     if (budgetCard && data && data.allocated !== undefined) {
       const allocated = data.allocated || 0;
@@ -235,13 +155,26 @@ async function loadCommitteeBudget(committeeName) {
         </div>
         <div class="budget-percentage">${percentage.toFixed(1)}% utilized</div>
       `;
+    } else {
+      budgetCard.innerHTML = `
+        <div style="color:var(--muted);font-size:0.85rem">
+          No budget allocated for this committee yet.
+        </div>
+      `;
     }
   } catch (e) {
     console.error('Error loading committee budget:', e);
+    const budgetCard = document.getElementById('budgetCard');
+    if (budgetCard) {
+      budgetCard.innerHTML = `
+        <div style="color:var(--muted);font-size:0.85rem">
+          Could not load budget data.
+        </div>`;
+    }
   }
 }
 
-// ── LOAD TOTAL BUDGET ──
+// ── LOAD TOTAL BUDGET (using the same format that works) ──
 async function loadTotalBudget() {
   try {
     console.log('loadTotalBudget called');
@@ -314,6 +247,115 @@ async function loadTotalBudget() {
       budgetCard.innerHTML = `<div style="color:var(--muted);font-size:0.85rem">Could not load budget data.</div>`;
     }
   }
+}
+
+function onCommitteeChange() {
+    const select = document.getElementById('committeeSelect');
+    if (!select) {
+        console.error('committeeSelect element not found');
+        return;
+    }
+    const committeeName = select.value;
+    console.log('Selected committee:', committeeName);
+    if (committeeName) {
+        window.location.href = `/Councilor/Committee/committee-detail.html?name=${encodeURIComponent(committeeName)}`;
+    }
+}
+
+function showRoleView() {
+    // Use the properties directly, not methods
+    const privilege = Session.privilege;
+    const userType = Session.userType;
+    
+    console.log('showRoleView called - Privilege:', privilege, 'UserType:', userType);
+    
+    const isAdminOrDeveloper = privilege === 'ADMIN' || userType === 'developer';
+    const isChairman = privilege === 'CHAIRMAN';
+    const isTreasurer = privilege === 'TREASURER';
+    
+    // Hide/show create committee button (only Chairman or Admin can create)
+    const createBtn = document.getElementById('createCommitteeBtn');
+    if (createBtn) {
+        createBtn.style.display = (isChairman || isAdminOrDeveloper) ? 'flex' : 'none';
+    }
+    
+    // Hide/show budget section (only Treasurer or Admin)
+    const budgetSection = document.querySelector('.budget-section');
+    if (budgetSection) {
+        budgetSection.style.display = (isTreasurer || isAdminOrDeveloper) ? 'block' : 'none';
+    }
+    
+    // Hide/show add member buttons
+    const addMemberBtns = document.querySelectorAll('.add-member-btn');
+    addMemberBtns.forEach(btn => {
+        btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
+    });
+    
+    // Hide/show edit/delete committee buttons
+    const editBtns = document.querySelectorAll('.edit-committee-btn');
+    editBtns.forEach(btn => {
+        btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
+    });
+    
+    console.log('Role view updated:', { isAdminOrDeveloper, isChairman, isTreasurer });
+}
+
+function renderBudget(data, filterCommittee) {
+  const budgetCard = document.getElementById('budgetCard');
+  if (!budgetCard) return;
+
+  let rows = data.committees || [];
+  if (filterCommittee) {
+    rows = rows.filter(c => c.committeeName === filterCommittee);
+  }
+
+  const totalBudget = Number(data.totalBudget) || 0;
+  const totalSpent = rows.reduce((s, c) => s + (c.spent || 0), 0);
+
+  if (totalBudget === 0 && rows.length === 0) {
+    budgetCard.innerHTML = `
+      <div style="color:var(--muted);font-size:0.85rem">
+        No budget has been set yet. The treasurer can set the budget.
+      </div>
+    `;
+    return;
+  }
+
+  budgetCard.innerHTML = `
+    <div class="budget-top">
+      <div>
+        <div class="budget-total-label">Total SK Budget</div>
+        <div class="budget-total-value">
+          ₱${totalBudget.toLocaleString('en-PH')}
+        </div>
+      </div>
+      <div class="budget-meta">
+        Spent: ₱${totalSpent.toLocaleString('en-PH')}<br>
+        Remaining: ₱${(totalBudget - totalSpent).toLocaleString('en-PH')}
+      </div>
+    </div>
+    <div class="committee-rows">
+      ${rows.length === 0 ? '<div style="color:var(--muted);font-size:0.82rem">No committee allocations yet.</div>' : rows.map(c => {
+        const pct = c.allocated > 0
+          ? Math.min((c.spent / c.allocated) * 100, 100)
+          : 0;
+        const over = c.spent > c.allocated;
+        return `
+          <div class="committee-row">
+            <div class="committee-row-header">
+              <span class="committee-row-name">${esc(c.committeeName)}</span>
+              <span class="committee-row-amounts">
+                ₱${(c.spent||0).toLocaleString('en-PH')} /
+                ₱${(c.allocated||0).toLocaleString('en-PH')}
+              </span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill ${over ? 'over' : ''}" style="width:${pct}%"></div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+  `;
 }
 
 function applyFilters() {
@@ -399,7 +441,9 @@ async function assignHead(committeeName) {
     if (text === 'SUCCESS') {
       Toast.show('Head assigned successfully!');
       await loadAllCommittees();
+      await loadMyCommittees();
       await loadCommitteesTable();
+      // Don't need to reload budget for head assignment
     } else if (text === 'COUNCILOR_NOT_IN_BARANGAY') {
       Toast.show('Councilor not found in this barangay.', true);
     } else if (text === 'ALREADY_HEADS_A_COMMITTEE') {
@@ -417,6 +461,7 @@ async function assignHead(committeeName) {
 async function deleteCommittee(committeeName) {
   console.log('deleteCommittee called for:', committeeName);
   
+  // First confirmation
   const confirmMessage = `⚠️ PERMANENT ACTION ⚠️\n\n` +
     `You are about to delete the committee "${committeeName}".\n\n` +
     `This will also delete:\n` +
@@ -452,12 +497,15 @@ async function deleteCommittee(committeeName) {
     
     if (result === 'SUCCESS') {
       Toast.show(`Committee "${committeeName}" has been deleted successfully.`);
+      // Refresh all data
       await loadAllCommittees();
       await loadMyCommittees();
       await loadCommitteesTable();
       await loadTotalBudget();
     } else if (result === 'COMMITTEE_NOT_FOUND') {
       Toast.show('Committee not found', true);
+    } else if (result === 'NOT_AUTHORIZED') {
+      Toast.show('You are not authorized to delete committees', true);
     } else {
       Toast.show('Error deleting committee: ' + result, true);
     }
@@ -467,25 +515,78 @@ async function deleteCommittee(committeeName) {
   }
 }
 
+async function debugBudget() {
+  console.log('=== DEBUGGING BUDGET ===');
+  
+  // Check if budget card exists
+  const budgetCard = document.getElementById('budgetCard');
+  console.log('Budget card element:', budgetCard);
+  
+  // Fetch budget data directly
+  const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`, {
+    credentials: 'include'
+  });
+  const data = await res.json();
+  console.log('Budget data from API:', data);
+  
+  // Try to manually display budget
+  if (budgetCard && data) {
+    const totalBudget = data.totalBudget || 0;
+    const committees = data.committees || [];
+    const totalSpent = committees.reduce((sum, c) => sum + (c.spent || 0), 0);
+    
+    budgetCard.innerHTML = `
+      <div class="budget-top">
+        <div>
+          <div class="budget-total-label">Total SK Budget</div>
+          <div class="budget-total-value">
+            ₱${totalBudget.toLocaleString('en-PH')}
+          </div>
+        </div>
+        <div class="budget-meta">
+          Spent: ₱${totalSpent.toLocaleString('en-PH')}<br>
+          Remaining: ₱${(totalBudget - totalSpent).toLocaleString('en-PH')}
+        </div>
+      </div>
+      <div class="committee-rows">
+        ${committees.length === 0 ? '<div style="color:var(--muted);font-size:0.82rem">No committee allocations yet.</div>' : committees.map(c => {
+          const pct = c.allocated > 0 ? Math.min((c.spent / c.allocated) * 100, 100) : 0;
+          return `
+            <div class="committee-row">
+              <div class="committee-row-header">
+                <span class="committee-row-name">${c.committeeName}</span>
+                <span class="committee-row-amounts">
+                  ₱${(c.spent||0).toLocaleString('en-PH')} /
+                  ₱${(c.allocated||0).toLocaleString('en-PH')}
+                </span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width:${pct}%"></div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    `;
+    console.log('Budget manually displayed!');
+  }
+}
+
 // ── CLOSE MODAL ON OUTSIDE CLICK ──
 document.getElementById('modalOverlay')?.addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
 
-// ── DOM CONTENT LOADED ──
 document.addEventListener('DOMContentLoaded', async () => {
   if (!localStorage.getItem('sk_name')) {
     window.location.href = '/Councilor/Log-in/Login';
     return;
   }
-  
   const isAuthenticated = await checkAuth();
   if (!isAuthenticated) {
     Session.clear();
     window.location.href = '/Councilor/Log-in/Login';
     return;
   }
-  
   const nameEl = document.getElementById('nameEl');
   const roleEl = document.getElementById('roleEl');
   const avatarEl = document.getElementById('avatarEl');
@@ -493,13 +594,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (nameEl) nameEl.textContent = localStorage.getItem('sk_name');
   if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
   if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
-  
   const greetingName = localStorage.getItem('sk_name');
   const greetNameEl = document.getElementById('dash-greet-name');
   if (greetNameEl && greetingName) {
     greetNameEl.textContent = greetingName.split(' ')[0];
   }
-  
   const today = new Date();
   const dateEl = document.getElementById('dash-today');
   if (dateEl) {
@@ -508,8 +607,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
   
-  // Start the app
-  init();
+  showRoleView();
 });
 
 // ── GLOBAL EXPORTS ──
@@ -520,4 +618,6 @@ window.assignHead = assignHead;
 window.onCommitteeChange = onCommitteeChange;
 window.applyFilters = applyFilters;
 window.deleteCommittee = deleteCommittee;
-window.goToCommitteeDetail = goToCommitteeDetail;
+
+// ── START ──
+init();
