@@ -189,24 +189,6 @@ public class Controller {
     }
 
     // =========================
-    // LOGOUT
-    // =========================
-    @PostMapping("/logout")
-    public Map<String, String> logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-
-        if (session != null) {
-            session.invalidate();
-        }
-
-        SecurityContextHolder.clearContext();
-
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "LOGGED_OUT");
-        return response;
-    }
-
-    // =========================
     // SUBMIT CREDENTIALS
     // =========================
     @PostMapping("/submitCredentials")
