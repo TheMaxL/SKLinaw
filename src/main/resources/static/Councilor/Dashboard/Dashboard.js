@@ -11,41 +11,23 @@ function showRoleView() {
     const isChairman = privilege === 'CHAIRMAN';
     const isTreasurer = privilege === 'TREASURER';
     
-    // Hide/show elements based on role - ALWAYS check if element exists first
+    // Show/hide main role views
+    const councilorView = document.getElementById('councilorView');
+    const treasurerView = document.getElementById('treasurerView');
+    const chairmanView = document.getElementById('chairmanView');
     
-    // Hide/show create committee button (for Chairman or Admin)
-    const createCommitteeBtn = document.getElementById('createCommitteeBtn');
-    if (createCommitteeBtn) {
-        createCommitteeBtn.style.display = (isChairman || isAdminOrDeveloper) ? 'flex' : 'none';
+    if (councilorView) councilorView.style.display = (!isChairman && !isTreasurer && !isAdminOrDeveloper) ? 'block' : 'none';
+    if (treasurerView) treasurerView.style.display = (isTreasurer || isAdminOrDeveloper) ? 'block' : 'none';
+    if (chairmanView) chairmanView.style.display = (isChairman || isAdminOrDeveloper) ? 'block' : 'none';
+    
+    // Load the appropriate dashboard data
+    if (isTreasurer || isAdminOrDeveloper) {
+        loadTreasurerDashboard();  // This will now call loadTreasurerBudget()
+    } else if (isChairman) {
+        loadChairmanDashboard();
+    } else {
+        loadCouncilorDashboard();
     }
-    
-    // Hide/show add project button (for Councilors)
-    const addProjectBtn = document.getElementById('addProjectBtn');
-    if (addProjectBtn) {
-        addProjectBtn.style.display = (isChairman || isAdminOrDeveloper) ? 'flex' : 'none';
-    }
-    
-    // Budget section - only show for Treasurer or Admin
-    const budgetSection = document.getElementById('treasurerBudgetSection');
-    if (budgetSection) {
-        budgetSection.style.display = (isTreasurer || isAdminOrDeveloper) ? 'block' : 'none';
-    }
-    
-    // Edit budget buttons
-    const editBudgetBtns = document.querySelectorAll('.edit-budget-btn');
-    editBudgetBtns.forEach(btn => {
-        if (btn) {
-            btn.style.display = (isTreasurer || isAdminOrDeveloper) ? 'inline-flex' : 'none';
-        }
-    });
-    
-    // Approve/reject buttons (only for Chairman/Admin)
-    const approveBtns = document.querySelectorAll('.approve-btn, .reject-btn');
-    approveBtns.forEach(btn => {
-        if (btn) {
-            btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
-        }
-    });
     
     console.log('Role view updated:', { isAdminOrDeveloper, isChairman, isTreasurer });
 }
@@ -155,6 +137,7 @@ async function loadTreasurerDashboard() {
   await loadExpenditureBar();
   await loadCommitteeCharts();
   await loadRecentExpenditures();
+  await loadTreasurerBudget();
 }
 
 async function loadExpenditureBar() {
