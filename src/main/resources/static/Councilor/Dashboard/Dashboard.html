@@ -107,28 +107,54 @@
   </div>
 
   <!-- TREASURER VIEW -->
-  <div class="budget-section">
-    <div class="section-heading">Budget Overview</div>
-    <div class="budget-card" id="budgetOverviewCard">
-        <div style="color:var(--muted);font-size:0.85rem">Loading budget data...</div>
-    </div>
-</div>
+  <div id="treasurerView" class="role-view" style="display: none;">
+    <div class="treasurer-dashboard">
+      <!-- Overall Expenditure Bar -->
+      <div class="expenditure-card">
+        <h3>Overall SK Expenditure</h3>
+        <div class="expenditure-bar-container">
+          <div class="expenditure-bar" id="expenditureBar" style="width: 0%"></div>
+        </div>
+        <div class="expenditure-stats">
+          <span>Spent: <strong id="totalSpent">₱0</strong></span>
+          <span>Remaining: <strong id="totalRemaining">₱0</strong></span>
+          <span>Percentage: <strong id="expenditurePercent">0%</strong></span>
+        </div>
+      </div>
 
-<!-- Committee Budget Table (replaces the redundant charts) -->
-<div class="budget-section">
-    <div class="section-heading">Committee Budget Utilization</div>
-    <div id="committeeBudgetTable">
-        <div class="loader"><span></span><span></span><span></span></div>
+      <div class="budget-section" id="treasurerBudgetSection" style="display: none;">
+        <div class="section-heading">Budget Overview</div>
+        <div class="budget-card" id="budgetCard">
+            <div style="color:var(--muted);font-size:0.85rem">Loading budget data...</div>
+        </div>
     </div>
-</div>
 
-<!-- Recent Expenditures - keep as is -->
-<div class="recent-section">
-    <div class="section-heading">Recent Expenditures</div>
-    <div id="recentExpenditures">
-        <div class="loader"><span></span><span></span><span></span></div>
+      <!-- Committee Budget Charts -->
+      <div class="committee-charts">
+        <h3>Committee Budget Utilization</h3>
+        <div id="committeeCharts" class="charts-grid">
+          <div class="loader"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <!-- Recent Expenditures -->
+      <div class="recent-expenditures">
+        <h3>Recent Expenditures</h3>
+        <div class="table-wrap">
+          <table class="expense-table">
+            <thead>
+              <tr>
+                <th>Project Name</th><th>Committee</th><th>Amount</th><th>Approved Date</th>
+              </tr>
+            </thead>
+            <tbody id="recentExpensesBody">
+              <tr><td colspan="4"><div class="loader"><span></span><span></span><span></span></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 
   <!-- CHAIRMAN VIEW -->
   <div id="chairmanView" class="role-view" style="display: none;">
