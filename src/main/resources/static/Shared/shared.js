@@ -137,6 +137,18 @@ const Session = {
   get userType() {
     return localStorage.getItem('sk_user_type') || '';
   },
+  getPrivilege() {
+    return this.privilege;
+  },
+  getUserType() {
+    return this.userType;
+  },
+  getName() {
+    return this.name;
+  },
+  getBarangay() {
+    return this.barangay;
+  },
   isAdmin() {
     return this.privilege === 'ADMIN' || this.userType === 'developer';
   },
