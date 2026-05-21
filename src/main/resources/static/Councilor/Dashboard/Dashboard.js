@@ -536,6 +536,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
   }
-  
+  showBudgetForTreasurer();
   showRoleView();
 });
