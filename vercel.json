@@ -19,20 +19,20 @@
       "dest": "/src/main/resources/static/index.html"
     },
     {
-      "src": "/Shared/(.*)",
-      "dest": "/src/main/resources/static/Shared/$1"
-    },
-    {
-      "src": "/Councilor/(.*)",
-      "dest": "/src/main/resources/static/Councilor/$1"
-    },
-    {
-      "src": "/Admin/(.*)",
-      "dest": "/src/main/resources/static/Admin/$1"
+      "src": "/Admin/Approval/admin",
+      "dest": "/src/main/resources/static/Admin/Approval/admin.html"
     },
     {
       "src": "/(.*)\\.(css|js|png|jpg|svg|ico)$",
       "dest": "/src/main/resources/static/$1.$2"
+    },
+    {
+      "src": "/(.*)-detail$",
+      "dest": "/src/main/resources/static/$1-detail.html"
+    },
+    {
+      "src": "/Councilor/(.*)",
+      "dest": "/src/main/resources/static/Councilor/$1.html"
     },
     {
       "src": "/api/(.*)",
@@ -41,6 +41,10 @@
     {
       "src": "/admin/(.*)",
       "dest": "https://sklinaw.onrender.com/admin/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/main/resources/static/$1.html"
     }
   ]
 }
