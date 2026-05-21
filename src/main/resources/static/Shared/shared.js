@@ -2,10 +2,9 @@ const API = 'https://sklinaw.onrender.com/api';
 const ADMIN_API = '/admin';
 
 // Token management
-let authToken = localStorage.getItem('auth_token');
+// let authToken = localStorage.getItem('auth_token');
 
 function setAuthToken(token) {
-    authToken = token;
     if (token) {
         localStorage.setItem('auth_token', token);
     } else {
@@ -82,18 +81,26 @@ function flashError(id) {
 async function authFetch(url, options = {}) {
     const fullUrl = url.startsWith('http') ? url : `${API}${url}`;
     
+    // Get token directly from localStorage - THIS IS THE KEY FIX
+    const token = localStorage.getItem('auth_token');
+    
+    console.log('authFetch - URL:', fullUrl);
+    console.log('authFetch - Token exists:', !!token);
+    
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers
     };
     
-    if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    } else {
+        console.error('No token found in localStorage!');
     }
     
     const mergedOptions = {
         ...options,
-        credentials: 'omit',  // No cookies needed
+        credentials: 'omit',
         headers: headers
     };
     
@@ -101,13 +108,14 @@ async function authFetch(url, options = {}) {
         const response = await fetch(fullUrl, mergedOptions);
         
         if (response.status === 401 || response.status === 403) {
+            console.warn('Auth failed for URL:', url, 'Status:', response.status);
             const publicPages = ['public.html', 'index.html', 'Login', 'signup.html', 'home.html'];
             const currentPage = window.location.pathname.split('/').pop();
             
             if (!publicPages.includes(currentPage) && !Session.name) {
                 Toast.show('Session expired. Please login again.', true);
                 Session.clear();
-                setAuthToken(null);
+                localStorage.removeItem('auth_token');
                 setTimeout(() => {
                     window.location.href = '/Councilor/Log-in/Login';
                 }, 1500);
