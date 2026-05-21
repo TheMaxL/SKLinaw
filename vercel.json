@@ -19,8 +19,12 @@
       "dest": "/src/main/resources/static/index.html"
     },
     {
-      "src": "/Shared/(.*)",
-      "dest": "/src/main/resources/static/Shared/$1"
+      "src": "/Shared/shared.css",
+      "dest": "/src/main/resources/static/Shared/shared.css"
+    },
+    {
+      "src": "/Shared/shared.js",
+      "dest": "/src/main/resources/static/Shared/shared.js"
     },
     {
       "src": "/Councilor/Committee/committee-detail",
