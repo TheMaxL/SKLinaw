@@ -4,27 +4,50 @@ const userBarangay = localStorage.getItem('sk_barangay') || '';
 
 // Show appropriate view based on role
 function showRoleView() {
-  // Hide all views first
-  document.getElementById('councilorView').style.display = 'none';
-  document.getElementById('treasurerView').style.display = 'none';
-  document.getElementById('chairmanView').style.display = 'none';
-  
-  // Update role label
-  const roleLabel = document.getElementById('dash-greet-sub');
-  
-  if (userPrivilege === 'TREASURER') {
-    document.getElementById('treasurerView').style.display = 'block';
-    roleLabel.textContent = 'Treasurer';
-    loadTreasurerDashboard();
-  } else if (userPrivilege === 'CHAIRMAN') {
-    document.getElementById('chairmanView').style.display = 'block';
-    roleLabel.textContent = 'Chairman';
-    loadChairmanDashboard();
-  } else {
-    document.getElementById('councilorView').style.display = 'block';
-    roleLabel.textContent = 'Councilor';
-    loadCouncilorDashboard();
-  }
+    const privilege = localStorage.getItem('sk_privilege') || '';
+    const userType = localStorage.getItem('sk_user_type') || '';
+    
+    const isAdminOrDeveloper = privilege === 'ADMIN' || userType === 'developer';
+    const isChairman = privilege === 'CHAIRMAN';
+    const isTreasurer = privilege === 'TREASURER';
+    
+    // Hide/show elements based on role - ALWAYS check if element exists first
+    
+    // Hide/show create committee button (for Chairman or Admin)
+    const createCommitteeBtn = document.getElementById('createCommitteeBtn');
+    if (createCommitteeBtn) {
+        createCommitteeBtn.style.display = (isChairman || isAdminOrDeveloper) ? 'flex' : 'none';
+    }
+    
+    // Hide/show add project button (for Councilors)
+    const addProjectBtn = document.getElementById('addProjectBtn');
+    if (addProjectBtn) {
+        addProjectBtn.style.display = (isChairman || isAdminOrDeveloper) ? 'flex' : 'none';
+    }
+    
+    // Budget section - only show for Treasurer or Admin
+    const budgetSection = document.getElementById('treasurerBudgetSection');
+    if (budgetSection) {
+        budgetSection.style.display = (isTreasurer || isAdminOrDeveloper) ? 'block' : 'none';
+    }
+    
+    // Edit budget buttons
+    const editBudgetBtns = document.querySelectorAll('.edit-budget-btn');
+    editBudgetBtns.forEach(btn => {
+        if (btn) {
+            btn.style.display = (isTreasurer || isAdminOrDeveloper) ? 'inline-flex' : 'none';
+        }
+    });
+    
+    // Approve/reject buttons (only for Chairman/Admin)
+    const approveBtns = document.querySelectorAll('.approve-btn, .reject-btn');
+    approveBtns.forEach(btn => {
+        if (btn) {
+            btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
+        }
+    });
+    
+    console.log('Role view updated:', { isAdminOrDeveloper, isChairman, isTreasurer });
 }
 
 // ==================== COUNCILOR VIEW ====================
