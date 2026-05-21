@@ -45,7 +45,8 @@ async function init() {
 
 async function loadCommittees() {
   try {
-    const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
+    // Use authFetch instead of fetch
+    const res = await authFetch(`/getCommittees?barangay=${encodeURIComponent(session.barangay)}`);
     const text = await res.text();
     if (text === 'ERROR') {
       committees = [];
@@ -85,7 +86,8 @@ async function loadProjects(committeeName) {
     allProjects = [];
 
     if (committeeName) {
-      const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`);
+      // Use authFetch instead of fetch
+      const res = await authFetch(`/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(committeeName)}`);
       const text = await res.text();
       if (text !== 'ERROR') {
         const data = JSON.parse(text);
@@ -93,7 +95,8 @@ async function loadProjects(committeeName) {
       }
     } else {
       for (const c of committees) {
-        const res = await fetch(`${API}/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(c.committeeName)}`);
+        // Use authFetch instead of fetch
+        const res = await authFetch(`/getProjects?barangay=${encodeURIComponent(session.barangay)}&committeeName=${encodeURIComponent(c.committeeName)}`);
         const text = await res.text();
         if (text !== 'ERROR') {
           const data = JSON.parse(text);
@@ -113,7 +116,8 @@ async function loadProjects(committeeName) {
 // Load pending projects for Chairman approval
 async function loadPendingProjects() {
   try {
-    const response = await fetch(`${API}/getPendingProjects?barangay=${encodeURIComponent(session.barangay)}`);
+    // Use authFetch instead of fetch
+    const response = await authFetch(`/getPendingProjects?barangay=${encodeURIComponent(session.barangay)}`);
     const text = await response.text();
     
     if (text === 'ERROR') {
@@ -167,7 +171,8 @@ function displayPendingProjects() {
 
 async function loadBudget(committeeName) {
   try {
-    const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
+    // Use authFetch instead of fetch
+    const res = await authFetch(`/getBudget?barangay=${encodeURIComponent(session.barangay)}`);
     const text = await res.text();
     if (text === 'ERROR') {
       document.getElementById('budgetCard').innerHTML = `<div style="color:var(--muted);font-size:0.85rem">Budget data unavailable.</div>`;
@@ -289,9 +294,9 @@ async function submitProject() {
   }
 
   try {
-    const res = await fetch(`${API}/addProject`, {
+    // Use authFetch instead of fetch
+    const res = await authFetch(`/addProject`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     const text = await res.text();
@@ -338,9 +343,9 @@ function closeApproveModal() {
 
 async function approveProject(projectId, projectName) {
     try {
-        const response = await fetch(`${API}/approveProject`, {
+        // Use authFetch instead of fetch
+        const response = await authFetch(`/approveProject`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 projectId: projectId,
                 barangay: session.barangay,
@@ -428,10 +433,9 @@ async function confirmReject() {
     console.log('Request body:', requestBody);
     
     try {
-        const response = await fetch(`${API}/rejectProject`, {
+        // Use authFetch instead of fetch
+        const response = await authFetch(`/rejectProject`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
             body: JSON.stringify(requestBody)
         });
         
@@ -454,7 +458,8 @@ async function confirmReject() {
 
 async function loadProjectFeedback(projectId) {
   try {
-    const response = await fetch(`${API}/getProjectComments?projectId=${projectId}`);
+    // Use authFetch instead of fetch
+    const response = await authFetch(`/getProjectComments?projectId=${projectId}`);
     if (!response.ok) throw new Error('Failed to fetch feedback');
     
     const feedback = await response.json();
@@ -534,6 +539,7 @@ function viewProject(id) {
 // ── HELPERS ──
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');
+  if (!t) return;
   t.textContent = msg;
   t.className = 'toast show' + (isError ? ' error' : '');
   setTimeout(() => t.classList.remove('show'), 3500);

@@ -38,12 +38,20 @@
       "dest": "/src/main/resources/static/Admin/Approval/$1.$2"
     },
     {
+      "src": "/Public/([^/]+)/([^/]+)\\.(css|js)$",
+      "dest": "/src/main/resources/static/Public/$1/$2.$3"
+    },
+    {
       "src": "/Councilor/([^/]+)/([^/]+)",
       "dest": "/src/main/resources/static/Councilor/$1/$2.html"
     },
     {
       "src": "/Admin/Approval/([^/]+)",
       "dest": "/src/main/resources/static/Admin/Approval/$1.html"
+    },
+    {
+      "src": "/Public/([^/]+)/([^/]+)",
+      "dest": "/src/main/resources/static/Public/$1/$2.html"
     },
     {
       "src": "/(.*)",
