@@ -6,11 +6,8 @@ const COLORS = [
   '#EC4899','#3B82F6','#F97316','#8B5CF6',
 ];
 
-const session = {
-  name: localStorage.getItem('sk_name') || '',
-  barangay: localStorage.getItem('sk_barangay') || '',
-  privilege: localStorage.getItem('sk_privilege') || ''
-};
+const userPrivilege = Session.privilege;
+const userBarangay = Session.barangay;
 
 // Role check - Treasurer or Chairman can edit
 const canEditBudget = session.privilege === 'CHAIRMAN' || session.privilege === 'TREASURER' || session.privilege === 'ADMIN';
@@ -19,7 +16,7 @@ const canEditBudget = session.privilege === 'CHAIRMAN' || session.privilege === 
 if (document.getElementById('nameEl')) {
   document.getElementById('nameEl').textContent = session.name;
   document.getElementById('avatarEl').textContent = session.name.charAt(0).toUpperCase();
-  document.getElementById('barangayLabel').textContent = session.barangay;
+  document.getElementById('barangayLabel').textContent = Session.barangay;
 }
 
 // Show read-only guard if not treasurer/chairman
@@ -44,7 +41,7 @@ async function loadCommittees() {
   }
   
   try {
-    const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`, {
+    const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(Session.barangay)}`, {
       credentials: 'include'
     });
     
@@ -73,7 +70,7 @@ async function loadCurrentBudget() {
   }
   
   try {
-    const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`, {
+    const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(Session.barangay)}`, {
       credentials: 'include'
     });
     
@@ -308,7 +305,7 @@ async function saveBudget() {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ 
-        barangay: session.barangay, 
+        barangay: Session.barangay, 
         totalBudget: total, 
         allocations 
       })
