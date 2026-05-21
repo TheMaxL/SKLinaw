@@ -1,5 +1,5 @@
 /* Committee Page Specific Styles */
-@import url('shared.css');
+@import url('/Shared/shared.css');
 
 /* ===== BUDGET OVERVIEW ===== */
 .budget-section { 
