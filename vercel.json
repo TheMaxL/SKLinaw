@@ -20,6 +20,18 @@
       "dest": "https://sklinaw.onrender.com/admin/$1"
     },
     {
+      "src": "/(.*)\\.(css|js|png|jpg|svg|ico|json)$",
+      "dest": "/src/main/resources/static/$1.$2"
+    },
+    {
+      "src": "/Shared/(.*)",
+      "dest": "/src/main/resources/static/Shared/$1"
+    },
+    {
+      "src": "/Councilor/(.*)/(.*)",
+      "dest": "/src/main/resources/static/Councilor/$1/$2"
+    },
+    {
       "src": "/(.*)",
       "dest": "/src/main/resources/static/$1.html"
     }
