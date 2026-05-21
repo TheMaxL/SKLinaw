@@ -2,7 +2,7 @@ const API = 'https://sklinaw.onrender.com/api';
 const ADMIN_API = '/admin';
 
 // Token management
-// let authToken = localStorage.getItem('auth_token');
+let authToken = localStorage.getItem('auth_token');
 
 function setAuthToken(token) {
     if (token) {
