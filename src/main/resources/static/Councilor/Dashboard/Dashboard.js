@@ -396,76 +396,98 @@ async function loadCommitteesTable() {
   if (!Array.isArray(committees) || committees.length === 0) {
     tbody.innerHTML = `
       <tr class="empty-row">
-        <td colspan="7">No committees found.耸
+        <td colspan="7">No committees found.</td>
       </tr>
     `;
     return;
   }
 
   // Show loading state
-  tbody.innerHTML = '<tr><td colspan="7"><div class="loader"><span></span><span></span><span></span></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7"><div class="loader"><span></span><span></span><span></span></div></tr>';
 
-  // Fetch data for each committee in parallel
-  const committeePromises = committees.map(async (committee) => {
-    try {
-      // Fetch projects for this committee
-      const projectsResponse = await fetch(`/api/getProjectsByCommittee?barangay=${encodeURIComponent(userBarangay)}&committeeName=${encodeURIComponent(committee.committeeName)}`, {
-        credentials: 'include'
-      });
-      const projects = await projectsResponse.json();
-      
-      // Calculate project stats
-      const pendingProjects = projects.filter(p => p.status === 'PENDING').length;
-      const approvedProjects = projects.filter(p => p.status === 'APPROVED').length;
-      
-      // Fetch budget data for this committee
-      const budgetResponse = await fetch(`/api/getBudgetByCommittee?barangay=${encodeURIComponent(userBarangay)}&committeeName=${encodeURIComponent(committee.committeeName)}`, {
-        credentials: 'include'
-      });
-      const budgetData = await budgetResponse.json();
-      
-      const totalBudget = budgetData.allocated || 0;
-      const spent = budgetData.spent || 0;
-      const remaining = budgetData.remaining || (totalBudget - spent);
-      
-      return {
-        ...committee,
-        pendingProjects,
-        approvedProjects,
-        totalBudget,
-        spent,
-        remaining
-      };
-    } catch (error) {
-      console.error(`Error loading data for committee ${committee.committeeName}:`, error);
-      return {
-        ...committee,
-        pendingProjects: 0,
-        approvedProjects: 0,
-        totalBudget: 0,
-        spent: 0,
-        remaining: 0
-      };
-    }
-  });
-  
-  // Wait for all committee data to load
-  const committeesWithData = await Promise.all(committeePromises);
-  
-  // Render the table
-  tbody.innerHTML = committeesWithData.map((c, i) => `
-    <tr style="animation-delay:${i * 0.05}s">
-      <td class="project-name-cell">${escapeHtml(c.committeeName)}</td>
-      <td>${c.headName ? escapeHtml(c.headName) : '<span style="color:var(--muted)">Not assigned</span>'}</td>
-      <td class="pending-count">${c.pendingProjects}</td>
-      <td class="approved-count">${c.approvedProjects}</td>
-      <td>₱${(c.totalBudget || 0).toLocaleString()}</td>
-      <td>₱${(c.spent || 0).toLocaleString()}</td>
-      <td>₱${(c.remaining || 0).toLocaleString()}</td>
-    </tr>
-  `).join('');
-  
-  console.log('Table rendered with', committeesWithData.length, 'committees and their data');
+  try {
+    // Fetch budget data for all committees at once
+    const budgetResponse = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const budgetData = await budgetResponse.json();
+    const committeesBudget = budgetData.committees || [];
+    console.log('Budget data loaded:', committeesBudget.length);
+
+    // Process each committee - fetch projects individually using getCommitteeProjects
+    const committeesWithData = await Promise.all(committees.map(async (committee) => {
+      try {
+        // Fetch projects for this committee using the correct endpoint
+        const projectsResponse = await fetch(`/api/getCommitteeProjects?barangay=${encodeURIComponent(userBarangay)}&committeeName=${encodeURIComponent(committee.committeeName)}`, {
+          credentials: 'include'
+        });
+        
+        const projectsText = await projectsResponse.text();
+        
+        // Parse the response (it could be a JSON array or "ERROR" string)
+        let projects = [];
+        if (projectsText !== 'ERROR' && projectsText) {
+          try {
+            projects = JSON.parse(projectsText);
+          } catch (parseError) {
+            console.error(`Failed to parse projects for ${committee.committeeName}:`, projectsText);
+            projects = [];
+          }
+        }
+        
+        // Calculate project stats
+        const pendingProjects = projects.filter(p => p.status === 'PENDING').length;
+        const approvedProjects = projects.filter(p => p.status === 'APPROVED').length;
+        
+        // Find budget for this committee
+        const committeeBudget = committeesBudget.find(b => b.committeeName === committee.committeeName);
+        const totalBudget = committeeBudget?.allocated || 0;
+        const spent = committeeBudget?.spent || 0;
+        const remaining = committeeBudget?.remaining || (totalBudget - spent);
+        
+        return {
+          ...committee,
+          pendingProjects,
+          approvedProjects,
+          totalBudget,
+          spent,
+          remaining
+        };
+      } catch (error) {
+        console.error(`Error loading data for committee ${committee.committeeName}:`, error);
+        return {
+          ...committee,
+          pendingProjects: 0,
+          approvedProjects: 0,
+          totalBudget: 0,
+          spent: 0,
+          remaining: 0
+        };
+      }
+    }));
+    
+    // Render the table
+    tbody.innerHTML = committeesWithData.map((c, i) => `
+      <tr style="animation-delay:${i * 0.05}s">
+        <td class="project-name-cell">${escapeHtml(c.committeeName)}</td>
+        <td>${c.headName ? escapeHtml(c.headName) : '<span style="color:var(--muted)">Not assigned</span>'}</td>
+        <td class="pending-count">${c.pendingProjects}</td>
+        <td class="approved-count">${c.approvedProjects}</td>
+        <td>₱${(c.totalBudget || 0).toLocaleString()}</td>
+        <td>₱${(c.spent || 0).toLocaleString()}</td>
+        <td>₱${(c.remaining || 0).toLocaleString()}</td>
+      </tr>
+    `).join('');
+    
+    console.log('Table rendered with', committeesWithData.length, 'committees and their data');
+  } catch (error) {
+    console.error('Error loading committees table:', error);
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="7">Error loading committee data. Please refresh the page.</td>
+      </tr>
+    `;
+  }
 }
 
 async function deleteCommittee(committeeName) {
