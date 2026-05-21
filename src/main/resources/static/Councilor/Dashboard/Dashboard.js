@@ -4,27 +4,32 @@ const userBarangay = localStorage.getItem('sk_barangay') || '';
 
 // Show appropriate view based on role
 function showRoleView() {
-  // Hide all views first
-  document.getElementById('councilorView').style.display = 'none';
-  document.getElementById('treasurerView').style.display = 'none';
-  document.getElementById('chairmanView').style.display = 'none';
-  
-  // Update role label
-  const roleLabel = document.getElementById('dash-greet-sub');
-  
-  if (userPrivilege === 'TREASURER') {
-    document.getElementById('treasurerView').style.display = 'block';
-    roleLabel.textContent = 'Treasurer';
-    loadTreasurerDashboard();
-  } else if (userPrivilege === 'CHAIRMAN') {
-    document.getElementById('chairmanView').style.display = 'block';
-    roleLabel.textContent = 'Chairman';
-    loadChairmanDashboard();
-  } else {
-    document.getElementById('councilorView').style.display = 'block';
-    roleLabel.textContent = 'Councilor';
-    loadCouncilorDashboard();
-  }
+    const privilege = localStorage.getItem('sk_privilege') || '';
+    const userType = localStorage.getItem('sk_user_type') || '';
+    
+    const isAdminOrDeveloper = privilege === 'ADMIN' || userType === 'developer';
+    const isChairman = privilege === 'CHAIRMAN';
+    const isTreasurer = privilege === 'TREASURER';
+    
+    // Show/hide main role views
+    const councilorView = document.getElementById('councilorView');
+    const treasurerView = document.getElementById('treasurerView');
+    const chairmanView = document.getElementById('chairmanView');
+    
+    if (councilorView) councilorView.style.display = (!isChairman && !isTreasurer && !isAdminOrDeveloper) ? 'block' : 'none';
+    if (treasurerView) treasurerView.style.display = (isTreasurer || isAdminOrDeveloper) ? 'block' : 'none';
+    if (chairmanView) chairmanView.style.display = (isChairman || isAdminOrDeveloper) ? 'block' : 'none';
+    
+    // Load the appropriate dashboard data
+    if (isTreasurer || isAdminOrDeveloper) {
+        loadTreasurerDashboard();  // This will now call loadTreasurerBudget()
+    } else if (isChairman) {
+        loadChairmanDashboard();
+    } else {
+        loadCouncilorDashboard();
+    }
+    
+    console.log('Role view updated:', { isAdminOrDeveloper, isChairman, isTreasurer });
 }
 
 // ==================== COUNCILOR VIEW ====================
@@ -132,6 +137,7 @@ async function loadTreasurerDashboard() {
   await loadExpenditureBar();
   await loadCommitteeCharts();
   await loadRecentExpenditures();
+  await loadTreasurerBudget();
 }
 
 async function loadExpenditureBar() {
@@ -153,6 +159,126 @@ async function loadExpenditureBar() {
   } catch (error) {
     console.error('Error loading expenditure bar:', error);
   }
+}
+
+async function loadTreasurerBudget() {
+    try {
+        const barangay = Session.barangay;
+        if (!barangay) return;
+        
+        const response = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(barangay)}`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        console.log('Budget data for Treasurer:', data);
+        
+        const budgetCard = document.getElementById('budgetCard');
+        if (!budgetCard) return;
+        
+        const totalBudget = data.totalBudget || 0;
+        const committees = data.committees || [];
+        const totalSpent = committees.reduce((sum, c) => sum + (c.spent || 0), 0);
+        const remaining = totalBudget - totalSpent;
+        
+        if (totalBudget === 0 && committees.length === 0) {
+            budgetCard.innerHTML = `
+                <div style="color:var(--muted);font-size:0.85rem; text-align: center; padding: 1rem;">
+                    No budget has been set yet. Click "Set Budget" to get started.
+                </div>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="openBudgetModal()">Set Budget</button>
+                </div>
+            `;
+            return;
+        }
+        
+        // Calculate percentage spent
+        const percentageSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+        
+        budgetCard.innerHTML = `
+            <div class="budget-top">
+                <div>
+                    <div class="budget-total-label">Total SK Budget</div>
+                    <div class="budget-total-value">
+                        ₱${totalBudget.toLocaleString('en-PH')}
+                    </div>
+                </div>
+                <div class="budget-meta">
+                    Spent: ₱${totalSpent.toLocaleString('en-PH')}<br>
+                    Remaining: ₱${remaining.toLocaleString('en-PH')}
+                </div>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" style="width: ${Math.min(percentageSpent, 100)}%"></div>
+            </div>
+            <div class="budget-percentage">${percentageSpent.toFixed(1)}% utilized</div>
+            
+            <div class="committee-rows" style="margin-top: 1.5rem;">
+                <div class="section-heading" style="margin-bottom: 0.75rem;">Committee Allocations</div>
+                ${committees.length === 0 ? 
+                    '<div style="color:var(--muted);font-size:0.82rem">No committee allocations yet.</div>' : 
+                    committees.map(c => {
+                        const pct = c.allocated > 0 ? Math.min((c.spent / c.allocated) * 100, 100) : 0;
+                        const over = c.spent > c.allocated;
+                        return `
+                            <div class="committee-row">
+                                <div class="committee-row-header">
+                                    <span class="committee-row-name">${escapeHtml(c.committeeName)}</span>
+                                    <span class="committee-row-amounts">
+                                        ₱${(c.spent || 0).toLocaleString('en-PH')} /
+                                        ₱${(c.allocated || 0).toLocaleString('en-PH')}
+                                    </span>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill ${over ? 'over' : ''}" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')
+                }
+            </div>
+            
+            <div style="margin-top: 1.5rem; text-align: right;">
+                <button class="btn btn-outline" onclick="openBudgetModal()">Edit Budget</button>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error loading budget:', error);
+        const budgetCard = document.getElementById('budgetCard');
+        if (budgetCard) {
+            budgetCard.innerHTML = `
+                <div style="color:var(--muted);font-size:0.85rem; text-align: center; padding: 1rem;">
+                    Could not load budget data. Please try again.
+                </div>
+            `;
+        }
+    }
+}
+
+// Show budget section only for Treasurer
+function showBudgetForTreasurer() {
+    const privilege = Session.privilege;
+    const userType = Session.userType;
+    
+    const isTreasurer = privilege === 'TREASURER';
+    const isAdmin = privilege === 'ADMIN' || userType === 'developer';
+    
+    const budgetSection = document.getElementById('treasurerBudgetSection');
+    if (budgetSection) {
+        budgetSection.style.display = (isTreasurer || isAdmin) ? 'block' : 'none';
+    }
+    
+    if (isTreasurer || isAdmin) {
+        loadTreasurerBudget();
+    }
+}
+
+// Open budget modal (you'll need to implement this or link to Budget page)
+function openBudgetModal() {
+    window.location.href = '/Councilor/Budget/Budget';
 }
 
 async function loadCommitteeCharts() {
@@ -258,7 +384,7 @@ async function loadChairmanStats() {
 }
 
 async function loadCommitteesTable() {
-  const tbody = document.getElementById('committeesTableBody');  // ← Changed from 'projectTableBody'
+  const tbody = document.getElementById('committeesTableBody');
   if (!tbody) {
     console.error('committeesTableBody not found!');
     return;
@@ -276,22 +402,92 @@ async function loadCommitteesTable() {
     return;
   }
 
-  const userPrivilege = localStorage.getItem('sk_privilege') || '';
-  const isChairman = userPrivilege === 'CHAIRMAN';
+  // Show loading state
+  tbody.innerHTML = '<tr><td colspan="7"><div class="loader"><span></span><span></span><span></span></div></tr>';
 
-  tbody.innerHTML = committees.map((c, i) => `
-    <tr style="animation-delay:${i * 0.05}s">
-      <td class="project-name-cell">${escapeHtml(c.committeeName)}</td>
-      <td>${c.headName ? escapeHtml(c.headName) : '<span style="color:var(--muted)">Not assigned</span>'}</td>
-      <td class="pending-count">—</td>
-      <td class="approved-count">—</td>
-      <td>—</td>
-      <td>—</td>
-      <td>—</td>
-    </tr>
-  `).join('');
-  
-  console.log('Table rendered with', committees.length, 'committees');
+  try {
+    // Fetch budget data for all committees at once
+    const budgetResponse = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const budgetData = await budgetResponse.json();
+    const committeesBudget = budgetData.committees || [];
+    console.log('Budget data loaded:', committeesBudget.length);
+
+    // Process each committee - fetch projects individually using getCommitteeProjects
+    const committeesWithData = await Promise.all(committees.map(async (committee) => {
+      try {
+        // Fetch projects for this committee using the correct endpoint
+        const projectsResponse = await fetch(`/api/getCommitteeProjects?barangay=${encodeURIComponent(userBarangay)}&committeeName=${encodeURIComponent(committee.committeeName)}`, {
+          credentials: 'include'
+        });
+        
+        const projectsText = await projectsResponse.text();
+        
+        // Parse the response (it could be a JSON array or "ERROR" string)
+        let projects = [];
+        if (projectsText !== 'ERROR' && projectsText) {
+          try {
+            projects = JSON.parse(projectsText);
+          } catch (parseError) {
+            console.error(`Failed to parse projects for ${committee.committeeName}:`, projectsText);
+            projects = [];
+          }
+        }
+        
+        // Calculate project stats
+        const pendingProjects = projects.filter(p => p.status === 'PENDING').length;
+        const approvedProjects = projects.filter(p => p.status === 'APPROVED').length;
+        
+        // Find budget for this committee
+        const committeeBudget = committeesBudget.find(b => b.committeeName === committee.committeeName);
+        const totalBudget = committeeBudget?.allocated || 0;
+        const spent = committeeBudget?.spent || 0;
+        const remaining = committeeBudget?.remaining || (totalBudget - spent);
+        
+        return {
+          ...committee,
+          pendingProjects,
+          approvedProjects,
+          totalBudget,
+          spent,
+          remaining
+        };
+      } catch (error) {
+        console.error(`Error loading data for committee ${committee.committeeName}:`, error);
+        return {
+          ...committee,
+          pendingProjects: 0,
+          approvedProjects: 0,
+          totalBudget: 0,
+          spent: 0,
+          remaining: 0
+        };
+      }
+    }));
+    
+    // Render the table
+    tbody.innerHTML = committeesWithData.map((c, i) => `
+      <tr style="animation-delay:${i * 0.05}s">
+        <td class="project-name-cell">${escapeHtml(c.committeeName)}</td>
+        <td>${c.headName ? escapeHtml(c.headName) : '<span style="color:var(--muted)">Not assigned</span>'}</td>
+        <td class="pending-count">${c.pendingProjects}</td>
+        <td class="approved-count">${c.approvedProjects}</td>
+        <td>₱${(c.totalBudget || 0).toLocaleString()}</td>
+        <td>₱${(c.spent || 0).toLocaleString()}</td>
+        <td>₱${(c.remaining || 0).toLocaleString()}</td>
+      </tr>
+    `).join('');
+    
+    console.log('Table rendered with', committeesWithData.length, 'committees and their data');
+  } catch (error) {
+    console.error('Error loading committees table:', error);
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="7">Error loading committee data. Please refresh the page.</td>
+      </tr>
+    `;
+  }
 }
 
 async function deleteCommittee(committeeName) {
@@ -393,6 +589,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
   }
-  
+  showBudgetForTreasurer();
   showRoleView();
 });

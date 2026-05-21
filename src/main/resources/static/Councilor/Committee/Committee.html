@@ -67,15 +67,15 @@
   <div>
     <div class="section-heading">Committees</div>
     <div class="filter-bar">
-      <select id="committeeFilter" onchange="onCommitteeChange()">
+      <select id="committeeSelect" onchange="onCommitteeChange()">
         <option value="">Loading committees…</option>
       </select>
       <input type="text" id="searchInput" placeholder="Search committees…" oninput="applyFilters()"/>
       <button class="btn-add" onclick="openModal()">+ Add Committee</button>
     </div>
 
-    <div class="table-wrap">
-      <table class="project-table">
+    <div class="table-container">
+      <table class="users-table">
         <thead>
           <tr>
             <th>Committee Name</th>
