@@ -1,3 +1,5 @@
+console.log('Budget.js loaded - checking auth...')
+
 const userPrivilege = localStorage.getItem('sk_privilege') || '';
 const userBarangay = localStorage.getItem('sk_barangay') || '';
 
