@@ -361,7 +361,12 @@ function esc(s) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Direct auth check using your working endpoint
+  // Check authentication
+  if (!localStorage.getItem('sk_name')) {
+    window.location.href = '/Councilor/Log-in/Login';
+    return;
+  }
+  
   try {
     const response = await fetch('https://sklinaw.onrender.com/api/check-auth', {
       credentials: 'include',
@@ -369,13 +374,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     const data = await response.json();
     
-    if (!data.authenticated || !localStorage.getItem('sk_name')) {
-      Session.clear();
+    if (!data.authenticated) {
+      localStorage.clear();
       window.location.href = '/Councilor/Log-in/Login';
       return;
     }
     
-    // User is authenticated, continue with page initialization
+    // User is authenticated, update UI
     const nameEl = document.getElementById('nameEl');
     const roleEl = document.getElementById('roleEl');
     const avatarEl = document.getElementById('avatarEl');
@@ -384,26 +389,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
     if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
     
-    const greetingName = localStorage.getItem('sk_name');
-    const greetNameEl = document.getElementById('dash-greet-name');
-    if (greetNameEl && greetingName) {
-      greetNameEl.textContent = greetingName.split(' ')[0];
-    }
-    
-    const today = new Date();
-    const dateEl = document.getElementById('dash-today');
-    if (dateEl) {
-      dateEl.textContent = today.toLocaleDateString('en-PH', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-      });
-    }
-    
-    showBudgetForTreasurer();
-    showRoleView();
-    
   } catch (error) {
     console.error('Auth check error:', error);
-    Session.clear();
     window.location.href = '/Councilor/Log-in/Login';
   }
 });
