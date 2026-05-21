@@ -146,6 +146,347 @@
   overflow: hidden;
 }
 
+/* Committee Page Table Styles */
+
+/* Table container - matches your HTML */
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    margin-top: 1rem;
+}
+
+/* Committee table - matches your table class */
+.committees-table,
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+/* Table header */
+.committees-table thead tr,
+.users-table thead tr {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.committees-table th,
+.users-table th {
+    text-align: left;
+    padding: 1rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+}
+
+/* Table rows */
+.committees-table tbody tr,
+.users-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.committees-table tbody tr:hover,
+.users-table tbody tr:hover {
+    background: rgba(11, 191, 181, 0.04);
+}
+
+/* Table cells */
+.committees-table td,
+.users-table td {
+    padding: 1rem 0.75rem;
+    color: var(--text);
+    vertical-align: middle;
+}
+
+/* Project name cell (committee name) */
+.project-name-cell {
+    font-weight: 600;
+    color: var(--teal);
+}
+
+/* Empty state row */
+.empty-row td {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+/* Loader row */
+.loader-row td {
+    text-align: center;
+    padding: 2.5rem;
+}
+
+/* Budget section */
+.budget-section {
+    margin-bottom: 2rem;
+}
+
+.section-heading {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text);
+}
+
+.budget-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.budget-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.budget-total-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.budget-total-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--teal);
+}
+
+.budget-meta {
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.progress-track {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0.75rem 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--teal);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.progress-fill.over {
+    background: var(--rejected);
+}
+
+.budget-percentage {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: right;
+}
+
+.committee-rows {
+    margin-top: 1rem;
+}
+
+.committee-row {
+    margin-bottom: 0.75rem;
+}
+
+.committee-row-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.committee-row-name {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.committee-row-amounts {
+    color: var(--muted);
+}
+
+/* Filter bar */
+.filter-bar {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--surface);
+    border-radius: 12px;
+}
+
+.filter-bar select,
+.filter-bar input {
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.85rem;
+}
+
+.filter-bar select {
+    min-width: 200px;
+}
+
+.filter-bar input {
+    flex: 1;
+}
+
+/* Page header */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+}
+
+.page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+    color: var(--muted);
+    font-size: 0.86rem;
+    margin-top: 2px;
+}
+
+.btn-primary {
+    background: var(--teal);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--teal-dark);
+    transform: translateY(-1px);
+}
+
+/* Modal styles */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-overlay.open {
+    display: flex;
+}
+
+.modal {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid var(--border);
+}
+
+.modal h2 {
+    margin-bottom: 1.5rem;
+    font-family: 'Syne', sans-serif;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.btn-cancel {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-submit {
+    background: var(--teal);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Sidebar styles override */
+.nav-item {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.nav-item:hover {
+    background: var(--surface2);
+}
+
+.nav-item.active {
+    background: var(--teal);
+    color: white;
+}
+
+/* Logout button */
+.btn-logout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 8px 12px;
+    width: 100%;
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.btn-logout:hover {
+    background: var(--surface2);
+    color: var(--rejected);
+}
+
 .project-name-cell { font-weight: 600; }
 .project-purpose-cell { color: var(--muted); font-size: 0.8rem; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cost-cell {
