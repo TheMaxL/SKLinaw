@@ -1,3 +1,5 @@
+console.log('Budget.js loaded - checking auth...')
+
 const userPrivilege = localStorage.getItem('sk_privilege') || '';
 const userBarangay = localStorage.getItem('sk_barangay') || '';
 
@@ -6,11 +8,8 @@ const COLORS = [
   '#EC4899','#3B82F6','#F97316','#8B5CF6',
 ];
 
-const session = {
-  name: localStorage.getItem('sk_name') || '',
-  barangay: localStorage.getItem('sk_barangay') || '',
-  privilege: localStorage.getItem('sk_privilege') || ''
-};
+const userPrivilege = Session.privilege;
+const userBarangay = Session.barangay;
 
 // Role check - Treasurer or Chairman can edit
 const canEditBudget = session.privilege === 'CHAIRMAN' || session.privilege === 'TREASURER' || session.privilege === 'ADMIN';
@@ -19,7 +18,7 @@ const canEditBudget = session.privilege === 'CHAIRMAN' || session.privilege === 
 if (document.getElementById('nameEl')) {
   document.getElementById('nameEl').textContent = session.name;
   document.getElementById('avatarEl').textContent = session.name.charAt(0).toUpperCase();
-  document.getElementById('barangayLabel').textContent = session.barangay;
+  document.getElementById('barangayLabel').textContent = Session.barangay;
 }
 
 // Show read-only guard if not treasurer/chairman
@@ -44,7 +43,7 @@ async function loadCommittees() {
   }
   
   try {
-    const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(session.barangay)}`, {
+    const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(Session.barangay)}`, {
       credentials: 'include'
     });
     
@@ -73,7 +72,7 @@ async function loadCurrentBudget() {
   }
   
   try {
-    const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(session.barangay)}`, {
+    const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(Session.barangay)}`, {
       credentials: 'include'
     });
     
@@ -308,7 +307,7 @@ async function saveBudget() {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ 
-        barangay: session.barangay, 
+        barangay: Session.barangay, 
         totalBudget: total, 
         allocations 
       })
@@ -364,37 +363,38 @@ function esc(s) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Check authentication
   if (!localStorage.getItem('sk_name')) {
     window.location.href = '/Councilor/Log-in/Login';
     return;
   }
-  const isAuthenticated = await checkAuth();
-  if (!isAuthenticated) {
-    Session.clear();
-    window.location.href = '/Councilor/Log-in/Login';
-    return;
-  }
-  const nameEl = document.getElementById('nameEl');
-  const roleEl = document.getElementById('roleEl');
-  const avatarEl = document.getElementById('avatarEl');
   
-  if (nameEl) nameEl.textContent = localStorage.getItem('sk_name');
-  if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
-  if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
-  const greetingName = localStorage.getItem('sk_name');
-  const greetNameEl = document.getElementById('dash-greet-name');
-  if (greetNameEl && greetingName) {
-    greetNameEl.textContent = greetingName.split(' ')[0];
-  }
-  const today = new Date();
-  const dateEl = document.getElementById('dash-today');
-  if (dateEl) {
-    dateEl.textContent = today.toLocaleDateString('en-PH', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  try {
+    const response = await fetch('https://sklinaw.onrender.com/api/check-auth', {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
     });
+    const data = await response.json();
+    
+    if (!data.authenticated) {
+      localStorage.clear();
+      window.location.href = '/Councilor/Log-in/Login';
+      return;
+    }
+    
+    // User is authenticated, update UI
+    const nameEl = document.getElementById('nameEl');
+    const roleEl = document.getElementById('roleEl');
+    const avatarEl = document.getElementById('avatarEl');
+    
+    if (nameEl) nameEl.textContent = localStorage.getItem('sk_name');
+    if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
+    if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
+    
+  } catch (error) {
+    console.error('Auth check error:', error);
+    window.location.href = '/Councilor/Log-in/Login';
   }
-  
-  showRoleView();
 });
 
 // Make functions global for onclick handlers

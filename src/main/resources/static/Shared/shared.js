@@ -69,7 +69,7 @@ function flashError(id) {
 // ── Authenticated Fetch Wrapper ────────────────────────────────
 async function authFetch(url, options = {}) {
   const defaultOptions = {
-    credentials: 'include', // Important for session cookies
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers
@@ -81,9 +81,8 @@ async function authFetch(url, options = {}) {
   try {
     const response = await fetch(url, mergedOptions);
     
-    // If unauthorized, redirect to login
-    if (response.status === 401) {
-      const publicPages = ['public.html', 'index.html', 'Login', 'signup.html'];
+    if (response.status === 401 || response.status === 403) {
+      const publicPages = ['public.html', 'index.html', 'Login', 'signup.html', 'home.html'];
       const currentPage = window.location.pathname.split('/').pop();
       
       if (!publicPages.includes(currentPage) && !Session.name) {
@@ -173,7 +172,7 @@ const Session = {
       case 'treasurer':
         return this.isTreasurer() || this.isAdmin();
       case 'councilor':
-        return true; // All logged-in users are councilors
+        return true;
       default:
         return false;
     }
@@ -219,7 +218,7 @@ function isPublicPage() {
   return publicPages.includes(currentPage);
 }
 
-// ── Authentication Check ────────────────────────────────
+// ── Authentication Check (FIXED) ────────────────────────────────
 async function checkAuth() {
   // Skip auth check for public pages
   if (isPublicPage()) {
@@ -227,13 +226,13 @@ async function checkAuth() {
   }
   
   try {
-    // This will now use the updated API variable
-    const response = await fetch(`${API}/auth/session`, {
+    // FIXED: Use /check-auth endpoint instead of /auth/session
+    const response = await fetch(`${API}/check-auth`, {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' }
     });
     
-    if (response.status === 401) {
+    if (response.status === 401 || response.status === 403) {
       return false;
     }
     
@@ -287,9 +286,13 @@ async function protectPage(requiredView) {
 // ── Get Default Redirect Based on Role ────────────────────────────────
 function getDefaultRedirect() {
   if (Session.isAdmin() || Session.isDeveloper()) {
-    return '/Councilor/Admin/admin';
-  } else {
+    return '/Admin/Approval/admin';
+  } else if (Session.isChairman()) {
     return '/Councilor/Dashboard/Dashboard';
+  } else if (Session.isTreasurer()) {
+    return '/Councilor/Treasurer/treasurer';
+  } else {
+    return '/Councilor/Home/home';
   }
 }
 
@@ -305,7 +308,6 @@ async function loadUserInfo() {
       return;
     }
     
-    // Get user role title
     const roleTitle = Session.getRoleTitle();
     const displayRole = roleTitle + (userBarangay ? ` (${userBarangay})` : '');
     
@@ -323,7 +325,6 @@ function getUserInitials(name) {
 }
 
 function updateUserDisplay(name, roleDisplay, avatarText, roleType) {
-  // Update sidebar footer elements
   const nameEl = document.getElementById('nameEl');
   const roleEl = document.getElementById('roleEl');
   const avatarEl = document.getElementById('avatarEl');
@@ -332,29 +333,23 @@ function updateUserDisplay(name, roleDisplay, avatarText, roleType) {
   if (roleEl) roleEl.textContent = roleDisplay;
   if (avatarEl) avatarEl.textContent = avatarText;
   
-  // Update topbar greeting elements
   const greetNameEl = document.getElementById('dash-greet-name');
   const greetSubEl = document.getElementById('dash-greet-sub');
   
   if (greetNameEl) greetNameEl.textContent = name;
   if (greetSubEl) greetSubEl.textContent = roleDisplay;
   
-  // Update topbar date
   updateTopbarDate();
-  
-  // Show role-specific UI elements
   showRoleSpecificElements(roleType);
 }
 
 function showRoleSpecificElements(roleType) {
   const roleClass = roleType ? roleType.toLowerCase() : '';
   
-  // Hide all role-specific elements first
   document.querySelectorAll('.role-specific').forEach(el => {
     el.style.display = 'none';
   });
   
-  // Show elements for current role
   if (roleClass) {
     const elementsToShow = document.querySelectorAll(`.role-${roleClass}`);
     elementsToShow.forEach(el => {
@@ -388,32 +383,27 @@ function setupRoleBasedNavigation() {
 // ── Logout Function ────────────────────────────────
 async function logout() {
   try {
-    // Call logout endpoint
     await fetch(`${API}/logout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
     }).catch(err => console.warn('Logout notification failed:', err));
     
-    // Clear local session
     Session.clear();
-    
     Toast.show('Logged out successfully');
     
-    // Redirect to home page
     setTimeout(() => {
-      window.location.href = '/Councilor/Home/home';
+      window.location.href = '/Councilor/Log-in/Login';
     }, 500);
   } catch (error) {
     console.error('Logout error:', error);
     Session.clear();
-    window.location.href = '/Councilor/Home/home.html';
+    window.location.href = '/Councilor/Log-in/Login';
   }
 }
 
 // ── NAVIGATION ─────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Load user info when page loads (skip for public pages)
   if (!isPublicPage()) {
     loadUserInfo();
     setupRoleBasedNavigation();
@@ -425,17 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
   buttons.forEach(btn => {
     const target = btn.dataset.page;
 
-    // Set active state
     if (target === currentPage) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
     }
 
-    // Prevent form submission behavior
     btn.setAttribute('type', 'button');
 
-    // Attach safe click handler
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const current = window.location.pathname.split('/').pop();
