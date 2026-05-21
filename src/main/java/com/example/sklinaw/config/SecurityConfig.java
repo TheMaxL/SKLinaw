@@ -189,7 +189,9 @@ public class SecurityConfig {
             "http://localhost:5500",
             "https://sklinaw.vercel.app",
             "https://*.vercel.app",
-            "https://sklinaw.onrender.com"
+            "https://sklinaw.onrender.com",
+            "https://TheMaxL.github.io",      
+            "https://*.github.io" 
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
