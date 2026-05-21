@@ -16,7 +16,7 @@ async function adminFetch(url, options = {}) {
     if (response.status === 401 || response.status === 403) {
         Toast.show('Session expired. Please login again.', true);
         setTimeout(() => {
-            window.location.href = '/Councilor/Log-in/Login.html';
+            window.location.href = '../Councilor/Log-in/Login';
         }, 1500);
         throw new Error('Unauthorized');
     }
@@ -716,7 +716,7 @@ function init() {
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', () => {
         localStorage.clear();
-        window.location.href = '../../Log-in/Login';
+        window.location.href = '../Councilor/Log-in/Login';
     }); 
     
     // Turnover button
