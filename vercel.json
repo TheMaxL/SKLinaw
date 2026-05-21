@@ -12,20 +12,34 @@
       "dest": "/src/main/resources/static/index.html"
     },
     {
+      "src": "/api/(.*)",
+      "dest": "https://sklinaw.onrender.com/api/$1",
+      "headers": {
+        "Access-Control-Allow-Credentials": "true"
+      }
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "https://sklinaw.onrender.com/admin/$1",
+      "headers": {
+        "Access-Control-Allow-Credentials": "true"
+      }
+    },
+    {
       "src": "/Shared/(.*)",
       "dest": "/src/main/resources/static/Shared/$1"
     },
     {
-      "src": "/Councilor/Home/home",
-      "dest": "/src/main/resources/static/Councilor/Home/home.html"
+      "src": "/Councilor/([^/]+)/([^/]+)",
+      "dest": "/src/main/resources/static/Councilor/$1/$2.html"
     },
     {
-      "src": "/Councilor/Dashboard/dashboard",
-      "dest": "/src/main/resources/static/Councilor/Dashboard/dashboard.html"
+      "src": "/Admin/Approval/([^/]+)",
+      "dest": "/src/main/resources/static/Admin/Approval/$1.html"
     },
     {
-      "src": "/Admin/Admin",
-      "dest": "/src/main/resources/static/Admin/Admin.html"
+      "src": "/Admin/([^/]+)/([^/]+)",
+      "dest": "/src/main/resources/static/Admin/$1/$2.html"
     },
     {
       "src": "/(.*)\\.(css|js|png|jpg|svg|ico|json)$",
