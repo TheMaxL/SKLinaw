@@ -1,8 +1,8 @@
 const userPrivilege = localStorage.getItem('sk_privilege') || '';
 const userBarangay = localStorage.getItem('sk_barangay') || '';
 
-const pathParts = window.location.pathname.split('/');
-const committeeName = decodeURIComponent(pathParts[pathParts.length - 1]);
+const urlParams = new URLSearchParams(window.location.search);
+const committeeName = urlParams.get('name');
 
 if (!committeeName) {
   window.location.href = 'Committee';
