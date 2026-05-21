@@ -1,9 +1,13 @@
 package com.example.sklinaw.config;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,9 +22,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -31,6 +44,10 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 // ========== PUBLIC HTML PAGES ==========
                 .requestMatchers("/Councilor/Home/**").permitAll()
@@ -96,16 +113,71 @@ public class SecurityConfig {
                 .requestMatchers("/api/addProject").authenticated()
                 .requestMatchers("/api/addCommitteeMember").authenticated()
                 .requestMatchers("/api/removeCommitteeMember").authenticated()
+                .requestMatchers("/api/getAllProjects").authenticated()
+                .requestMatchers("/api/getCommitteeProjects").authenticated()
+                .requestMatchers("/api/getProjectsByCouncilor").authenticated()
+                .requestMatchers("/api/getProjects").authenticated()
+                .requestMatchers("/api/updateProject").authenticated()
+                .requestMatchers("/api/deleteProject").authenticated()
+                .requestMatchers("/api/approveProject").hasRole("CHAIRMAN")
+                .requestMatchers("/api/rejectProject").hasRole("CHAIRMAN")
                 
                 // All other requests require authentication
                 .anyRequest().authenticated()
             )
             
-            // Disable HTTP Basic (use session-based auth)
             .httpBasic(httpBasic -> httpBasic.disable())
             .formLogin(form -> form.disable());
         
         return http.build();
+    }
+    
+    @Bean
+    public Filter tokenAuthenticationFilter() {
+        return new Filter() {
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+                    throws IOException, ServletException {
+                HttpServletRequest httpRequest = (HttpServletRequest) request;
+                String authHeader = httpRequest.getHeader("Authorization");
+                
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    String token = authHeader.substring(7);
+                    
+                    // Access the token map from AuthController using reflection
+                    try {
+                        Class<?> authControllerClass = Class.forName("com.example.sklinaw.controller.AuthController");
+                        java.lang.reflect.Field field = authControllerClass.getDeclaredField("activeTokens");
+                        field.setAccessible(true);
+                        @SuppressWarnings("unchecked")
+                        Map<String, Map<String, Object>> activeTokens = (Map<String, Map<String, Object>>) field.get(null);
+                        
+                        Map<String, Object> sessionData = activeTokens.get(token);
+                        
+                        if (sessionData != null) {
+                            String name = (String) sessionData.get("name");
+                            String privilege = (String) sessionData.get("privilege");
+                            
+                            org.springframework.security.core.authority.SimpleGrantedAuthority authority = 
+                                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + privilege);
+                            
+                            org.springframework.security.authentication.UsernamePasswordAuthenticationToken authentication = 
+                                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                    name, null, java.util.Collections.singletonList(authority));
+                            
+                            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(authentication);
+                            System.out.println("Token authenticated for: " + name + " with role: ROLE_" + privilege);
+                        } else {
+                            System.out.println("Invalid token: " + token);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error accessing token map: " + e.getMessage());
+                    }
+                }
+                
+                chain.doFilter(request, response);
+            }
+        };
     }
 
     @Bean
@@ -128,15 +200,11 @@ public class SecurityConfig {
             "Accept",
             "Origin",
             "Access-Control-Request-Method",
-            "Access-Control-Request-Headers",
-            "Cookie",
-            "Set-Cookie"
+            "Access-Control-Request-Headers"
         ));
         configuration.setExposedHeaders(Arrays.asList(
             "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials",
-            "Set-Cookie",
-            "Cookie"
+            "Access-Control-Allow-Credentials"
         ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
@@ -150,11 +218,9 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(DataSource dataSource) {
         JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
         
-        // Check if running on Render (PostgreSQL) or local (SQLite)
         String dbUrl = System.getenv("DB_URL");
         
         if (dbUrl != null && !dbUrl.isEmpty()) {
-            // PostgreSQL syntax (no changes needed, same as SQLite for these queries)
             users.setUsersByUsernameQuery(
                 "SELECT username, password, enabled FROM (" +
                 "SELECT Name as username, Password as password, approved as enabled FROM Councilors " +
@@ -173,7 +239,6 @@ public class SecurityConfig {
                 ") AS all_authorities WHERE username = ?"
             );
         } else {
-            // SQLite syntax (same queries work)
             users.setUsersByUsernameQuery(
                 "SELECT username, password, enabled FROM (" +
                 "SELECT Name as username, Password as password, approved as enabled FROM Councilors " +
@@ -199,20 +264,17 @@ public class SecurityConfig {
 
     @Bean
     public DataSource dataSource() {
-        // Check if running on Render (PostgreSQL) or local (SQLite)
         String dbUrl = System.getenv("DB_URL");
         
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         
         if (dbUrl != null && !dbUrl.isEmpty()) {
-            // Running on Render - use PostgreSQL
             System.out.println("Using PostgreSQL database for production");
             dataSource.setDriverClassName("org.postgresql.Driver");
             dataSource.setUrl(dbUrl);
             dataSource.setUsername(System.getenv("DB_USER"));
             dataSource.setPassword(System.getenv("DB_PASS"));
         } else {
-            // Local development - use SQLite
             System.out.println("Using SQLite database for local development");
             dataSource.setDriverClassName("org.sqlite.JDBC");
             dataSource.setUrl("jdbc:sqlite:sklinaw.db");

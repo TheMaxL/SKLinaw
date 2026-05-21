@@ -46,8 +46,8 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
-    // Token storage (in production, use Redis or database)
-    private static final Map<String, Map<String, Object>> activeTokens = new ConcurrentHashMap<>();
+    // Token storage - made public static so SecurityConfig can access it
+    public static final Map<String, Map<String, Object>> activeTokens = new ConcurrentHashMap<>();
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
@@ -116,8 +116,10 @@ public class AuthController {
             
             activeTokens.put(token, sessionData);
             
-            System.out.println("Token created for user: " + name);
-            System.out.println("Login successful for: " + name);
+            System.out.println("=== TOKEN STORED ===");
+            System.out.println("Token: " + token);
+            System.out.println("User: " + name);
+            System.out.println("Active tokens count: " + activeTokens.size());
             
             // Return user data with token
             Map<String, Object> responseData = new HashMap<>();
