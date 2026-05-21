@@ -21,8 +21,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.Cookie;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -48,7 +50,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest, 
-                                    HttpServletRequest request) {
+                                    HttpServletRequest request, 
+                                    HttpServletResponse response) {
         try {
             String name = loginRequest.get("name");
             String password = loginRequest.get("password");
@@ -62,7 +65,7 @@ public class AuthController {
             String storedPassword = "";
             
             try (Connection conn = dataSource.getConnection()) {
-                // First, check Developer table (no barangay column)
+                // First, check Developer table
                 String devSql = "SELECT id, name, password, privilege FROM Developer WHERE name = ? AND approved = 1";
                 PreparedStatement devStmt = conn.prepareStatement(devSql);
                 devStmt.setString(1, name);
@@ -72,11 +75,11 @@ public class AuthController {
                     userId = devRs.getInt("id");
                     storedPassword = devRs.getString("password");
                     privilege = devRs.getString("privilege") != null ? devRs.getString("privilege") : "ADMIN";
-                    barangay = "System"; // Developers don't have a barangay
+                    barangay = "System";
                     userType = "developer";
                     System.out.println("Found user in Developer table");
                 } else {
-                    // Check Councilors table (has barangay column)
+                    // Check Councilors table
                     String councilorSql = "SELECT id, name, password, barangay, privilege FROM councilors WHERE name = ? AND approved = 1";
                     PreparedStatement councilorStmt = conn.prepareStatement(councilorSql);
                     councilorStmt.setString(1, name);
@@ -90,70 +93,55 @@ public class AuthController {
                         userType = "councilor";
                         System.out.println("Found user in Councilors table");
                     } else {
-                        return ResponseEntity.status(401).body(Map.of(
-                            "status", "INVALID", 
-                            "message", "User not found or not approved"
-                        ));
+                        return ResponseEntity.status(401).body(Map.of("status", "INVALID", "message", "User not found"));
                     }
                 }
                 
                 // Verify password
-                if (storedPassword == null || storedPassword.isEmpty()) {
-                    return ResponseEntity.status(401).body(Map.of(
-                        "status", "INVALID", 
-                        "message", "Invalid credentials"
-                    ));
-                }
-                
                 if (!passwordEncoder.matches(password, storedPassword)) {
-                    System.out.println("Password mismatch for user: " + name);
-                    return ResponseEntity.status(401).body(Map.of(
-                        "status", "INVALID", 
-                        "message", "Invalid credentials"
-                    ));
+                    return ResponseEntity.status(401).body(Map.of("status", "INVALID", "message", "Invalid credentials"));
                 }
             }
             
-            // Authenticate with Spring Security
-            UsernamePasswordAuthenticationToken authToken = 
-                new UsernamePasswordAuthenticationToken(name, password);
-            Authentication authentication = authenticationManager.authenticate(authToken);
-            
-            // Set the authentication in context
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            
-            // Force session creation
-            HttpSession session = request.getSession(true);
-            session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+            // ✅ CRITICAL: Create session and set cookie
+            HttpSession session = request.getSession(true); // true = create if doesn't exist
             session.setAttribute("userId", userId);
+            session.setAttribute("name", name);
             session.setAttribute("barangay", barangay);
             session.setAttribute("privilege", privilege);
             session.setAttribute("userType", userType);
             session.setMaxInactiveInterval(30 * 60); // 30 minutes
             
+            // ✅ CRITICAL: Set session cookie in response
+            Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
+            sessionCookie.setPath("/");
+            sessionCookie.setHttpOnly(true);
+            sessionCookie.setSecure(true);  // Required for HTTPS
+            sessionCookie.setAttribute("SameSite", "None");  // Required for cross-domain
+            response.addCookie(sessionCookie);
+            
+            // Also set the header explicitly
+            response.setHeader("Set-Cookie", 
+                "JSESSIONID=" + session.getId() + 
+                "; Path=/; HttpOnly; Secure; SameSite=None");
+            
+            System.out.println("Session created with ID: " + session.getId());
             System.out.println("Login successful for: " + name);
-            System.out.println("Session ID: " + session.getId());
-            System.out.println("User Type: " + userType);
-            System.out.println("Barangay: " + barangay);
-            System.out.println("Privilege: " + privilege);
             
             // Return user data
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "SUCCESS");
-            response.put("name", name);
-            response.put("barangay", barangay);
-            response.put("privilege", privilege);
-            response.put("id", String.valueOf(userId));
-            response.put("userType", userType);
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("status", "SUCCESS");
+            responseData.put("name", name);
+            responseData.put("barangay", barangay);
+            responseData.put("privilege", privilege);
+            responseData.put("id", String.valueOf(userId));
+            responseData.put("userType", userType);
             
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(responseData);
             
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(401).body(Map.of(
-                "status", "ERROR", 
-                "message", e.getMessage()
-            ));
+            return ResponseEntity.status(500).body(Map.of("status", "ERROR", "message", e.getMessage()));
         }
     }
 
