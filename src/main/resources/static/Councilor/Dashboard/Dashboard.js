@@ -41,7 +41,7 @@ async function loadCouncilorDashboard() {
 
 async function loadRecentProjects() {
   try {
-    const response = await authFetch(`/api/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`);
+    const response = await authFetch(`/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`);
     const projects = await response.json();
     const recent = projects.slice(0, 5);
     
@@ -65,7 +65,7 @@ async function loadRecentProjects() {
 
 async function loadBudgetPanel() {
     try {
-        const response = await authFetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
+        const response = await authFetch(`/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
         const text = await response.text();
         
         if (text === 'ERROR' || !text) {
@@ -109,7 +109,7 @@ async function loadBudgetPanel() {
 
 async function loadQuickStats() {
   try {
-    const response = await authFetch(`/api/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`);
+    const response = await authFetch(`/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`);
     const projects = await response.json();
     
     const total = projects.length;
@@ -134,7 +134,7 @@ async function loadTreasurerDashboard() {
 
 async function loadExpenditureBar() {
   try {
-    const response = await authFetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
+    const response = await authFetch(`/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
     const data = await response.json();
     
     const totalBudget = data.totalBudget || 0;
@@ -160,7 +160,7 @@ async function loadTreasurerBudget() {
         const barangay = Session.barangay;
         if (!barangay) return;
         
-        const response = await authFetch(`${API}/getBudget?barangay=${encodeURIComponent(barangay)}`);
+        const response = await authFetch(`/getBudget?barangay=${encodeURIComponent(barangay)}`);
         const data = await response.json();
         console.log('Budget data for Treasurer:', data);
         
@@ -271,7 +271,7 @@ function openBudgetModal() {
 
 async function loadCommitteeCharts() {
   try {
-    const response = await authFetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
+    const response = await authFetch(`/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
     const data = await response.json();
     const committees = data.committees || [];
     
@@ -305,7 +305,7 @@ async function loadCommitteeCharts() {
 
 async function loadRecentExpenditures() {
   try {
-    const response = await authFetch(`/api/getRecentExpenditures?barangay=${encodeURIComponent(userBarangay)}&limit=5`);
+    const response = await authFetch(`/getRecentExpenditures?barangay=${encodeURIComponent(userBarangay)}&limit=5`);
     const expenditures = await response.json();
     
     const container = document.getElementById('recentExpensesBody');
@@ -338,7 +338,7 @@ async function loadChairmanDashboard() {
 
 async function loadCommitteesList() {
   try {
-    const response = await authFetch(`/api/getCommittees?barangay=${encodeURIComponent(userBarangay)}`);
+    const response = await authFetch(`/getCommittees?barangay=${encodeURIComponent(userBarangay)}`);
     const committees = await response.json();
     window.allCommittees = committees;
     console.log('Committees loaded:', committees);
@@ -350,7 +350,7 @@ async function loadCommitteesList() {
 
 async function loadChairmanStats() {
   try {
-    const response = await authFetch(`/api/getAllProjects?barangay=${encodeURIComponent(userBarangay)}`);
+    const response = await authFetch(`/getAllProjects?barangay=${encodeURIComponent(userBarangay)}`);
     const projects = await response.json();
     
     const total = projects.length;
@@ -386,13 +386,13 @@ async function loadCommitteesTable() {
   tbody.innerHTML = '<tr><td colspan="7"><div class="loader"></div></td></tr>';
 
   try {
-    const budgetResponse = await authFetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
+    const budgetResponse = await authFetch(`/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
     const budgetData = await budgetResponse.json();
     const committeesBudget = budgetData.committees || [];
 
     const committeesWithData = await Promise.all(committees.map(async (committee) => {
       try {
-        const projectsResponse = await authFetch(`/api/getCommitteeProjects?barangay=${encodeURIComponent(userBarangay)}&committeeName=${encodeURIComponent(committee.committeeName)}`);
+        const projectsResponse = await authFetch(`/getCommitteeProjects?barangay=${encodeURIComponent(userBarangay)}&committeeName=${encodeURIComponent(committee.committeeName)}`);
         const projectsText = await projectsResponse.text();
         
         let projects = [];
@@ -410,7 +410,7 @@ async function loadCommitteesTable() {
         const committeeBudget = committeesBudget.find(b => b.committeeName === committee.committeeName);
         const totalBudget = committeeBudget?.allocated || 0;
         const spent = committeeBudget?.spent || 0;
-        const remaining = committeeBudget?.remaining || (totalBudget - spent);
+        const remaining = totalBudget - spent;
         
         return { ...committee, pendingProjects, approvedProjects, totalBudget, spent, remaining };
       } catch (error) {
