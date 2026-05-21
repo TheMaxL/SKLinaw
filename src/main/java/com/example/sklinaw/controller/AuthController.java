@@ -55,33 +55,62 @@ public class AuthController {
             
             System.out.println("Login attempt for user: " + name);
             
-            // First, check if user exists and get their details
-            String sql = "SELECT name, password, privilege, barangay, 'developer' as userType FROM Developer WHERE name = ? " +
-                         "UNION ALL " +
-                         "SELECT name, password, privilege, barangay, 'councilor' as userType FROM Councilors WHERE name = ?";
+            String barangay = "";
+            String privilege = "";
+            int userId = 0;
+            String userType = "";
+            String storedPassword = "";
             
-            Map<String, Object> userData = null;
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, name);
-                stmt.setString(2, name);
-                ResultSet rs = stmt.executeQuery();
+            try (Connection conn = dataSource.getConnection()) {
+                // First, check Developer table (no barangay column)
+                String devSql = "SELECT id, name, password, privilege FROM Developer WHERE name = ? AND approved = 1";
+                PreparedStatement devStmt = conn.prepareStatement(devSql);
+                devStmt.setString(1, name);
+                ResultSet devRs = devStmt.executeQuery();
                 
-                if (rs.next()) {
-                    userData = new HashMap<>();
-                    userData.put("name", rs.getString("name"));
-                    userData.put("privilege", rs.getString("privilege"));
-                    userData.put("barangay", rs.getString("barangay"));
-                    userData.put("userType", rs.getString("userType"));
-                    
-                    String storedPassword = rs.getString("password");
-                    
-                    // Verify password
-                    if (!passwordEncoder.matches(password, storedPassword)) {
-                        return ResponseEntity.status(401).body(Map.of("status", "INVALID", "message", "Invalid credentials"));
-                    }
+                if (devRs.next()) {
+                    userId = devRs.getInt("id");
+                    storedPassword = devRs.getString("password");
+                    privilege = devRs.getString("privilege") != null ? devRs.getString("privilege") : "ADMIN";
+                    barangay = "System"; // Developers don't have a barangay
+                    userType = "developer";
+                    System.out.println("Found user in Developer table");
                 } else {
-                    return ResponseEntity.status(401).body(Map.of("status", "INVALID", "message", "User not found"));
+                    // Check Councilors table (has barangay column)
+                    String councilorSql = "SELECT id, name, password, barangay, privilege FROM councilors WHERE name = ? AND approved = 1";
+                    PreparedStatement councilorStmt = conn.prepareStatement(councilorSql);
+                    councilorStmt.setString(1, name);
+                    ResultSet councilorRs = councilorStmt.executeQuery();
+                    
+                    if (councilorRs.next()) {
+                        userId = councilorRs.getInt("id");
+                        storedPassword = councilorRs.getString("password");
+                        barangay = councilorRs.getString("barangay");
+                        privilege = councilorRs.getString("privilege") != null ? councilorRs.getString("privilege") : "";
+                        userType = "councilor";
+                        System.out.println("Found user in Councilors table");
+                    } else {
+                        return ResponseEntity.status(401).body(Map.of(
+                            "status", "INVALID", 
+                            "message", "User not found or not approved"
+                        ));
+                    }
+                }
+                
+                // Verify password
+                if (storedPassword == null || storedPassword.isEmpty()) {
+                    return ResponseEntity.status(401).body(Map.of(
+                        "status", "INVALID", 
+                        "message", "Invalid credentials"
+                    ));
+                }
+                
+                if (!passwordEncoder.matches(password, storedPassword)) {
+                    System.out.println("Password mismatch for user: " + name);
+                    return ResponseEntity.status(401).body(Map.of(
+                        "status", "INVALID", 
+                        "message", "Invalid credentials"
+                    ));
                 }
             }
             
@@ -96,18 +125,35 @@ public class AuthController {
             // Force session creation
             HttpSession session = request.getSession(true);
             session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+            session.setAttribute("userId", userId);
+            session.setAttribute("barangay", barangay);
+            session.setAttribute("privilege", privilege);
+            session.setAttribute("userType", userType);
             session.setMaxInactiveInterval(30 * 60); // 30 minutes
             
             System.out.println("Login successful for: " + name);
             System.out.println("Session ID: " + session.getId());
-            System.out.println("User privilege: " + userData.get("privilege"));
+            System.out.println("User Type: " + userType);
+            System.out.println("Barangay: " + barangay);
+            System.out.println("Privilege: " + privilege);
             
             // Return user data
-            return ResponseEntity.ok(userData);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "SUCCESS");
+            response.put("name", name);
+            response.put("barangay", barangay);
+            response.put("privilege", privilege);
+            response.put("id", String.valueOf(userId));
+            response.put("userType", userType);
+            
+            return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(401).body(Map.of("status", "ERROR", "message", e.getMessage()));
+            return ResponseEntity.status(401).body(Map.of(
+                "status", "ERROR", 
+                "message", e.getMessage()
+            ));
         }
     }
 
@@ -141,6 +187,12 @@ public class AuthController {
         
         if (session != null) {
             response.put("sessionId", session.getId());
+            // Also return stored session attributes if needed
+            if (session.getAttribute("userType") != null) {
+                response.put("userType", session.getAttribute("userType"));
+                response.put("barangay", session.getAttribute("barangay"));
+                response.put("privilege", session.getAttribute("privilege"));
+            }
         }
         
         return ResponseEntity.ok(response);
