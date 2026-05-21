@@ -26,8 +26,16 @@
       }
     },
     {
-      "src": "/Shared/(.*)",
-      "dest": "/src/main/resources/static/Shared/$1"
+      "src": "/Shared/(.*)\\.(css|js)$",
+      "dest": "/src/main/resources/static/Shared/$1.$2"
+    },
+    {
+      "src": "/Councilor/([^/]+)/([^/]+)\\.(css|js)$",
+      "dest": "/src/main/resources/static/Councilor/$1/$2.$3"
+    },
+    {
+      "src": "/Admin/Approval/([^/]+)\\.(css|js)$",
+      "dest": "/src/main/resources/static/Admin/Approval/$1.$2"
     },
     {
       "src": "/Councilor/([^/]+)/([^/]+)",
@@ -36,14 +44,6 @@
     {
       "src": "/Admin/Approval/([^/]+)",
       "dest": "/src/main/resources/static/Admin/Approval/$1.html"
-    },
-    {
-      "src": "/Admin/([^/]+)/([^/]+)",
-      "dest": "/src/main/resources/static/Admin/$1/$2.html"
-    },
-    {
-      "src": "/(.*)\\.(css|js|png|jpg|svg|ico|json)$",
-      "dest": "/src/main/resources/static/$1.$2"
     },
     {
       "src": "/(.*)",
