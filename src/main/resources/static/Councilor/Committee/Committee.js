@@ -252,7 +252,7 @@ async function loadTotalBudget() {
 function onCommitteeChange() {
   const selected = document.getElementById('committeeFilter').value;
   if (selected) {
-    window.location.href = `committee-detail?name=${encodeURIComponent(selected)}`;
+    window.location.href = `/Councilor/Committee/committee-detail/${encodeURIComponent(committeeName)}`;
   }
 }
 
