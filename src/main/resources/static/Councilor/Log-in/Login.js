@@ -124,8 +124,16 @@ async function submitLogin() {
         console.log('Login response:', data);
         
         if (data.status === 'SUCCESS') {
+            console.log('Login response FULL:', data);
+            console.log('Token received:', data.token);
             // Store user session (includes token)
             storeUserSession(data);
+            const storedToken = localStorage.getItem('auth_token');
+            console.log('Token stored successfully?', !!storedToken);
+            
+            if (!storedToken) {
+                console.error('CRITICAL: Token was not stored!');
+            }
             
             // Get redirect URL and navigate
             const redirectUrl = getRedirectUrl(data.privilege, data.userType);
