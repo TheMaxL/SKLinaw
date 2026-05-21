@@ -74,8 +74,8 @@
       <button class="btn-add" onclick="openModal()">+ Add Committee</button>
     </div>
 
-    <div class="table-wrap">
-      <table class="project-table">
+    <div class="table-container">
+      <table class="users-table committees-table">
         <thead>
           <tr>
             <th>Committee Name</th>
@@ -85,7 +85,11 @@
           </tr>
         </thead>
         <tbody id="projectTableBody">
-          <tr class="loader-row"><td colspan="4"><div class="loader"><span></span><span></span><span></span></div></tr>
+          <tr class="loader-row">
+            <td colspan="4">
+              <div class="loader"><span></span><span></span><span></span></div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
