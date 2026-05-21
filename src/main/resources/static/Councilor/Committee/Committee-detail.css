@@ -1,6 +1,3 @@
-/* committee-detail.css - Specific styles for committee detail page */
-@import url('../shared.css');
-
 /* ── COMMITTEE HEADER ── */
 .committee-header {
   background: var(--surface);
