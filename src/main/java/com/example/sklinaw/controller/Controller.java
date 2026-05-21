@@ -183,22 +183,6 @@ public class Controller {
         return response;
     }
 
-    @GetMapping("/check-role")
-    public Map<String, Object> checkRole(Authentication authentication) {
-        Map<String, Object> response = new HashMap<>();
-        
-        if (authentication == null) {
-            response.put("authenticated", false);
-            return response;
-        }
-        
-        response.put("authenticated", true);
-        response.put("name", authentication.getName());
-        response.put("authorities", authentication.getAuthorities().toString());
-        
-        return response;
-    }
-
     @GetMapping("/councilors")
     public List<Account> getAllCouncilors() {
         String sql = "SELECT id, Name, Barangay, approved, privilege FROM Councilors WHERE approved = 1";
@@ -224,15 +208,6 @@ public class Controller {
             e.printStackTrace();
             return new ArrayList<>();
         }
-    }
-
-    @GetMapping("/check-session")
-    public ResponseEntity<?> checkSession(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).body(Map.of("authenticated", false));
-        }
-        return ResponseEntity.ok(Map.of("authenticated", true));
     }
 
     private String getRoleDisplay(String privilege) {

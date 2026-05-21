@@ -5,6 +5,8 @@ import java.util.Map;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
@@ -19,12 +21,9 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api")
@@ -46,11 +45,12 @@ public class AuthController {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    // Token storage (in production, use Redis or database)
+    private static final Map<String, Map<String, Object>> activeTokens = new ConcurrentHashMap<>();
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest, 
-                                    HttpServletRequest request, 
-                                    HttpServletResponse response) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
         try {
             String name = loginRequest.get("name");
             String password = loginRequest.get("password");
@@ -102,25 +102,24 @@ public class AuthController {
                 }
             }
             
-            // Create session - Spring Boot will automatically set the cookie based on application.properties
-            HttpSession session = request.getSession(true);
-            session.setAttribute("userId", userId);
-            session.setAttribute("name", name);
-            session.setAttribute("barangay", barangay);
-            session.setAttribute("privilege", privilege);
-            session.setAttribute("userType", userType);
-            session.setMaxInactiveInterval(30 * 60); // 30 minutes
+            // Generate token
+            String token = UUID.randomUUID().toString();
             
-            // Force authentication in Spring Security context
-            UsernamePasswordAuthenticationToken authToken = 
-                new UsernamePasswordAuthenticationToken(name, password);
-            Authentication authentication = authenticationManager.authenticate(authToken);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            // Store session data with token (expires in 24 hours)
+            Map<String, Object> sessionData = new HashMap<>();
+            sessionData.put("userId", userId);
+            sessionData.put("name", name);
+            sessionData.put("barangay", barangay);
+            sessionData.put("privilege", privilege);
+            sessionData.put("userType", userType);
+            sessionData.put("expiresAt", System.currentTimeMillis() + 24 * 60 * 60 * 1000); // 24 hours
             
-            System.out.println("Session created with ID: " + session.getId());
+            activeTokens.put(token, sessionData);
+            
+            System.out.println("Token created for user: " + name);
             System.out.println("Login successful for: " + name);
             
-            // Return user data (Spring Boot will automatically add Set-Cookie header)
+            // Return user data with token
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("status", "SUCCESS");
             responseData.put("name", name);
@@ -128,6 +127,7 @@ public class AuthController {
             responseData.put("privilege", privilege);
             responseData.put("id", String.valueOf(userId));
             responseData.put("userType", userType);
+            responseData.put("token", token);
             
             return ResponseEntity.ok(responseData);
             
@@ -138,47 +138,48 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
+    public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            activeTokens.remove(token);
+            System.out.println("Token removed for logout");
         }
-        SecurityContextHolder.clearContext();
-        
-        // Clear the cookie by setting it to expire
-        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("JSESSIONID", null);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
-        
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
     @GetMapping("/check-auth")
-    public ResponseEntity<?> checkAuth(HttpServletRequest request) {
+    public ResponseEntity<?> checkAuth(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         Map<String, Object> response = new HashMap<>();
         
-        HttpSession session = request.getSession(false);
-        response.put("hasSession", session != null);
-        
-        if (session == null) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             response.put("authenticated", false);
+            response.put("message", "No token provided");
             return ResponseEntity.ok(response);
         }
         
-        String name = (String) session.getAttribute("name");
-        if (name == null) {
+        String token = authHeader.substring(7);
+        Map<String, Object> sessionData = activeTokens.get(token);
+        
+        if (sessionData == null) {
             response.put("authenticated", false);
+            response.put("message", "Invalid token");
+            return ResponseEntity.ok(response);
+        }
+        
+        long expiresAt = (long) sessionData.get("expiresAt");
+        if (System.currentTimeMillis() > expiresAt) {
+            activeTokens.remove(token);
+            response.put("authenticated", false);
+            response.put("message", "Token expired");
             return ResponseEntity.ok(response);
         }
         
         response.put("authenticated", true);
-        response.put("name", name);
-        response.put("userId", session.getAttribute("userId"));
-        response.put("barangay", session.getAttribute("barangay"));
-        response.put("privilege", session.getAttribute("privilege"));
-        response.put("userType", session.getAttribute("userType"));
+        response.put("name", sessionData.get("name"));
+        response.put("userId", sessionData.get("userId"));
+        response.put("barangay", sessionData.get("barangay"));
+        response.put("privilege", sessionData.get("privilege"));
+        response.put("userType", sessionData.get("userType"));
         
         return ResponseEntity.ok(response);
     }
