@@ -16,8 +16,12 @@
       "dest": "https://sklinaw.onrender.com/admin/$1"
     },
     {
+      "src": "/(.*)\\.(css|js|png|jpg|svg|ico|json)$",
+      "dest": "/src/main/resources/static/$1.$2"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/src/main/resources/static/$1"
+      "dest": "/src/main/resources/static/$1.html"
     }
   ]
 }
