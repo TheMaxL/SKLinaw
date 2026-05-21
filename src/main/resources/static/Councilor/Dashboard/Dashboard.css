@@ -211,3 +211,83 @@
     background: var(--teal-dark);
     transform: translateY(-1px);
 }
+
+/* Budget Table Styles */
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.budget-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.budget-table thead tr {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.budget-table th {
+    text-align: left;
+    padding: 1rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.budget-table td {
+    padding: 1rem 0.75rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.budget-table tbody tr:hover {
+    background: rgba(11, 191, 181, 0.04);
+}
+
+.budget-table .committee-name {
+    font-weight: 600;
+    color: var(--teal);
+}
+
+.budget-table .negative {
+    color: var(--rejected);
+}
+
+.progress-track.small {
+    height: 6px;
+    width: 100px;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.percentage-text {
+    font-size: 0.7rem;
+    color: var(--muted);
+}
+
+.btn-outline {
+    background: none;
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.btn-outline:hover {
+    background: var(--teal);
+    color: white;
+}
