@@ -8,28 +8,24 @@
   ],
   "routes": [
     {
-      "src": "/",
-      "dest": "/src/main/resources/static/index.html"
-    },
-    {
       "src": "/api/(.*)",
-      "dest": "https://sklinaw.onrender.com/api/$1"
+      "dest": "https://sklinaw.onrender.com/api/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://sklinaw.vercel.app",
+        "Access-Control-Allow-Credentials": "true"
+      }
     },
     {
       "src": "/admin/(.*)",
-      "dest": "https://sklinaw.onrender.com/admin/$1"
+      "dest": "https://sklinaw.onrender.com/admin/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://sklinaw.vercel.app",
+        "Access-Control-Allow-Credentials": "true"
+      }
     },
     {
       "src": "/Councilor/Home/home",
       "dest": "/src/main/resources/static/Councilor/Home/home.html"
-    },
-    {
-      "src": "/Councilor/Dashboard/dashboard",
-      "dest": "/src/main/resources/static/Councilor/Dashboard/dashboard.html"
-    },
-    {
-      "src": "/Admin/Admin",
-      "dest": "/src/main/resources/static/Admin/Admin.html"
     },
     {
       "src": "/(.*)\\.(css|js|png|jpg|svg|ico|json)$",
