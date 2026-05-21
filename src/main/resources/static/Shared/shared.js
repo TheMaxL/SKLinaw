@@ -1,4 +1,4 @@
-const API = '/api';
+const API = 'https://sklinaw.onrender.com/api';
 const ADMIN_API = '/admin';
 
 // ── Toast ──────────────────────────────────
@@ -227,6 +227,7 @@ async function checkAuth() {
   }
   
   try {
+    // This will now use the updated API variable
     const response = await fetch(`${API}/auth/session`, {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' }
