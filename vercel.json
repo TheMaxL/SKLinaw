@@ -19,12 +19,8 @@
       "dest": "/src/main/resources/static/index.html"
     },
     {
-      "src": "/Councilor/Committee/committee-detail",
-      "dest": "/src/main/resources/static/Councilor/Committee/committee-detail.html"
-    },
-    {
-      "src": "/Councilor/Committee/(.*)",
-      "dest": "/src/main/resources/static/Councilor/Committee/$1.html"
+      "src": "/Admin/Approval/admin",
+      "dest": "/src/main/resources/static/Admin/Approval/admin.html"
     },
     {
       "src": "/(.*)\\.(css|js|png|jpg|svg|ico)$",
@@ -33,6 +29,10 @@
     {
       "src": "/(.*)-detail$",
       "dest": "/src/main/resources/static/$1-detail.html"
+    },
+    {
+      "src": "/Councilor/(.*)",
+      "dest": "/src/main/resources/static/Councilor/$1.html"
     },
     {
       "src": "/api/(.*)",
