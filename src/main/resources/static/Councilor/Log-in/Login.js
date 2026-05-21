@@ -24,6 +24,9 @@ function storeUserSession(data) {
     // Store token if present
     if (data.token) {
         localStorage.setItem('auth_token', data.token);
+        console.log('Token stored:', data.token.substring(0, 20) + '...');
+    } else {
+        console.error('No token received in login response!');
     }
     
     console.log('Session stored:', {
