@@ -22,8 +22,28 @@
       }
     },
     {
+      "src": "/Admin/(.*)",
+      "dest": "/src/main/resources/static/Admin/$1"
+    },
+    {
+      "src": "/Councilor/(.*)",
+      "dest": "/src/main/resources/static/Councilor/$1"
+    },
+    {
+      "src": "/Public/(.*)",
+      "dest": "/src/main/resources/static/Public/$1"
+    },
+    {
+      "src": "/Shared/(.*)",
+      "dest": "/src/main/resources/static/Shared/$1"
+    },
+    {
+      "src": "/(.*)\\.(css|js|png|jpg|svg|ico|json)$",
+      "dest": "/src/main/resources/static/$1.$2"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/src/main/resources/static/$1"
+      "dest": "/src/main/resources/static/$1.html"
     }
   ]
 }
