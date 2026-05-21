@@ -178,40 +178,6 @@ async function loadExpenditureBar() {
   }
 }
 
-async function loadCommitteeCharts() {
-  try {
-    const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
-      credentials: 'include'
-    });
-    const data = await response.json();
-    const committees = data.committees || [];
-    
-    const container = document.getElementById('committeeCharts');
-    if (committees.length === 0) {
-      container.innerHTML = '<div class="empty-state">No committee budget data available.</div>';
-      return;
-    }
-    
-    container.innerHTML = committees.map(c => {
-      const percentage = c.allocated > 0 ? (c.spent / c.allocated * 100) : 0;
-      return `
-        <div class="chart-card">
-          <div class="chart-title">${escapeHtml(c.committeeName)}</div>
-          <div class="chart-bar-container">
-            <div class="chart-bar" style="width: ${percentage}%; background: linear-gradient(90deg, #0BBFB5, #10B981);"></div>
-          </div>
-          <div class="chart-numbers">
-            <span>₱${(c.spent || 0).toLocaleString()} / ₱${(c.allocated || 0).toLocaleString()}</span>
-            <span>${percentage.toFixed(1)}%</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-  } catch (error) {
-    console.error('Error loading committee charts:', error);
-  }
-}
-
 async function loadTreasurerBudget() {
     try {
         const barangay = Session.barangay;
@@ -329,7 +295,41 @@ function showBudgetForTreasurer() {
 
 // Open budget modal (you'll need to implement this or link to Budget page)
 function openBudgetModal() {
-    window.location.href = '/Councilor/Budget/Budget.html';
+    window.location.href = '/Councilor/Budget/Budget';
+}
+
+async function loadCommitteeCharts() {
+  try {
+    const response = await fetch(`/api/getBudget?barangay=${encodeURIComponent(userBarangay)}`, {
+      credentials: 'include'
+    });
+    const data = await response.json();
+    const committees = data.committees || [];
+    
+    const container = document.getElementById('committeeCharts');
+    if (committees.length === 0) {
+      container.innerHTML = '<div class="empty-state">No committee budget data available.</div>';
+      return;
+    }
+    
+    container.innerHTML = committees.map(c => {
+      const percentage = c.allocated > 0 ? (c.spent / c.allocated * 100) : 0;
+      return `
+        <div class="chart-card">
+          <div class="chart-title">${escapeHtml(c.committeeName)}</div>
+          <div class="chart-bar-container">
+            <div class="chart-bar" style="width: ${percentage}%; background: linear-gradient(90deg, #0BBFB5, #10B981);"></div>
+          </div>
+          <div class="chart-numbers">
+            <span>₱${(c.spent || 0).toLocaleString()} / ₱${(c.allocated || 0).toLocaleString()}</span>
+            <span>${percentage.toFixed(1)}%</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Error loading committee charts:', error);
+  }
 }
 
 async function loadRecentExpenditures() {
