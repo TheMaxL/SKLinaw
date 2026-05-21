@@ -19,12 +19,20 @@
       "dest": "/src/main/resources/static/index.html"
     },
     {
-      "src": "/Shared/shared.css",
-      "dest": "/src/main/resources/static/Shared/shared.css"
+      "src": "/Shared/(.*)",
+      "dest": "/src/main/resources/static/Shared/$1"
     },
     {
-      "src": "/Shared/shared.js",
-      "dest": "/src/main/resources/static/Shared/shared.js"
+      "src": "/Councilor/(.*)/(.*)\\.(css|js)$",
+      "dest": "/src/main/resources/static/Councilor/$1/$2.$3"
+    },
+    {
+      "src": "/Councilor/(.*)\\.(css|js)$",
+      "dest": "/src/main/resources/static/Councilor/$1.$2"
+    },
+    {
+      "src": "/Admin/(.*)/(.*)\\.(css|js)$",
+      "dest": "/src/main/resources/static/Admin/$1/$2.$3"
     },
     {
       "src": "/Councilor/Committee/committee-detail",
@@ -39,16 +47,16 @@
       "dest": "/src/main/resources/static/Admin/$1.html"
     },
     {
-      "src": "/(.*)\\.(css|js|png|jpg|svg|ico)$",
-      "dest": "/src/main/resources/static/$1.$2"
-    },
-    {
       "src": "/api/(.*)",
       "dest": "https://sklinaw.onrender.com/api/$1"
     },
     {
       "src": "/admin/(.*)",
       "dest": "https://sklinaw.onrender.com/admin/$1"
+    },
+    {
+      "src": "/(.*)\\.(css|js|png|jpg|svg|ico)$",
+      "dest": "/src/main/resources/static/$1.$2"
     },
     {
       "src": "/(.*)",
