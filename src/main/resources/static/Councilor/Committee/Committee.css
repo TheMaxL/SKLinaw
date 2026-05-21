@@ -1,3 +1,6 @@
+/* Committee Page Specific Styles */
+@import url('shared.css');
+
 /* ===== BUDGET OVERVIEW ===== */
 .budget-section { 
     margin-bottom: 2rem; 
