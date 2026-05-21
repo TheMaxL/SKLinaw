@@ -256,6 +256,31 @@ function onCommitteeChange() {
   }
 }
 
+function showRoleView() {
+    const privilege = Session.getPrivilege();
+    const userType = Session.getUserType();
+    const isAdminOrDeveloper = Session.isAdmin() || Session.isDeveloper();
+    const isChairman = privilege === 'CHAIRMAN';
+    const isTreasurer = privilege === 'TREASURER';
+    const createBtn = document.getElementById('createCommitteeBtn');
+    if (createBtn) {
+        createBtn.style.display = (isChairman || isAdminOrDeveloper) ? 'flex' : 'none';
+    }
+    const budgetSection = document.querySelector('.budget-section');
+    if (budgetSection) {
+        budgetSection.style.display = (isTreasurer || isAdminOrDeveloper) ? 'block' : 'none';
+    }
+    const addMemberBtns = document.querySelectorAll('.add-member-btn');
+    addMemberBtns.forEach(btn => {
+        btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
+    });
+    const editBtns = document.querySelectorAll('.edit-committee-btn');
+    editBtns.forEach(btn => {
+        btn.style.display = (isChairman || isAdminOrDeveloper) ? 'inline-flex' : 'none';
+    });
+    console.log('Role view updated:', { isAdminOrDeveloper, isChairman, isTreasurer });
+}
+
 function renderBudget(data, filterCommittee) {
   const budgetCard = document.getElementById('budgetCard');
   if (!budgetCard) return;
