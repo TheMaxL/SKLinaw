@@ -84,8 +84,8 @@ public class FeedbackController {
         System.out.println("=== getProjectComments called for projectId: " + projectId);
         
         try (Connection conn = dataSource.getConnection()) {
-            String sql = "SELECT id, name, message, created_at " +
-                         "FROM Feedback WHERE project_id = ? ORDER BY created_at DESC LIMIT 50";
+            String sql = "SELECT id, name, message, rating, created_at " +
+                        "FROM Feedback WHERE project_id = ? ORDER BY created_at DESC LIMIT 50";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setInt(1, projectId);
             ResultSet rs = stmt.executeQuery();
@@ -95,11 +95,12 @@ public class FeedbackController {
             while (rs.next()) {
                 if (!first) result.append(",");
                 result.append("{")
-                      .append("\"id\":").append(rs.getInt("id")).append(",")
-                      .append("\"authorName\":\"").append(escape(rs.getString("name"))).append("\",")
-                      .append("\"message\":\"").append(escape(rs.getString("message"))).append("\",")
-                      .append("\"createdAt\":\"").append(escape(rs.getString("created_at"))).append("\"")
-                      .append("}");
+                    .append("\"id\":").append(rs.getInt("id")).append(",")
+                    .append("\"authorName\":\"").append(escape(rs.getString("name"))).append("\",")
+                    .append("\"message\":\"").append(escape(rs.getString("message"))).append("\",")
+                    .append("\"rating\":").append(rs.getInt("rating")).append(",")  // ← ADD THIS LINE
+                    .append("\"createdAt\":\"").append(escape(rs.getString("created_at"))).append("\"")
+                    .append("}");
                 first = false;
             }
             result.append("]");

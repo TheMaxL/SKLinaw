@@ -1,4 +1,4 @@
-console.log('Budget.js loaded - checking auth...')
+console.log('Budget.js loaded - checking auth...');
 
 const userPrivilege = localStorage.getItem('sk_privilege') || '';
 const userBarangay = localStorage.getItem('sk_barangay') || '';
@@ -8,17 +8,19 @@ const COLORS = [
   '#EC4899','#3B82F6','#F97316','#8B5CF6',
 ];
 
-const userPrivilege = Session.privilege;
-const userBarangay = Session.barangay;
+// Get session data from localStorage directly
+const sessionName = localStorage.getItem('sk_name') || 'Councilor';
+const sessionBarangay = localStorage.getItem('sk_barangay') || '';
+const sessionPrivilege = localStorage.getItem('sk_privilege') || '';
 
 // Role check - Treasurer or Chairman can edit
-const canEditBudget = session.privilege === 'CHAIRMAN' || session.privilege === 'TREASURER' || session.privilege === 'ADMIN';
+const canEditBudget = sessionPrivilege === 'CHAIRMAN' || sessionPrivilege === 'TREASURER' || sessionPrivilege === 'ADMIN';
 
 // Update sidebar
 if (document.getElementById('nameEl')) {
-  document.getElementById('nameEl').textContent = session.name;
-  document.getElementById('avatarEl').textContent = session.name.charAt(0).toUpperCase();
-  document.getElementById('barangayLabel').textContent = Session.barangay;
+  document.getElementById('nameEl').textContent = sessionName;
+  document.getElementById('avatarEl').textContent = sessionName.charAt(0).toUpperCase();
+  document.getElementById('barangayLabel').textContent = sessionBarangay;
 }
 
 // Show read-only guard if not treasurer/chairman
@@ -43,9 +45,8 @@ async function loadCommittees() {
   }
   
   try {
-    const res = await fetch(`${API}/getCommittees?barangay=${encodeURIComponent(Session.barangay)}`, {
-      credentials: 'include'
-    });
+    // Use authFetch instead of direct fetch
+    const res = await authFetch(`/getCommittees?barangay=${encodeURIComponent(sessionBarangay)}`);
     
     if (!res.ok) throw new Error('Failed to fetch committees');
     
@@ -72,16 +73,14 @@ async function loadCurrentBudget() {
   }
   
   try {
-    const res = await fetch(`${API}/getBudget?barangay=${encodeURIComponent(Session.barangay)}`, {
-      credentials: 'include'
-    });
+    // Use authFetch instead of direct fetch
+    const res = await authFetch(`/getBudget?barangay=${encodeURIComponent(sessionBarangay)}`);
     
     if (!res.ok) throw new Error('Failed to fetch budget');
     
     const data = await res.json();
     renderCurrentBudget(data);
 
-    // Pre-fill form with existing values
     const totalBudgetInput = document.getElementById('totalBudget');
     if (totalBudgetInput && data.totalBudget) {
       totalBudgetInput.value = data.totalBudget;
@@ -132,7 +131,6 @@ function renderAllocRows() {
 }
 
 function addCommitteeRow() {
-  // Committees must be created through the Committees page, not here
   showAlert('Committees can only be created by the Chairman on the Committees page.', 'error');
 }
 
@@ -154,7 +152,6 @@ function updatePreview() {
     inp.classList.toggle('over', val > total && total > 0);
   });
 
-  // Remaining banner
   const remaining = total - totalAlloc;
   const banner = document.getElementById('remainingBanner');
   const remVal = document.getElementById('remainingVal');
@@ -164,7 +161,6 @@ function updatePreview() {
   }
   if (banner) banner.classList.toggle('over', remaining < 0);
 
-  // Progress bars preview
   const barsEl = document.getElementById('previewBars');
   if (barsEl) {
     barsEl.innerHTML = committees.map((c, i) => {
@@ -184,7 +180,6 @@ function updatePreview() {
     }).join('');
   }
 
-  // Preview total
   const previewTotal = document.getElementById('previewTotal');
   if (previewTotal) {
     previewTotal.textContent = '₱' + (total/1000).toFixed(0) + 'K';
@@ -220,13 +215,11 @@ function drawPreviewPie(slices) {
     angle += sweep;
   });
 
-  // Donut hole
   ctx.beginPath();
   ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
   ctx.fillStyle = '#142322';
   ctx.fill();
 
-  // Gaps
   angle = -Math.PI / 2;
   slices.forEach(sl => {
     const sweep = (sl.value / total) * Math.PI * 2;
@@ -302,12 +295,11 @@ async function saveBudget() {
   }
 
   try {
-    const res = await fetch(`${API}/setBudget`, {
+    // Use authFetch instead of direct fetch
+    const res = await authFetch(`/setBudget`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ 
-        barangay: Session.barangay, 
+        barangay: sessionBarangay, 
         totalBudget: total, 
         allocations 
       })
@@ -352,27 +344,29 @@ function showAlert(msg, type) {
 }
 
 function logout() {
-  localStorage.removeItem('sk_name');
-  localStorage.removeItem('sk_barangay');
-  localStorage.removeItem('sk_privilege');
-  window.location.href = '../Log-in/login';
+  localStorage.clear();
+  window.location.href = '/Councilor/Log-in/Login';
 }
 
 function esc(s) { 
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); 
 }
 
+// DOMContentLoaded - Token-based auth check
 document.addEventListener('DOMContentLoaded', async () => {
-  // Check authentication
-  if (!localStorage.getItem('sk_name')) {
+  const token = localStorage.getItem('auth_token');
+  
+  if (!token || !localStorage.getItem('sk_name')) {
     window.location.href = '/Councilor/Log-in/Login';
     return;
   }
   
   try {
     const response = await fetch('https://sklinaw.onrender.com/api/check-auth', {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
     const data = await response.json();
     
@@ -382,7 +376,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
     
-    // User is authenticated, update UI
     const nameEl = document.getElementById('nameEl');
     const roleEl = document.getElementById('roleEl');
     const avatarEl = document.getElementById('avatarEl');
@@ -391,8 +384,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (roleEl) roleEl.textContent = userPrivilege || 'Councilor';
     if (avatarEl) avatarEl.textContent = (localStorage.getItem('sk_name') || '?').charAt(0).toUpperCase();
     
+    // Start the app
+    init();
+    
   } catch (error) {
     console.error('Auth check error:', error);
+    localStorage.clear();
     window.location.href = '/Councilor/Log-in/Login';
   }
 });
@@ -404,6 +401,3 @@ window.onTotalChange = onTotalChange;
 window.updatePreview = updatePreview;
 window.addCommitteeRow = addCommitteeRow;
 window.logout = logout;
-
-// Start the app
-init();
