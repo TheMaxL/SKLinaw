@@ -108,7 +108,7 @@ function viewPhoto(userId, userName) {
             <div class="modal-content">
                 <span class="modal-close" onclick="closePhotoModal()">&times;</span>
                 <h3 id="photoModalTitle">Verification Photo</h3>
-                <img id="photoModalImage" src="" alt="Verification photo" style="max-width: 100%; max-height: 70vh;">
+                <div id="photoContainer">Loading photo...</div>
             </div>
         `;
         document.body.appendChild(modal);
@@ -117,11 +117,35 @@ function viewPhoto(userId, userName) {
             if (e.target === modal) closePhotoModal();
         });
     }
-    
-    // Use full Render URL
     document.getElementById('photoModalTitle').textContent = `Verification ID: ${userName}`;
-    document.getElementById('photoModalImage').src = `https://sklinaw.onrender.com/admin/pending-photo/${userId}?t=${Date.now()}`;
+    const photoContainer = document.getElementById('photoContainer');
+    photoContainer.innerHTML = '<div class="loader"><span></span><span></span><span></span></div>';
     modal.style.display = 'flex';
+    const token = localStorage.getItem('auth_token');
+    fetch(`https://sklinaw.onrender.com/admin/pending-photo/${userId}?t=${Date.now()}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const imageUrl = URL.createObjectURL(blob);
+        photoContainer.innerHTML = `<img src="${imageUrl}" alt="Verification photo" style="max-width: 100%; max-height: 70vh;">`;
+    })
+    .catch(error => {
+        console.error('Error loading photo:', error);
+        photoContainer.innerHTML = `
+            <div style="color: var(--error); text-align: center; padding: 20px;">
+                <p>❌ Could not load photo</p>
+                <p style="font-size: 0.8rem;">${error.message}</p>
+            </div>
+        `;
+    });
 }
 
 function closePhotoModal() {
