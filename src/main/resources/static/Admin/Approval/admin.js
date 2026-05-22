@@ -118,10 +118,9 @@ function viewPhoto(userId, userName) {
         });
     }
     
-    // Use the full Render URL for photo endpoint
-    const photoUrl = `https://sklinaw.onrender.com/admin/pending-photo/${userId}?t=${Date.now()}`;
+    // Use full Render URL
     document.getElementById('photoModalTitle').textContent = `Verification ID: ${userName}`;
-    document.getElementById('photoModalImage').src = photoUrl;
+    document.getElementById('photoModalImage').src = `https://sklinaw.onrender.com/admin/pending-photo/${userId}?t=${Date.now()}`;
     modal.style.display = 'flex';
 }
 

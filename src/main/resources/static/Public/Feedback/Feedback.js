@@ -1,10 +1,38 @@
-const API = '/api';
-const ADMIN_API = '/admin';
+// Feedback.js - Public page with optional authentication for feedback submission
+
+// Use absolute URLs to Render backend
+const API = 'https://sklinaw.onrender.com/api';
+const ADMIN_API = 'https://sklinaw.onrender.com/admin';
 
 let currentBarangay = '';
 let currentProjectId = null;
 let currentProjectName = '';
 let currentRating = 0;
+
+// Helper function to get auth token (if user is logged in)
+function getAuthToken() {
+    return localStorage.getItem('auth_token');
+}
+
+// Helper function for authenticated fetch (used when user wants to submit feedback with their name)
+async function fetchWithAuth(url, options = {}) {
+    const token = getAuthToken();
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(url, {
+        ...options,
+        headers: headers
+    });
+    
+    return response;
+}
 
 async function loadBarangays() {
   console.log('Loading barangays from public endpoint...');
@@ -25,7 +53,6 @@ async function loadBarangays() {
       select.innerHTML += `<option value="${escapeHtml(barangay)}">${escapeHtml(barangay)}</option>`;
     });
     
-    // ✅ If there's only one barangay, auto-select it and load committees
     if (barangays.length === 1) {
       select.value = barangays[0];
       loadCommittees(barangays[0]);
@@ -44,7 +71,6 @@ async function loadBarangays() {
   }
 }
 
-// Initialize rating stars
 function initRatingStars() {
   const stars = document.querySelectorAll('#feedbackModal .star');
   console.log('Initializing stars, found:', stars.length);
@@ -66,7 +92,7 @@ function handleStarClick() {
   stars.forEach((star, index) => {
     if (index < rating) {
       star.classList.add('active');
-      star.textCode = '★';
+      star.textContent = '★';
     } else {
       star.classList.remove('active');
       star.textContent = '☆';
@@ -239,7 +265,7 @@ async function renderProjectsWithComments(projects) {
     const p = projects[i];
     const commentContainerId = `comments-${p.id}`;
     const comments = await loadProjectComments(p.id);
-    const ratingData = await loadProjectRating(p.id);  // ← Changed from loadProjectScore
+    const ratingData = await loadProjectScore(p.id);
     
     html += `
       <div class="project-card" data-project-id="${p.id}" style="animation-delay:${i * 0.05}s">
@@ -409,16 +435,16 @@ async function submitFeedback() {
     barangay: currentBarangay,
     authorName: name || 'Anonymous',
     message: message,
-    rating: rating,  // Include rating in the comment
+    rating: rating,
     reaction: ''
   };
   
   console.log('Submitting feedback:', feedbackData);
   
   try {
-    const response = await fetch(`${API}/submitProjectComment`, {
+    // Use fetchWithAuth for submission (will include token if user is logged in)
+    const response = await fetchWithAuth(`${API}/submitProjectComment`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(feedbackData)
     });
     
