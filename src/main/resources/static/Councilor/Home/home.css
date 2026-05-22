@@ -7,7 +7,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Subtle teal glow top-left */
 body::before {
   content: '';
   position: fixed;
@@ -29,7 +28,6 @@ nav {
 }
 .nav-links { display: flex; gap: 0.6rem; align-items: center; }
 
-/* ── Hero ── */
 .hero {
   flex: 1;
   display: flex;
@@ -67,6 +65,8 @@ nav {
   max-width: 780px;
   animation: fadeUp 0.5s ease 0.08s both;
   letter-spacing: -1px;
+  text-align: center;
+  width: 100%;
 }
 .hero h1 em { font-style: normal; color: var(--teal); }
 
@@ -80,7 +80,6 @@ nav {
   animation: fadeUp 0.5s ease 0.16s both;
 }
 
-/* ── Entry cards ── */
 .entry-cards {
   display: flex;
   gap: 1rem;
@@ -115,7 +114,6 @@ nav {
 .entry-card h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem; }
 .entry-card p  { font-size: 0.76rem; color: var(--muted); line-height: 1.5; }
 
-/* ── Stats strip ── */
 .stats-strip {
   display: flex;
   justify-content: center;
@@ -131,7 +129,6 @@ nav {
 .stat-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: var(--teal); }
 .stat-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 3px; letter-spacing: 0.3px; }
 
-/* ── Responsive ── */
 @media (max-width: 540px) {
   nav              { padding: 1rem 1.25rem; }
   .hero h1         { font-size: clamp(2.2rem, 10vw, 3.5rem); }
