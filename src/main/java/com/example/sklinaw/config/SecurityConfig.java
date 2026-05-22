@@ -190,8 +190,8 @@ public class SecurityConfig {
             "https://sklinaw.vercel.app",
             "https://*.vercel.app",
             "https://sklinaw.onrender.com",
-            "https://TheMaxL.github.io",      
-            "https://*.github.io" 
+            "https://your-netlify-site.netlify.app",     // ← Add your Netlify URL
+            "https://*.netlify.app" 
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
