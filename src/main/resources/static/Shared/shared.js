@@ -325,12 +325,8 @@ async function protectPage(requiredView) {
 function getDefaultRedirect() {
   if (Session.isAdmin() || Session.isDeveloper()) {
     return '/Admin/Approval/admin';
-  } else if (Session.isChairman()) {
-    return '/Councilor/Dashboard/Dashboard';
-  } else if (Session.isTreasurer()) {
-    return '/Councilor/Treasurer/treasurer';
   } else {
-    return '/Councilor/Home/home';
+    return '/Councilor/Dashboard/Dashboard';
   }
 }
 
