@@ -33,22 +33,44 @@ body {
   display: flex;
 }
 
-/* SIDEBAR */
+/* TOPBAR */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
 
+.greeting {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+}
+
+.greeting small {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.topbar-date {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* SIDEBAR */
 .sidebar {
   width: 230px;
   min-width: 230px;
-
   background: var(--surface);
-
   border-right: 1px solid var(--border);
-
   padding: 1.5rem 1rem;
-
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-
   position: sticky;
   top: 0;
   height: 100vh;
@@ -58,13 +80,9 @@ body {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 1.25rem;
-
   color: var(--teal);
-
   padding: 0.5rem 0.75rem 1.25rem;
-
   border-bottom: 1px solid var(--border);
-
   margin-bottom: 0.5rem;
 }
 
@@ -77,9 +95,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-
   color: var(--muted);
-
   padding: 0.6rem 0.75rem 0.3rem;
 }
 
@@ -87,17 +103,12 @@ body {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-
   padding: 0.6rem 0.75rem;
-
   border-radius: 9px;
-
   font-size: 0.86rem;
   font-weight: 500;
-
   color: var(--muted);
   text-decoration: none;
-
   transition: background 0.2s, color 0.2s;
 }
 
@@ -117,47 +128,35 @@ body {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-
   padding: 0.6rem 0.75rem;
 }
 
 .avatar {
   width: 34px;
   height: 34px;
-
   border-radius: 50%;
-
   background: var(--teal-dim);
-
   border: 1.5px solid var(--teal);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 0.85rem;
-
   color: var(--teal);
 }
 
 .btn-logout {
   width: 100%;
-
   background: none;
   border: none;
-
   color: var(--muted);
-
   padding: 0.5rem 0.75rem;
-
   cursor: pointer;
 }
 
-/* MAIN */
-
-.main {
+/* MAIN CONTENT - Changed from .main to .main-content */
+.main-content {
   flex: 1;
   padding: 2rem 2.5rem;
 }
@@ -166,28 +165,21 @@ body {
   font-family: 'Syne', sans-serif;
   font-size: 1.6rem;
   font-weight: 800;
-
   margin-bottom: 0.3rem;
 }
 
 .page-sub {
   color: var(--muted);
   font-size: 0.88rem;
-
   margin-bottom: 2rem;
 }
 
-/* GENERATOR */
-
+/* GENERATOR CARD */
 .generator-card {
   background: var(--surface);
-
   border: 1px solid var(--border);
-
   border-radius: 14px;
-
   padding: 1.5rem;
-
   margin-bottom: 2rem;
 }
 
@@ -204,46 +196,49 @@ body {
 
 .gen-group label {
   display: block;
-
   margin-bottom: 5px;
-
   font-size: 0.73rem;
   font-weight: 600;
-
   color: var(--muted);
 }
 
-.gen-group select {
+.gen-group select,
+.gen-group input {
   width: 100%;
-
   background: var(--surface2);
-
   border: 1px solid var(--border);
-
   border-radius: 8px;
-
   color: var(--text);
-
   padding: 0.55rem 0.8rem;
 }
 
 .btn-generate,
 .btn-print {
   background: var(--teal);
-
   color: #fff;
-
   border: none;
-
   border-radius: 8px;
-
   padding: 0.58rem 1.4rem;
-
   cursor: pointer;
+  margin-right: 0.5rem;
+}
+
+.btn-generate:hover,
+.btn-print:hover {
+  background: var(--teal-dark);
+}
+
+/* REPORT CONTAINER */
+#reportDoc {
+  display: none;
+  background: #fff;
+  color: #111;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 2rem;
 }
 
 /* LOADER */
-
 .loader {
   display: flex;
   justify-content: center;
@@ -254,11 +249,8 @@ body {
 .loader span {
   width: 9px;
   height: 9px;
-
   border-radius: 50%;
-
   background: var(--teal);
-
   animation: bounce 0.8s infinite alternate;
 }
 
@@ -275,36 +267,19 @@ body {
     transform: translateY(0);
     opacity: 0.5;
   }
-
   to {
     transform: translateY(-9px);
     opacity: 1;
   }
 }
 
-/* REPORT */
-
-#reportDoc {
-  display: none;
-
-  background: #fff;
-  color: #111;
-
-  border-radius: 14px;
-
-  overflow: hidden;
-}
-
-/* MOBILE */
-
+/* RESPONSIVE */
 @media (max-width: 650px) {
-
   .sidebar {
     display: none;
   }
 
-  .main {
+  .main-content {
     padding: 1.25rem;
   }
-
 }
