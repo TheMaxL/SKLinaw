@@ -42,7 +42,7 @@ function getRedirectUrl(privilege, userType) {
     if (privilege === 'ADMIN' || userType === 'developer') {
         return '/Admin/Approval/admin';
     }
-    return '/Councilor/Home/home';
+    return '/Councilor/Dashboard/Dashboard';
 }
 
 function clearFormAndFocus() {
