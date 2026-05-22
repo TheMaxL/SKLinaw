@@ -34,77 +34,7 @@ function showRoleView() {
 
 // ==================== COUNCILOR VIEW ====================
 async function loadCouncilorDashboard() {
-  await loadRecentProjects();
-  await loadBudgetPanel();
   await loadQuickStats();
-}
-
-async function loadRecentProjects() {
-  try {
-    const response = await authFetch(`/getProjectsByCouncilor?councilor=${encodeURIComponent(localStorage.getItem('sk_name'))}&barangay=${encodeURIComponent(userBarangay)}`);
-    const projects = await response.json();
-    const recent = projects.slice(0, 5);
-    
-    const container = document.getElementById('recent-projects');
-    if (recent.length === 0) {
-      container.innerHTML = '<div class="empty-state">No projects yet.</div>';
-      return;
-    }
-    
-    container.innerHTML = recent.map(p => `
-      <div class="project-item">
-        <div class="project-name">${escapeHtml(p.projectName)}</div>
-        <div class="project-status status-${p.status}">${p.status}</div>
-        <div class="project-cost">₱${(p.totalCost || 0).toLocaleString()}</div>
-      </div>
-    `).join('');
-  } catch (error) {
-    console.error('Error loading recent projects:', error);
-  }
-}
-
-async function loadBudgetPanel() {
-    try {
-        const response = await authFetch(`/getBudget?barangay=${encodeURIComponent(userBarangay)}`);
-        const text = await response.text();
-        
-        if (text === 'ERROR' || !text) {
-            document.getElementById('budget-panel').innerHTML = '<div class="empty-state">No budget data available.</div>';
-            return;
-        }
-        
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (parseError) {
-            console.error('Failed to parse budget response:', text);
-            document.getElementById('budget-panel').innerHTML = '<div class="empty-state">Error loading budget data.</div>';
-            return;
-        }
-        
-        const committees = data.committees || [];
-        const container = document.getElementById('budget-panel');
-        
-        if (committees.length === 0) {
-            container.innerHTML = '<div class="empty-state">No budget data available.</div>';
-            return;
-        }
-        
-        container.innerHTML = committees.map(c => `
-            <div class="budget-item">
-                <div class="budget-name">${escapeHtml(c.committeeName)}</div>
-                <div class="budget-bar-container">
-                    <div class="budget-bar" style="width: ${c.allocated > 0 ? (c.spent / c.allocated * 100) : 0}%"></div>
-                </div>
-                <div class="budget-numbers">
-                    <span>₱${(c.spent || 0).toLocaleString()} / ₱${(c.allocated || 0).toLocaleString()}</span>
-                </div>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading budget panel:', error);
-        document.getElementById('budget-panel').innerHTML = '<div class="empty-state">Error loading budget data.</div>';
-    }
 }
 
 async function loadQuickStats() {
