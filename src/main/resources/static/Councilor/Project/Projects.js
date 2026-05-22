@@ -240,7 +240,7 @@ function renderTable(projects) {
     if (!tbody) return;
     
     if (projects.length === 0) {
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No projects found. </span>`;
         return;
     }
     
@@ -258,9 +258,27 @@ function renderTable(projects) {
             <td class="cost-cell">₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
             <td><span class="status-pill status-${p.status}">${p.status}</span></td>
             <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
+            <td class="rating-cell">
+                <div class="rating-display" data-project-id="${p.id}">
+                    <span class="rating-stars">${renderStars(p.rating?.average || 0)}</span>
+                    <span class="rating-count">(${p.rating?.totalVotes || 0})</span>
+                </div>
+            </td>
             <td><button class="action-btn" onclick="viewProject(${p.id})">View</button></td>
         </tr>
     `).join('');
+}
+
+function renderStars(averageRating) {
+    const fullStars = Math.floor(averageRating);
+    const hasHalfStar = averageRating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    
+    let starsHtml = '';
+    for (let i = 0; i < fullStars; i++) starsHtml += '★';
+    if (hasHalfStar) starsHtml += '½';
+    for (let i = 0; i < emptyStars; i++) starsHtml += '☆';
+    return starsHtml;
 }
 
 function onCommitteeChange() {
@@ -468,6 +486,19 @@ async function loadProjectFeedback(projectId) {
     console.error('Error loading feedback:', error);
     return [];
   }
+}
+
+async function loadProjectRatings(projects) {
+    for (const project of projects) {
+        try {
+            const response = await authFetch(`/getProjectRating?projectId=${project.id}`);
+            const data = await response.json();
+            project.rating = data;
+        } catch (error) {
+            project.rating = { average: 0, totalVotes: 0 };
+        }
+    }
+    return projects;
 }
 
 function toggleFeedback(projectId) {
