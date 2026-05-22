@@ -240,27 +240,63 @@ function renderTable(projects) {
     if (!tbody) return;
     
     if (projects.length === 0) {
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No projects found.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No projects found. </span>`;
         return;
     }
     
     tbody.innerHTML = projects.map((p, i) => `
-        <tr style="animation-delay:${i * 0.04}s">
+        <tr style="animation-delay:${i * 0.04}s" data-project-id="${p.id}">
             <td class="project-name-cell">${escHtml(p.projectName)}</td>
-            <td class="project-purpose-cell">
-                ${escHtml(p.purpose || '—')}
-                ${p.status === 'REJECTED' && p.rejectionReason ? `
-                    <div class="rejection-reason">
-                        <strong>Rejection reason:</strong> ${escHtml(p.rejectionReason)}
-                    </div>
-                ` : ''}
-            </td>
+            <td class="project-purpose-cell">${escHtml(p.purpose || '—')}</td>
             <td class="cost-cell">₱${(p.totalCost || 0).toLocaleString('en-PH')}</td>
             <td><span class="status-pill status-${p.status}">${p.status}</span></td>
             <td style="color:var(--muted);font-size:0.78rem">${formatDate(p.createdAt)}</td>
+            <td class="rating-cell" data-project-id="${p.id}">
+                <span class="rating-stars">☆☆☆☆☆</span>
+                <span class="rating-count">(0)</span>
+            </td>
             <td><button class="action-btn" onclick="viewProject(${p.id})">View</button></td>
         </tr>
     `).join('');
+    
+    // Load ratings for each project
+    projects.forEach(project => {
+        loadRatingForProject(project.id);
+    });
+}
+
+async function loadRatingForProject(projectId) {
+    try {
+        const response = await authFetch(`/getProjectRating?projectId=${projectId}`);
+        const data = await response.json();
+        
+        const row = document.querySelector(`tr[data-project-id="${projectId}"]`);
+        if (row) {
+            const ratingCell = row.querySelector('.rating-cell');
+            if (ratingCell) {
+                const stars = renderStars(data.average || 0);
+                const count = data.totalVotes || 0;
+                ratingCell.innerHTML = `
+                    <span class="rating-stars">${stars}</span>
+                    <span class="rating-count">(${count})</span>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error(`Error loading rating for project ${projectId}:`, error);
+    }
+}
+
+function renderStars(averageRating) {
+    const fullStars = Math.floor(averageRating);
+    const hasHalfStar = averageRating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    
+    let starsHtml = '';
+    for (let i = 0; i < fullStars; i++) starsHtml += '★';
+    if (hasHalfStar) starsHtml += '½';
+    for (let i = 0; i < emptyStars; i++) starsHtml += '☆';
+    return starsHtml;
 }
 
 function onCommitteeChange() {
@@ -468,6 +504,19 @@ async function loadProjectFeedback(projectId) {
     console.error('Error loading feedback:', error);
     return [];
   }
+}
+
+async function loadProjectRatings(projects) {
+    for (const project of projects) {
+        try {
+            const response = await authFetch(`/getProjectRating?projectId=${project.id}`);
+            const data = await response.json();
+            project.rating = data;
+        } catch (error) {
+            project.rating = { average: 0, totalVotes: 0 };
+        }
+    }
+    return projects;
 }
 
 function toggleFeedback(projectId) {
