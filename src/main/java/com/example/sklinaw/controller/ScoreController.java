@@ -1,7 +1,6 @@
 package com.example.sklinaw.controller;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -19,7 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin
+@CrossOrigin(origins = {
+    "http://localhost:8085",
+    "http://localhost:3000",
+    "https://sklinaw.vercel.app",
+    "https://*.vercel.app",
+    "https://sklinaw.onrender.com",
+    "https://*.onrender.com"
+}, allowCredentials = "true")
 public class ScoreController {
     @Autowired
     private DataSource dataSource;
@@ -29,14 +35,11 @@ public class ScoreController {
     
     @PostMapping("/submitScore")
     public String submitScore(@RequestBody ScoreRequest req) {
-
         if (req.getScore() < 1 || req.getScore() > 5) {
             return "INVALID_SCORE";
         }
 
         try (Connection conn = dataSource.getConnection()) {
-
-            
             String checkSql = "SELECT id FROM Projects WHERE id = ? AND barangay = ? AND status = 'APPROVED'";
             PreparedStatement checkStmt = conn.prepareStatement(checkSql);
             checkStmt.setInt(1, req.getProjectId());
@@ -44,15 +47,44 @@ public class ScoreController {
             ResultSet rs = checkStmt.executeQuery();
             if (!rs.next()) return "PROJECT_NOT_FOUND";
 
+            // Insert into ProjectRatings table (or update if exists)
+            String upsertSql = "INSERT INTO ProjectRatings (project_id, barangay, rating_1_count, rating_2_count, rating_3_count, rating_4_count, rating_5_count, total_ratings, average_rating, updated_at) " +
+                               "VALUES (?, ?, " +
+                               "CASE WHEN ? = 1 THEN 1 ELSE 0 END, " +
+                               "CASE WHEN ? = 2 THEN 1 ELSE 0 END, " +
+                               "CASE WHEN ? = 3 THEN 1 ELSE 0 END, " +
+                               "CASE WHEN ? = 4 THEN 1 ELSE 0 END, " +
+                               "CASE WHEN ? = 5 THEN 1 ELSE 0 END, " +
+                               "1, ?, CURRENT_TIMESTAMP) " +
+                               "ON CONFLICT(project_id) DO UPDATE SET " +
+                               "rating_1_count = rating_1_count + (CASE WHEN ? = 1 THEN 1 ELSE 0 END), " +
+                               "rating_2_count = rating_2_count + (CASE WHEN ? = 2 THEN 1 ELSE 0 END), " +
+                               "rating_3_count = rating_3_count + (CASE WHEN ? = 3 THEN 1 ELSE 0 END), " +
+                               "rating_4_count = rating_4_count + (CASE WHEN ? = 4 THEN 1 ELSE 0 END), " +
+                               "rating_5_count = rating_5_count + (CASE WHEN ? = 5 THEN 1 ELSE 0 END), " +
+                               "total_ratings = total_ratings + 1, " +
+                               "average_rating = (rating_1_count + rating_2_count*2 + rating_3_count*3 + rating_4_count*4 + rating_5_count*5 + ?) / (total_ratings + 1.0), " +
+                               "updated_at = CURRENT_TIMESTAMP";
             
-            String insertSql =
-                "INSERT INTO ProjectScores (project_id, barangay, score) VALUES (?, ?, ?)";
-            PreparedStatement insertStmt = conn.prepareStatement(insertSql);
-            insertStmt.setInt(1, req.getProjectId());
-            insertStmt.setString(2, req.getBarangay());
-            insertStmt.setInt(3, req.getScore());
-            insertStmt.executeUpdate();
-
+            PreparedStatement upsertStmt = conn.prepareStatement(upsertSql);
+            int score = req.getScore();
+            upsertStmt.setInt(1, req.getProjectId());
+            upsertStmt.setString(2, req.getBarangay());
+            upsertStmt.setInt(3, score);
+            upsertStmt.setInt(4, score);
+            upsertStmt.setInt(5, score);
+            upsertStmt.setInt(6, score);
+            upsertStmt.setInt(7, score);
+            upsertStmt.setDouble(8, score);
+            upsertStmt.setInt(9, score);
+            upsertStmt.setInt(10, score);
+            upsertStmt.setInt(11, score);
+            upsertStmt.setInt(12, score);
+            upsertStmt.setInt(13, score);
+            upsertStmt.setInt(14, score);
+            upsertStmt.setDouble(15, score);
+            
+            upsertStmt.executeUpdate();
             return "SUCCESS";
 
         } catch (Exception e) {
@@ -61,59 +93,46 @@ public class ScoreController {
         }
     }
 
-    
     @GetMapping("/getProjectScore")
     public String getProjectScore(@RequestParam int projectId) {
         try (Connection conn = dataSource.getConnection()) {
-
+            // Query from ProjectRatings table
+            String sql = "SELECT average_rating, total_ratings, " +
+                         "rating_1_count, rating_2_count, rating_3_count, rating_4_count, rating_5_count " +
+                         "FROM ProjectRatings WHERE project_id = ?";
             
-            String avgSql =
-                "SELECT AVG(score) as average, COUNT(*) as total FROM ProjectScores WHERE project_id = ?";
-            PreparedStatement avgStmt = conn.prepareStatement(avgSql);
-            avgStmt.setInt(1, projectId);
-            ResultSet avgRs = avgStmt.executeQuery();
-
-            double average    = 0;
-            int    totalVotes = 0;
-            if (avgRs.next()) {
-                average    = avgRs.getDouble("average");
-                totalVotes = avgRs.getInt("total");
-            }
-
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, projectId);
+            ResultSet rs = stmt.executeQuery();
             
-            String breakSql =
-                "SELECT score, COUNT(*) as cnt FROM ProjectScores WHERE project_id = ? GROUP BY score";
-            PreparedStatement breakStmt = conn.prepareStatement(breakSql);
-            breakStmt.setInt(1, projectId);
-            ResultSet breakRs = breakStmt.executeQuery();
-
-            int[] breakdown = new int[6]; 
-            while (breakRs.next()) {
-                int s = breakRs.getInt("score");
-                if (s >= 1 && s <= 5) breakdown[s] = breakRs.getInt("cnt");
+            if (rs.next()) {
+                double average = rs.getDouble("average_rating");
+                int totalVotes = rs.getInt("total_ratings");
+                int r1 = rs.getInt("rating_1_count");
+                int r2 = rs.getInt("rating_2_count");
+                int r3 = rs.getInt("rating_3_count");
+                int r4 = rs.getInt("rating_4_count");
+                int r5 = rs.getInt("rating_5_count");
+                
+                return String.format(
+                    "{\"average\":%.1f,\"totalVotes\":%d,\"breakdown\":{\"1\":%d,\"2\":%d,\"3\":%d,\"4\":%d,\"5\":%d}}",
+                    average, totalVotes, r1, r2, r3, r4, r5
+                );
             }
-
-            return String.format(
-                "{\"average\":%.1f,\"totalVotes\":%d," +
-                "\"breakdown\":{\"1\":%d,\"2\":%d,\"3\":%d,\"4\":%d,\"5\":%d}}",
-                average, totalVotes,
-                breakdown[1], breakdown[2], breakdown[3], breakdown[4], breakdown[5]
-            );
-
+            
+            return "{\"average\":0,\"totalVotes\":0,\"breakdown\":{\"1\":0,\"2\":0,\"3\":0,\"4\":0,\"5\":0}}";
+            
         } catch (Exception e) {
             e.printStackTrace();
             return "ERROR";
         }
     }
 
-    
     @GetMapping("/getAllProjectScores")
     public String getAllProjectScores(@RequestParam String barangay) {
         try (Connection conn = dataSource.getConnection()) {
-
-            String sql =
-                "SELECT project_id, AVG(score) as average, COUNT(*) as total " +
-                "FROM ProjectScores WHERE barangay = ? GROUP BY project_id";
+            String sql = "SELECT project_id, average_rating, total_ratings " +
+                         "FROM ProjectRatings WHERE barangay = ?";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, barangay);
             ResultSet rs = stmt.executeQuery();
@@ -123,8 +142,8 @@ public class ScoreController {
             while (rs.next()) {
                 if (!first) result.append(",");
                 result.append("\"").append(rs.getInt("project_id")).append("\":{")
-                      .append("\"average\":").append(String.format("%.1f", rs.getDouble("average"))).append(",")
-                      .append("\"totalVotes\":").append(rs.getInt("total"))
+                      .append("\"average\":").append(String.format("%.1f", rs.getDouble("average_rating"))).append(",")
+                      .append("\"totalVotes\":").append(rs.getInt("total_ratings"))
                       .append("}");
                 first = false;
             }
@@ -137,7 +156,6 @@ public class ScoreController {
         }
     }
 
-    
     public static class ScoreRequest {
         private int    projectId;
         private String barangay;
