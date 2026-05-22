@@ -42,18 +42,7 @@ function getRedirectUrl(privilege, userType) {
     if (privilege === 'ADMIN' || userType === 'developer') {
         return '/Admin/Approval/admin';
     }
-    
-    // Role-based redirect
-    if (privilege === 'CHAIRMAN') {
-        return '/Councilor/Dashboard/Dashboard';
-    }
-    
-    if (privilege === 'TREASURER') {
-        return '/Councilor/Treasurer/treasurer';
-    }
-    
-    // Default for regular councilors
-    return '/Councilor/Home/home';
+    return '/Councilor/Dashboard/Dashboard';
 }
 
 function clearFormAndFocus() {

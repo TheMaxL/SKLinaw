@@ -27,9 +27,7 @@ let sortDir          = 'desc';
 
 async function init() {
   try {
-    const res = await fetch(`${API}/getExpenses?barangay=${encodeURIComponent(session.barangay)}`, {
-      credentials: 'include'
-    });
+    const res = await authFetch(`/getExpenses?barangay=${encodeURIComponent(session.barangay)}`);
     const text = await res.text();
     
     if (text === 'ERROR') {
@@ -39,7 +37,6 @@ async function init() {
       allExpenses = JSON.parse(text);
     }
     
-    // If no expenses in DB, show empty state (no demo data!)
     if (!allExpenses.length) {
       console.log('No expenses found in database');
     }
@@ -103,7 +100,6 @@ function sortBy(field, btn) {
     sortField = field;
     sortDir = field === 'amount' ? 'desc' : 'asc';
   }
-  // Update sort button states
   document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   
@@ -120,17 +116,14 @@ function applyFilters() {
 
   let rows = [...allExpenses];
 
-  // Committee filter
   if (activeCommittee !== 'all') {
     rows = rows.filter(e => e.committeeName === activeCommittee);
   }
 
-  // Type filter
   if (type) {
     rows = rows.filter(e => e.type === type);
   }
 
-  // Search
   if (search) {
     rows = rows.filter(e =>
       (e.description || '').toLowerCase().includes(search) ||
@@ -139,7 +132,6 @@ function applyFilters() {
     );
   }
 
-  // Sort
   rows = [...rows].sort((a, b) => {
     let valA, valB;
     if (sortField === 'date') {
@@ -224,10 +216,8 @@ function goPage(n) {
 }
 
 function logout() {
-  localStorage.removeItem('sk_name');
-  localStorage.removeItem('sk_barangay');
-  localStorage.removeItem('sk_privilege');
-  window.location.href = '../Log-in/login';
+  Session.clear();
+  window.location.href = '/Councilor/Log-in/Login';
 }
 
 function esc(s) {
@@ -248,22 +238,30 @@ function fmtDate(s) {
   }
 }
 
+// DOMContentLoaded - Token-based auth check
 document.addEventListener('DOMContentLoaded', async () => {
-  // Direct auth check using your working endpoint
+  const token = localStorage.getItem('auth_token');
+  
+  if (!token || !localStorage.getItem('sk_name')) {
+    window.location.href = '/Councilor/Log-in/Login';
+    return;
+  }
+  
   try {
     const response = await fetch('https://sklinaw.onrender.com/api/check-auth', {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
     const data = await response.json();
     
-    if (!data.authenticated || !localStorage.getItem('sk_name')) {
+    if (!data.authenticated) {
       Session.clear();
       window.location.href = '/Councilor/Log-in/Login';
       return;
     }
     
-    // User is authenticated, continue with page initialization
     const nameEl = document.getElementById('nameEl');
     const roleEl = document.getElementById('roleEl');
     const avatarEl = document.getElementById('avatarEl');
@@ -286,8 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
     
-    showBudgetForTreasurer();
-    showRoleView();
+    init();
     
   } catch (error) {
     console.error('Auth check error:', error);
@@ -302,6 +299,3 @@ window.sortBy = sortBy;
 window.goPage = goPage;
 window.logout = logout;
 window.applyFilters = applyFilters;
-
-// Initialize
-init();

@@ -1,20 +1,31 @@
 let currentView = 'pending'; // 'pending', 'approved', or 'all'
 let currentMainView = 'user-mgmt'; // 'user-mgmt' or 'turnover'
 
-// Helper function for admin API calls
+// Helper function for admin API calls (Token-based)
 async function adminFetch(url, options = {}) {
+    // Get token directly from localStorage
+    const token = localStorage.getItem('auth_token');
+    
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const defaultOptions = {
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json'
-        }
+        headers: headers
     };
     
     const mergedOptions = { ...defaultOptions, ...options };
+    
+    // Use ADMIN_API which should be '/admin'
     const response = await fetch(`${ADMIN_API}${url}`, mergedOptions);
     
     if (response.status === 401 || response.status === 403) {
         Toast.show('Session expired. Please login again.', true);
+        localStorage.clear();
         setTimeout(() => {
             window.location.href = '../../Councilor/Log-in/Login';
         }, 1500);
@@ -32,7 +43,6 @@ async function loadPendingUsers() {
         let users = await res.json();
         console.log('Pending users count:', users.length);
 
-        // Apply status filter if needed
         const filterEl = document.getElementById('filter');
         const filter = filterEl ? filterEl.value : 'All';
 
@@ -88,9 +98,7 @@ async function loadPendingUsers() {
     }
 }
 
-// Function to view photo in modal
 function viewPhoto(userId, userName) {
-    // Create modal if it doesn't exist
     let modal = document.getElementById('photoModal');
     if (!modal) {
         modal = document.createElement('div');
@@ -100,20 +108,44 @@ function viewPhoto(userId, userName) {
             <div class="modal-content">
                 <span class="modal-close" onclick="closePhotoModal()">&times;</span>
                 <h3 id="photoModalTitle">Verification Photo</h3>
-                <img id="photoModalImage" src="" alt="Verification photo" style="max-width: 100%; max-height: 70vh;">
+                <div id="photoContainer">Loading photo...</div>
             </div>
         `;
         document.body.appendChild(modal);
         
-        // Close modal when clicking outside
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closePhotoModal();
         });
     }
-    
     document.getElementById('photoModalTitle').textContent = `Verification ID: ${userName}`;
-    document.getElementById('photoModalImage').src = `${ADMIN_API}/pending-photo/${userId}?t=${Date.now()}`;
+    const photoContainer = document.getElementById('photoContainer');
+    photoContainer.innerHTML = '<div class="loader"><span></span><span></span><span></span></div>';
     modal.style.display = 'flex';
+    const token = localStorage.getItem('auth_token');
+    fetch(`https://sklinaw.onrender.com/admin/pending-photo/${userId}?t=${Date.now()}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const imageUrl = URL.createObjectURL(blob);
+        photoContainer.innerHTML = `<img src="${imageUrl}" alt="Verification photo" style="max-width: 100%; max-height: 70vh;">`;
+    })
+    .catch(error => {
+        console.error('Error loading photo:', error);
+        photoContainer.innerHTML = `
+            <div style="color: var(--error); text-align: center; padding: 20px;">
+                <p>❌ Could not load photo</p>
+                <p style="font-size: 0.8rem;">${error.message}</p>
+            </div>
+        `;
+    });
 }
 
 function closePhotoModal() {
@@ -126,10 +158,8 @@ async function loadApprovedUsers() {
         const response = await adminFetch('/councilors');
         let councilors = await response.json();
         
-        // Filter only approved councilors
         councilors = councilors.filter(c => c.approved === 1);
         
-        // Apply barangay filter if selected
         const barangayFilter = document.getElementById('barangayFilter');
         const selectedBarangay = barangayFilter ? barangayFilter.value : '';
         
@@ -176,22 +206,18 @@ async function loadApprovedUsers() {
 
 async function loadAllUsers() {
     try {
-        // Get pending users
         const pendingRes = await adminFetch('/users');
         const pendingUsers = await pendingRes.json();
         
-        // Get approved users
         const approvedRes = await adminFetch('/councilors');
         let approvedUsers = await approvedRes.json();
         approvedUsers = approvedUsers.filter(c => c.approved === 1);
         
-        // Combine and mark status
         const allUsers = [
             ...pendingUsers.map(u => ({ ...u, status: 'Pending' })),
             ...approvedUsers.map(c => ({ ...c, status: 'Approved', name: c.name, barangay: c.barangay, id: c.id }))
         ];
         
-        // Apply barangay filter if in approved view context
         const barangayFilter = document.getElementById('barangayFilter');
         const selectedBarangay = barangayFilter ? barangayFilter.value : '';
         
@@ -243,13 +269,11 @@ async function loadAllUsers() {
     }
 }
 
-// Load barangays from Councilors table for filter
 async function loadBarangayFilter() {
     try {
         const response = await adminFetch('/councilors');
         const councilors = await response.json();
         
-        // Get unique barangays from approved councilors
         const barangays = [...new Set(councilors.map(c => c.barangay))];
         
         const filterSelect = document.getElementById('barangayFilter');
@@ -269,13 +293,11 @@ async function loadBarangayFilter() {
     }
 }
 
-// Load barangays for turnover dropdown
 async function loadTurnoverBarangays() {
     try {
         const response = await adminFetch('/councilors');
         const councilors = await response.json();
         
-        // Get unique barangays with data
         const barangays = [...new Set(councilors.map(c => c.barangay))];
         
         const select = document.getElementById('turnoverBarangay');
@@ -293,7 +315,6 @@ async function loadTurnoverBarangays() {
             }
         });
         
-        // Add change event listener
         select.removeEventListener('change', onBarangaySelected);
         select.addEventListener('change', onBarangaySelected);
         
@@ -305,7 +326,6 @@ async function loadTurnoverBarangays() {
     }
 }
 
-// Handle barangay selection for turnover
 async function onBarangaySelected() {
     const select = document.getElementById('turnoverBarangay');
     const barangay = select.value;
@@ -335,7 +355,6 @@ async function onBarangaySelected() {
     }
 }
 
-// Perform turnover
 async function performTurnover() {
     const select = document.getElementById('turnoverBarangay');
     const barangay = select.value;
@@ -395,7 +414,6 @@ async function performTurnover() {
             `;
             Toast.show(`Turnover completed for ${barangay}!`);
             
-            // Refresh all data
             loadStats();
             loadBarangayFilter();
             loadTurnoverBarangays();
@@ -407,7 +425,6 @@ async function performTurnover() {
                 loadAllUsers();
             }
             
-            // Reset form
             select.value = '';
             document.getElementById('turnoverStatus').style.display = 'none';
             
@@ -428,7 +445,6 @@ async function performTurnover() {
     }
 }
 
-// Update table headers based on view
 function updateTableHeaders(view) {
     const thead = document.querySelector('#usersTable thead');
     if (!thead) return;
@@ -477,7 +493,6 @@ function switchView(view) {
     const filterContainer = document.getElementById('filterContainer');
     const filterSelect = document.getElementById('filter');
     
-    // Update tab active states
     if (pendingTab) pendingTab.classList.toggle('active', view === 'pending');
     if (approvedTab) approvedTab.classList.toggle('active', view === 'approved');
     if (allTab) allTab.classList.toggle('active', view === 'all');
@@ -527,25 +542,13 @@ async function loadStats() {
 }
 
 async function approveUser(id, name) {
-    console.log('=== APPROVE USER START ===');
-    console.log('Current view BEFORE approval:', currentView);
-    
     try {
         const response = await adminFetch(`/users/${id}/approve`, { method: 'POST' });
         if (response.ok) {
             Toast.show(`${name} has been approved`);
-            
-            console.log('Calling loadPendingUsers...');
             await loadPendingUsers();
-            
-            console.log('Calling loadStats...');
             await loadStats();
-            
-            console.log('Calling loadBarangayFilter...');
             await loadBarangayFilter();
-            
-            console.log('Current view AFTER all loads:', currentView);
-            checkTabVisualState();
         } else {
             Toast.show(`Error approving ${name}`, true);
         }
@@ -553,7 +556,6 @@ async function approveUser(id, name) {
         console.error('Error approving user:', err);
         Toast.show('Error approving user', true);
     }
-    console.log('=== APPROVE USER END ===');
 }
 
 async function rejectUser(id, name) {
@@ -612,8 +614,6 @@ async function assignPrivilege(councilorId, councilorName) {
     }
 }
 
-// ==================== MAIN NAVIGATION ====================
-
 function switchMainSection(section) {
     currentMainView = section;
     
@@ -632,7 +632,6 @@ function switchMainSection(section) {
         if (mainTitle) mainTitle.textContent = 'User Management';
         if (mainSubtitle) mainSubtitle.textContent = 'Review and approve SK councilor registration requests.';
         
-        // Refresh user management data
         loadStats();
         loadBarangayFilter();
         if (currentView === 'pending') {
@@ -651,22 +650,17 @@ function switchMainSection(section) {
         if (mainTitle) mainTitle.textContent = 'Turnover Tool';
         if (mainSubtitle) mainSubtitle.textContent = 'Clear barangay data after elections.';
         
-        // Refresh turnover data
         loadTurnoverBarangays();
     }
 }
 
-// ==================== INITIALIZATION ====================
-
 function init() {
-    // Main navigation
     const navUserMgmt = document.getElementById('nav-user-mgmt');
     const navTurnover = document.getElementById('nav-turnover');
     
     if (navUserMgmt) navUserMgmt.addEventListener('click', () => switchMainSection('user-mgmt'));
     if (navTurnover) navTurnover.addEventListener('click', () => switchMainSection('turnover'));
     
-    // Tab buttons for user management
     const pendingTab = document.getElementById('tab-pending');
     const approvedTab = document.getElementById('tab-approved');
     const allTab = document.getElementById('tab-all');
@@ -675,7 +669,6 @@ function init() {
     if (approvedTab) approvedTab.addEventListener('click', () => switchView('approved'));
     if (allTab) allTab.addEventListener('click', () => switchView('all'));
     
-    // Barangay filter
     const barangayFilter = document.getElementById('barangayFilter');
     if (barangayFilter) barangayFilter.addEventListener('change', () => {
         if (currentView === 'approved') {
@@ -685,7 +678,6 @@ function init() {
         }
     });
     
-    // Status filter
     const filterEl = document.getElementById('filter');
     if (filterEl) filterEl.addEventListener('change', () => {
         if (currentView === 'pending') {
@@ -693,7 +685,6 @@ function init() {
         }
     });
     
-    // Refresh button
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) refreshBtn.addEventListener('click', () => {
         if (currentMainView === 'user-mgmt') {
@@ -712,18 +703,15 @@ function init() {
         Toast.show('Refreshed!');
     });
     
-    // Logout button
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', () => {
         localStorage.clear();
         window.location.href = '../../Councilor/Log-in/Login';
     }); 
     
-    // Turnover button
     const turnoverBtn = document.getElementById('turnoverBtn');
     if (turnoverBtn) turnoverBtn.addEventListener('click', performTurnover);
     
-    // Initial load - start with user management
     loadStats();
     loadBarangayFilter();
     switchView('pending');
@@ -738,7 +726,6 @@ function checkTabVisualState() {
     console.log('currentView variable:', currentView);
 }
 
-// Helper function
 function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -749,7 +736,6 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// Make functions global for onclick handlers
 window.approveUser = approveUser;
 window.rejectUser = rejectUser;
 window.assignPrivilege = assignPrivilege;
@@ -758,5 +744,4 @@ window.switchMainSection = switchMainSection;
 window.viewPhoto = viewPhoto;
 window.closePhotoModal = closePhotoModal;   
 
-// Start the app
 init();
